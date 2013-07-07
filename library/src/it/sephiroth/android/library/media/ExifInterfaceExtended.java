@@ -19,52 +19,52 @@ public class ExifInterfaceExtended {
 	// The Exif tag names
 	
 	/**
-	 * int<br />
-	 * The file size in bytes
+	 * Value is int<br />
+	 * Not an exif tag, this indicates the file size in bytes
 	 */
 	public static final String TAG_FILE_SIZE = "FileSize";
 	
    /**
-    * ASCII string<br />
+    * Value is ascii string<br />
     * The manufacturer of the recording equipment. This is the manufacturer of the DSC, scanner, video digitizer or other
     * equipment that generated the image. When the field is left blank, it is treated as unknown.
     */
 	public static final String TAG_MAKE = "Make";
 	
    /**
-    * ASCII string<br />
+    * Value is ascii string<br />
     * The model name or model number of the equipment. This is the model name of number of the DSC, scanner, video
     * digitizer or other equipment that generated the image. When the field is left blank, it is treated as unknown.
     */
 	public static final String TAG_MODEL = "Model";
 	
 	/**
-	 * ASCII string (20)<br />
+	 * Value is ascii string (20)<br />
 	 * Date/Time of image was last modified. Data format is "YYYY:MM:DD HH:MM:SS"+0x00, total 20bytes.
 	 * In usual, it has the same value of DateTimeOriginal(0x9003)
 	 */
 	public static final String TAG_DATETIME = "DateTime";
 	
    /**
-    * ASCII string (20)<br />
+    * Value is ascii string (20)<br />
     * Date/Time of image digitized. Usually, it contains the same value of DateTimeOriginal(0x9003).
     */
    public static final String TAG_DATETIME_DIGITIZED = "DateTimeDigitized";	
 	
    /**
-    * ASCII string (20)<br />
+    * Value is ascii string (20)<br />
     * Date/Time of original image taken. This value should not be modified by user program.
     */
    public static final String TAG_DATETIME_ORIGINAL = "DateTimeOriginal";
    
    /**
-    * ASCII string<br />
+    * Values is ascii string<br />
     * Shows copyright information
     */
    public static final String TAG_COPYRIGHT = "Copyright";
    
    /**
-    * ASCII String<br />
+    * Vallue is ascii String<br />
     * This tag records the name of the camera owner, photographer or image creator. The detailed format is not specified,
     * but it is recommended that the information be written as in the example below for ease of Interoperability. When the
     * field is left blank, it is treated as unknown.
@@ -72,25 +72,25 @@ public class ExifInterfaceExtended {
    public static final String TAG_ARTIST = "Artist";
    
    /**
-    * ASCII string<br />
+    * Value is ascii string<br />
     * Shows firmware(internal software of digicam) version number.
     */
    public static final String TAG_SOFTWARE = "Software";
    
    /**
-    * int<br />
+    * Value is int<br />
     * The number of columns of image data, equal to the number of pixels per row. In JPEG compressed data a JPEG  marker is used instead of this tag.
     */
    public static final String TAG_IMAGE_WIDTH = "ImageWidth";
 
    /**
-    * int<br />
+    * Value is int<br />
     * The number of rows of image data. In JPEG compressed data a JPEG marker is used instead of this tag.
     */
    public static final String TAG_IMAGE_HEIGHT = "ImageHeight";
 	
    /**
-    * int<br />
+    * Value is int<br />
     * The orientation of the camera relative to the scene, when the image was captured. The start point of stored data is:
     * <ul>
     * <li>'0' undefined</li>
@@ -108,7 +108,7 @@ public class ExifInterfaceExtended {
    public static final String TAG_ORIENTATION = "Orientation";
    
    /**
-    * int<br />
+    * Value is int<br />
     * Not an exif tag, this is extracted from the jpeg file.
     * It gives information about the process used to create the JPEG file.
     * Possible values are:
