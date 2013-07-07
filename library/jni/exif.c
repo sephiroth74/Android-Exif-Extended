@@ -27,12 +27,21 @@ typedef struct
 
 //--------------------------------------------------------------------------
 // Table of Jpeg encoding process names
-static const TagTable_t ProcessTable[] = { { M_SOF0, "Baseline" }, { M_SOF1, "Extended sequential" }, { M_SOF2, "Progressive" }, {
-      M_SOF3, "Lossless" }, { M_SOF5, "Differential sequential" }, { M_SOF6, "Differential progressive" }, { M_SOF7,
-      "Differential lossless" }, { M_SOF9, "Extended sequential, arithmetic coding" },
-      { M_SOF10, "Progressive, arithmetic coding" }, { M_SOF11, "Lossless, arithmetic coding" }, { M_SOF13,
-            "Differential sequential, arithmetic coding" }, { M_SOF14, "Differential progressive, arithmetic coding" }, { M_SOF15,
-            "Differential lossless, arithmetic coding" }, };
+static const TagTable_t ProcessTable[] = {
+		{ M_SOF0, "Baseline" },
+		{ M_SOF1, "Extended sequential" },
+		{ M_SOF2, "Progressive" },
+		{ M_SOF3, "Lossless" },
+		{ M_SOF5, "Differential sequential" },
+		{ M_SOF6, "Differential progressive" },
+		{ M_SOF7, "Differential lossless" },
+		{ M_SOF9, "Extended sequential, arithmetic coding" },
+      { M_SOF10, "Progressive, arithmetic coding" },
+      { M_SOF11, "Lossless, arithmetic coding" },
+      { M_SOF13, "Differential sequential, arithmetic coding" },
+      { M_SOF14, "Differential progressive, arithmetic coding" },
+      { M_SOF15, "Differential lossless, arithmetic coding" },
+};
 
 #define PROCESS_TABLE_SIZE  (sizeof(ProcessTable) / sizeof(TagTable_t))
 
@@ -615,11 +624,10 @@ static void ProcessExifDir(unsigned char * DirStart, unsigned char * OffsetBase,
 				LOGD("BrightnessValue: %.4f", ImageInfo.BrightnessValue);
 				break;
 
-			case TAG_CPRS_BITS_PER_PIXEL:
-				ImageInfo.CompressedBitsPerPixel = (float) ConvertAnyFormat(ValuePtr, Format);
-				LOGD("CompressedBitsPerPixel: %.4f", ImageInfo.CompressedBitsPerPixel);
-				break;
-
+//			case TAG_CPRS_BITS_PER_PIXEL:
+//				ImageInfo.CompressedBitsPerPixel = (float) ConvertAnyFormat(ValuePtr, Format);
+//				LOGD("CompressedBitsPerPixel: %.4f", ImageInfo.CompressedBitsPerPixel);
+//				break;
 
 			case TAG_SCENE_CAPTURE_TYPE:
 				ImageInfo.SceneCaptureType = (unsigned) ConvertAnyFormat(ValuePtr, Format);
@@ -628,7 +636,7 @@ static void ProcessExifDir(unsigned char * DirStart, unsigned char * OffsetBase,
 
 			case TAG_COPYRIGHT:
 				strncpy(ImageInfo.Copyright, (char *) ValuePtr, ByteCount < 254 ? ByteCount : 254);
-				LOGD("Copyright: %s", ImageInfo.Copyright);
+				LOGD("Copyright: %s, size: %i", ValuePtr, strlen(ValuePtr));
 				break;
 
 			case TAG_ARTIST:
@@ -1036,14 +1044,14 @@ static void ProcessExifDir(unsigned char * DirStart, unsigned char * OffsetBase,
 				}
 				break;
 
-			case TAG_FLASH_PIX_VERSION:
-				if( ByteCount == 4 ) {
-					strncpy(ImageInfo.FlashpixVersion, (char *) ValuePtr, ByteCount);
-					LOGD("FlashPixVersion: %s", ImageInfo.FlashpixVersion );
-				} else {
-					ErrNonfatal("FlashPixVersion invalid byte count: %i ( it should be %i )", ByteCount, 4);
-				}
-				break;
+//			case TAG_FLASH_PIX_VERSION:
+//				if( ByteCount == 4 ) {
+//					strncpy(ImageInfo.FlashpixVersion, (char *) ValuePtr, ByteCount);
+//					LOGD("FlashPixVersion: %s", ImageInfo.FlashpixVersion );
+//				} else {
+//					ErrNonfatal("FlashPixVersion invalid byte count: %i ( it should be %i )", ByteCount, 4);
+//				}
+//				break;
 
 			case TAG_COLOR_SPACE:
 				ImageInfo.ColorSpace =  (int) ConvertAnyFormat( ValuePtr, Format );
@@ -1715,6 +1723,7 @@ void ShowImageInfo(int ShowFileInfo)
 			; //Quercus: 17-1-2004 There are many more modes for this, check Exif2.2 specs
 			// If it just says 'unknown' or we don't know it, then
 			// don't bother showing it - it doesn't add any useful information.
+			break;
 	}
 
 	if (ImageInfo.MeteringMode > 0)
@@ -1910,7 +1919,7 @@ void ShowConciseImageInfo(void)
 		printf(" f(35)=%dmm", ImageInfo.FocalLengthIn35mmFilm);
 	}
 
-	if (ImageInfo.Flash >= 0 && ImageInfo.Flash & 1)
+	if (ImageInfo.Flash >= 0 && (ImageInfo.Flash & 1))
 	{
 		printf(" (flash)");
 	}

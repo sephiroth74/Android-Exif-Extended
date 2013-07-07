@@ -8,14 +8,15 @@ import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.BitmapFactory.Options;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.TextView;
 
 public class MainActivity extends Activity implements OnClickListener {
 
@@ -23,6 +24,7 @@ public class MainActivity extends Activity implements OnClickListener {
 	static final int REQUEST_FILE = 1; 
 	Button button1, button2;
 	ImageView image;
+	TextView exifText;
 
 	@Override
 	protected void onCreate( Bundle savedInstanceState ) {
@@ -32,6 +34,7 @@ public class MainActivity extends Activity implements OnClickListener {
 		button1 = (Button) findViewById( R.id.button1 );
 		button2 = (Button) findViewById( R.id.button2 );
 		image = (ImageView) findViewById( R.id.image1 );
+		exifText = (TextView) findViewById( R.id.exif );
 
 		button1.setOnClickListener( this );
 		button2.setOnClickListener( this );
@@ -58,15 +61,9 @@ public class MainActivity extends Activity implements OnClickListener {
 			return;
 		}
 		
-		Options options = new BitmapFactory.Options();
-		options.inSampleSize = 2;
-		options.inPreferQualityOverSpeed = false;
-		options.inPreferredConfig = Bitmap.Config.RGB_565;
-		
-		Bitmap bitmap = BitmapFactory.decodeFile( filename, options );
-		image.setImageBitmap( bitmap );
-		
-		
+		image.setImageBitmap( null );
+		exifText.setText( "" );
+
 		ExifInterfaceExtended exif = null;
 		
 		try {
@@ -79,10 +76,12 @@ public class MainActivity extends Activity implements OnClickListener {
 			Set<String> keys = exif.keySet();
 			
 			for( String key : keys ) {
-				Log.d( LOG_TAG, key + " = " + exif.getAttribute( key ) );
+				exifText.append( key + " = " + exif.getAttribute( key ) + "\n" );
 			}
-			
 		}
+		
+		
+		new LoadThumbnailTask().execute( filename );
 	}
 	
 	@Override
@@ -108,4 +107,48 @@ public class MainActivity extends Activity implements OnClickListener {
 		}
 	}
 
+	
+	private class LoadThumbnailTask extends AsyncTask<String, Void, Bitmap> {
+
+		@Override
+		protected Bitmap doInBackground( String... params ) {
+			
+			String filename = params[0];
+			Bitmap thumbnail = null;
+			ExifInterfaceExtended exif = null;
+			
+			try {
+				exif = new ExifInterfaceExtended( filename );
+			} catch ( IOException e ) {
+				e.printStackTrace();
+			}
+
+			
+			if( null != exif ) {
+				if( exif.hasThumbnail() ) {
+					byte[] data = exif.getThumbnail();
+					if( null != data ) {
+						thumbnail = BitmapFactory.decodeByteArray( data, 0, data.length );
+					}
+				}
+			}
+			
+//			if( thumbnail == null ) {
+//				Options options = new BitmapFactory.Options();
+//				options.inSampleSize = 2;
+//				options.inPreferQualityOverSpeed = false;
+//				options.inPreferredConfig = Bitmap.Config.RGB_565;
+//				Bitmap bitmap = BitmapFactory.decodeFile( filename, options );
+//				thumbnail = ThumbnailUtils.extractThumbnail( bitmap, 200, 200 );
+//			}
+			
+			return thumbnail;
+		}
+		
+		@Override
+		protected void onPostExecute( Bitmap result ) {
+			super.onPostExecute( result );
+			image.setImageBitmap( result );
+		}
+	}
 }

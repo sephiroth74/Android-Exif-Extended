@@ -139,8 +139,9 @@
 		// ShowImageInfo(TRUE);
 
 		// parse all attributes
-		bufLen = addKeyValueString(&buf, bufLen, "hasThumbnail",
-				ImageInfo.ThumbnailOffset == 0 || ImageInfo.ThumbnailAtEnd == FALSE || ImageInfo.ThumbnailSize == 0 ? "false" : "true");
+
+		// thumbnail
+		bufLen = addKeyValueString(&buf, bufLen, "hasThumbnail", ImageInfo.ThumbnailOffset == 0 || ImageInfo.ThumbnailAtEnd == FALSE || ImageInfo.ThumbnailSize == 0 ? "false" : "true");
 		if (bufLen == 0) return NULL;
 
 		if( ImageInfo.Make[0] )
@@ -161,15 +162,21 @@
 			if( bufLen == 0 ) return NULL;
 		}
 
-		if( ImageInfo.Copyright[0] )
+		if( ImageInfo.DateTimeDigitized[0] )
 		{
-			bufLen = addKeyValueString( &buf, bufLen, "Copyright", ImageInfo.Copyright );
+			bufLen = addKeyValueString( &buf, bufLen, "DateTimeDigitized", ImageInfo.DateTimeDigitized );
 			if( bufLen == 0 ) return NULL;
 		}
 
-		if( ImageInfo.Software[0] )
+		if( ImageInfo.DateTimeOriginal[0] )
 		{
-			bufLen = addKeyValueString( &buf, bufLen, "Software", ImageInfo.Software );
+			bufLen = addKeyValueString( &buf, bufLen, "DateTimeOriginal", ImageInfo.DateTimeOriginal );
+			if( bufLen == 0 ) return NULL;
+		}
+
+		if( ImageInfo.Copyright[0] )
+		{
+			bufLen = addKeyValueString( &buf, bufLen, "Copyright", ImageInfo.Copyright );
 			if( bufLen == 0 ) return NULL;
 		}
 
@@ -179,18 +186,36 @@
 			if( bufLen == 0 ) return NULL;
 		}
 
-		bufLen = addKeyValueInt(&buf, bufLen, "ImageWidth", ImageInfo.ImageWidth);
-		if (bufLen == 0) return NULL;
+		if( ImageInfo.Software[0] )
+		{
+			bufLen = addKeyValueString( &buf, bufLen, "Software", ImageInfo.Software );
+			if( bufLen == 0 ) return NULL;
+		}
 
-		bufLen = addKeyValueInt(&buf, bufLen, "ImageHeight", ImageInfo.ImageHeight);
-		if (bufLen == 0) return NULL;
+		if( ImageInfo.ImageWidth > 0 && ImageInfo.ImageHeight > 0 )
+		{
+			bufLen = addKeyValueInt(&buf, bufLen, "ImageWidth", ImageInfo.ImageWidth);
+			if (bufLen == 0) return NULL;
 
-		bufLen = addKeyValueInt(&buf, bufLen, "Orientation", ImageInfo.Orientation);
-		if (bufLen == 0) return NULL;
+			bufLen = addKeyValueInt(&buf, bufLen, "ImageHeight", ImageInfo.ImageHeight);
+			if (bufLen == 0) return NULL;
+		}
+
+		if(ImageInfo.Orientation >= 0 )
+		{
+			bufLen = addKeyValueInt(&buf, bufLen, "Orientation", ImageInfo.Orientation);
+			if (bufLen == 0) return NULL;
+		}
 
 		if (ImageInfo.Flash >= 0)
 		{
 			bufLen = addKeyValueInt(&buf, bufLen, "Flash", ImageInfo.Flash);
+			if (bufLen == 0) return NULL;
+		}
+
+		if (ImageInfo.FocalLength)
+		{
+			bufLen = addKeyValueDouble(&buf, bufLen, "FocalLength", ImageInfo.FocalLength, "%4.2f");
 			if (bufLen == 0) return NULL;
 		}
 
@@ -215,9 +240,27 @@
 			if (bufLen == 0) return NULL;
 		}
 
+		if( ImageInfo.ApertureValue )
+		{
+			bufLen = addKeyValueDouble(&buf, bufLen, "ApertureValue", (double)ImageInfo.ApertureValue, "%4.2f");
+			if (bufLen == 0) return NULL;
+		}
+
+		if(ImageInfo.BrightnessValue )
+		{
+			bufLen = addKeyValueDouble(&buf, bufLen, "BrightnessValue", (double)ImageInfo.BrightnessValue, "%4.2f");
+			if (bufLen == 0) return NULL;
+		}
+
+		if(ImageInfo.MaxApertureValue)
+		{
+			bufLen = addKeyValueDouble(&buf, bufLen, "MaxApertureValue", (double)ImageInfo.MaxApertureValue, "%4.2f");
+			if (bufLen == 0) return NULL;
+		}
+
 		if (ImageInfo.SubjectDistance)
 		{
-			bufLen = addKeyValueDouble(&buf, bufLen, "Distance", (double)ImageInfo.SubjectDistance, "%4.2f");
+			bufLen = addKeyValueDouble(&buf, bufLen, "SubjectDistance", (double)ImageInfo.SubjectDistance, "%4.2f");
 			if (bufLen == 0) return NULL;
 		}
 
@@ -230,13 +273,19 @@
 		if (ImageInfo.DigitalZoomRatio > 1.0)
 		{
 			// Digital zoom used.  Shame on you! (LOL)
-			bufLen = addKeyValueDouble(&buf, bufLen, "DigitalZoomRatio", ImageInfo.DigitalZoomRatio, "%1.3f");
+			bufLen = addKeyValueDouble(&buf, bufLen, "DigitalZoomRatio", ImageInfo.DigitalZoomRatio, "%2.3f");
 			if (bufLen == 0) return NULL;
 		}
 
-		if (ImageInfo.FocalLength)
+		if( ImageInfo.FocalLengthIn35mmFilm )
 		{
-			bufLen = addKeyValueDouble(&buf, bufLen, "FocalLength", ImageInfo.FocalLength, "%4.2f");
+			bufLen = addKeyValueInt(&buf, bufLen, "FocalLengthIn35mmFilm", ImageInfo.FocalLengthIn35mmFilm);
+			if (bufLen == 0) return NULL;
+		}
+
+		if( ImageInfo.SensingMethod > 0 )
+		{
+			bufLen = addKeyValueInt(&buf, bufLen, "SensingMethod", ImageInfo.SensingMethod);
 			if (bufLen == 0) return NULL;
 		}
 
@@ -246,11 +295,17 @@
 			if (bufLen == 0) return NULL;
 		}
 
-		if( ImageInfo.MeteringMode > 0 )
+		if( ImageInfo.MeteringMode > 0 && ImageInfo.MeteringMode <= 255)
 		{
 			bufLen = addKeyValueInt(&buf, bufLen, "MeteringMode", ImageInfo.MeteringMode);
 			if (bufLen == 0) return NULL;
 		}
+
+//		if(ImageInfo.CompressedBitsPerPixel)
+//		{
+//			bufLen = addKeyValueDouble(&buf, bufLen, "CompressedBitsPerPixel", (double)ImageInfo.CompressedBitsPerPixel, "%4.2f");
+//			if (bufLen == 0) return NULL;
+//		}
 
 		if (ImageInfo.ExposureProgram > 0)
 		{
@@ -276,7 +331,7 @@
 			if (bufLen == 0) return NULL;
 		}
 
-		if(ImageInfo.SubjectDistanceRange)
+		if(ImageInfo.SubjectDistanceRange > 0)
 		{
 			bufLen = addKeyValueInt(&buf, bufLen, "SubjectDistanceRange", ImageInfo.SubjectDistanceRange);
 			if (bufLen == 0) return NULL;
@@ -284,19 +339,49 @@
 
 		if(ImageInfo.XResolution)
 		{
-			bufLen = addKeyValueDouble(&buf, bufLen, "XResolution", ImageInfo.XResolution, "%.4f");
+			bufLen = addKeyValueDouble(&buf, bufLen, "XResolution", ImageInfo.XResolution, "%.2f");
 			if (bufLen == 0) return NULL;
 		}
 
 		if(ImageInfo.YResolution)
 		{
-			bufLen = addKeyValueDouble(&buf, bufLen, "YResolution", ImageInfo.YResolution, "%.4f");
+			bufLen = addKeyValueDouble(&buf, bufLen, "YResolution", ImageInfo.YResolution, "%.2f");
 			if (bufLen == 0) return NULL;
 		}
 
 		if(ImageInfo.ResolutionUnit)
 		{
 			bufLen = addKeyValueInt(&buf, bufLen, "ResolutionUnit", ImageInfo.ResolutionUnit);
+			if (bufLen == 0) return NULL;
+		}
+
+		if(ImageInfo.FocalPlaneXResolution)
+		{
+			bufLen = addKeyValueDouble(&buf, bufLen, "FocalPlaneXResolution", ImageInfo.FocalPlaneXResolution, "%.4f");
+			if (bufLen == 0) return NULL;
+		}
+
+		if(ImageInfo.FocalPlaneYResolution)
+		{
+			bufLen = addKeyValueDouble(&buf, bufLen, "FocalPlaneYResolution", ImageInfo.FocalPlaneYResolution, "%.4f");
+			if (bufLen == 0) return NULL;
+		}
+
+		if(ImageInfo.FocalPlaneResolutionUnit)
+		{
+			bufLen = addKeyValueInt(&buf, bufLen, "FocalPlaneResolutionUnit", ImageInfo.FocalPlaneResolutionUnit);
+			if (bufLen == 0) return NULL;
+		}
+
+		if(ImageInfo.PixelXDimension)
+		{
+			bufLen = addKeyValueInt(&buf, bufLen, "PixelXDimension", ImageInfo.PixelXDimension);
+			if (bufLen == 0) return NULL;
+		}
+
+		if(ImageInfo.PixelYDimension)
+		{
+			bufLen = addKeyValueInt(&buf, bufLen, "PixelYDimension", ImageInfo.PixelYDimension);
 			if (bufLen == 0) return NULL;
 		}
 
@@ -315,6 +400,30 @@
 		if( ImageInfo.ShutterSpeedValue)
 		{
 			bufLen = addKeyValueDouble(&buf, bufLen, "ShutterSpeedValue", ImageInfo.ShutterSpeedValue, "%.4f");
+			if (bufLen == 0) return NULL;
+		}
+
+		if(ImageInfo.ExifVersion[0])
+		{
+			bufLen = addKeyValueString(&buf, bufLen, "ExifVersion", ImageInfo.ExifVersion);
+			if (bufLen == 0) return NULL;
+		}
+
+		if(ImageInfo.ColorSpace > 0)
+		{
+			bufLen = addKeyValueInt(&buf, bufLen, "ColorSpace", ImageInfo.ColorSpace);
+			if (bufLen == 0) return NULL;
+		}
+
+		if(ImageInfo.Compression > 0)
+		{
+			bufLen = addKeyValueInt(&buf, bufLen, "Compression", ImageInfo.Compression);
+			if (bufLen == 0) return NULL;
+		}
+
+		if(ImageInfo.Process)
+		{
+			bufLen = addKeyValueInt(&buf, bufLen, "Process", ImageInfo.Process);
 			if (bufLen == 0) return NULL;
 		}
 
@@ -384,11 +493,41 @@
 		LOGI("commitChanges");
 	}
 
-	static jbyteArray getThumbnail(JNIEnv *env, jobject jobj, jstring jfilename)
+static jbyteArray getThumbnail(JNIEnv *env, jobject jobj, jstring jfilename)
+{
+	LOGI("getThumbnail");
+
+	const char* filename = (*env)->GetStringUTFChars(env, jfilename, NULL);
+
+	if (filename)
 	{
-		LOGI("getThumbnail");
-		return NULL;
+		loadExifInfo(filename, FALSE);
+		Section_t* ExifSection = FindSection(M_EXIF);
+		if (ExifSection == NULL || ImageInfo.ThumbnailSize == 0)
+		{
+			LOGE("no exif section or size == 0, so no thumbnail\n");
+			goto noThumbnail;
+		}
+		uchar* thumbnailPointer = ExifSection->Data + ImageInfo.ThumbnailOffset + 8;
+		jbyteArray byteArray = (*env)->NewByteArray(env, ImageInfo.ThumbnailSize);
+		if (byteArray == NULL)
+		{
+			LOGE("couldn't allocate thumbnail memory, so no thumbnail\n");
+			goto noThumbnail;
+		}
+		(*env)->SetByteArrayRegion(env, byteArray, 0, ImageInfo.ThumbnailSize, thumbnailPointer);
+		LOGD("thumbnail size %d\n", ImageInfo.ThumbnailSize);
+		(*env)->ReleaseStringUTFChars(env, jfilename, filename);
+		DiscardData();
+		return byteArray;
 	}
+	noThumbnail: if (filename)
+	{
+		(*env)->ReleaseStringUTFChars(env, jfilename, filename);
+	}
+	DiscardData();
+	return NULL;
+}
 
 // JNI load
 

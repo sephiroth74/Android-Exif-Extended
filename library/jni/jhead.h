@@ -91,19 +91,19 @@ typedef struct {
      * The manufacturer of the recording equipment. This is the manufacturer of the DSC, scanner, video digitizer or other
      * equipment that generated the image. When the field is left blank, it is treated as unknown.
      */
-    char  Make   [32];
+    char  Make[32];
 
     /* ascii string.
      * The model name or model number of the equipment. This is the model name of number of the DSC, scanner, video
      * digitizer or other equipment that generated the image. When the field is left blank, it is treated as unknown.
      */
-    char  Model  [40];
+    char  Model[40];
 
     /* ascii string (20)
      * Date/Time of image was last modified. Data format is "YYYY:MM:DD HH:MM:SS"+0x00, total 20bytes.
      * In usual, it has the same value of DateTimeOriginal(0x9003)
      */
-    char  DateTime     [20];
+    char  DateTime[20];
 
     /* ascii string (20)
      * Date/Time of image digitized. Usually, it contains the same value of DateTimeOriginal(0x9003).
@@ -113,19 +113,24 @@ typedef struct {
     /* ascii string (20)
      * Date/Time of original image taken. This value should not be modified by user program.
      */
-    char  DateTimeOriginal     [20];
+    char  DateTimeOriginal[20];
 
     /* ascii string
      * Shows copyright information
      */
-    char  Copyright    [255];
+    char  Copyright[255];
 
-    char  Artist       [255];
+    /*
+     * This tag records the name of the camera owner, photographer or image creator. The detailed format is not specified,
+     * but it is recommended that the information be written as in the example below for ease of Interoperability. When the
+     * field is left blank, it is treated as unknown.
+     */
+    char  Artist[255];
 
     /* ascii string
      * Shows firmware(internal software of digicam) version number.
      */
-    char  Software     [255];
+    char  Software[255];
 
     /* unsigned short
      * The number of columns and rows of image data, equal to the number of pixels per row. In JPEG compressed data a JPEG  marker is used instead of this tag.
@@ -149,6 +154,8 @@ typedef struct {
      * '9' undefined
      */
     int   Orientation;
+
+    /* readonly information */
     int   Process;
 
     /*
@@ -247,7 +254,7 @@ typedef struct {
      * CCDWidth = (PixelXDimension * FocalplaneUnits / FocalplaneXRes);
      * FocalLengthIn35mmFilm = (FocalLength / CCDWidth * 36 + 0.5);
      */
-    int   FocalLengthIn35mmFilm; // Exif 2.2 tag - usually not present.
+    int FocalLengthIn35mmFilm; // Exif 2.2 tag - usually not present.
 
     /*
      * unsigned short.
@@ -290,7 +297,7 @@ typedef struct {
      * The average compression ratio of JPEG.
      * Information specific to compressed data. The compression mode used for a compressed image is indicated in unit bits per pixel.
      */
-    float CompressedBitsPerPixel;
+    // float CompressedBitsPerPixel;
 
     /*
      * unsigned short.
@@ -433,7 +440,7 @@ typedef struct {
 
     char GpsAlt[20];
 
-    /* informational only */
+    /* informational only, not an actual exif tag */
     int  QualityGuess;
 
     /* short
@@ -463,12 +470,6 @@ typedef struct {
     char ExifVersion[4];
 
     /*
-     * ascii string(4)
-     * Stores FlashPix version. Unknown but 4bytes of ASCII characters "0100"exists.
-     */
-    char FlashpixVersion[4];
-
-    /*
      * short
      * Normally sRGB (=1) is used to define the color space based on the PC monitor conditions and environment. If a
      * color space other than sRGB is used, Uncalibrated (=FFFF.H) is set. Image data recorded as Uncalibrated can be
@@ -479,7 +480,7 @@ typedef struct {
      */
     int ColorSpace;
 
-    /* unsigned short
+    /* unsigned short (read-only)
      * The compression scheme used for the image data. When a primary image is JPEG compressed, this designation is
      * not necessary and is omitted. When thumbnails use JPEG compression, this tag value is set to 6.
      *
