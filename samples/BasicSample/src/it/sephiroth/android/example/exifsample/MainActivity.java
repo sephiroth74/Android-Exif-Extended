@@ -3,11 +3,15 @@ package it.sephiroth.android.example.exifsample;
 import it.sephiroth.android.example.exifsample.utils.IOUtils;
 import it.sephiroth.android.library.media.ExifInterfaceExtended;
 import java.io.IOException;
+import java.util.Date;
+import java.util.List;
 import java.util.Set;
 import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.location.Address;
+import android.location.Geocoder;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -40,6 +44,7 @@ public class MainActivity extends Activity implements OnClickListener {
 		button2.setOnClickListener( this );
 		
 		String uriString = "content://media/external/images/media/32706";
+		uriString = "content://media/external/images/media/25470";
 		// String uriString = "content://media/external/images/media/32705";
 		// String uriString = ( "content://media/external/images/media/18937";
 		
@@ -78,6 +83,28 @@ public class MainActivity extends Activity implements OnClickListener {
 			for( String key : keys ) {
 				exifText.append( key + " = " + exif.getAttribute( key ) + "\n" );
 			}
+			
+			float[] output = new float[2];
+			if( exif.getLatLong( output ) ) {
+				GetGeoLocationTask task = new GetGeoLocationTask();
+				task.execute( output[0], output[1] );
+			}
+			
+			double altitude = exif.getAltitude( 0 );
+			Log.d( LOG_TAG, "alt: " + altitude );
+			
+			
+			Date datetime = new Date( exif.getDateTime( exif.getAttribute( ExifInterfaceExtended.TAG_EXIF_DATETIME ) ) );
+			Date datetimeDigitized = new Date( exif.getDateTime( exif.getAttribute( ExifInterfaceExtended.TAG_EXIF_DATETIME_DIGITIZED ) ) );
+			Date datetimeOriginal = new Date( exif.getDateTime( exif.getAttribute( ExifInterfaceExtended.TAG_EXIF_DATETIME_ORIGINAL ) ) );
+			Date datetimeFile = new Date( exif.getDateTime( exif.getAttribute( ExifInterfaceExtended.TAG_JPEG_FILE_DATETIME ) ) );
+			
+			Log.d( LOG_TAG, "date time: " + datetime );
+			Log.d( LOG_TAG, "date time digitized: " + datetimeDigitized );
+			Log.d( LOG_TAG, "date time original: " + datetimeOriginal );
+			Log.d( LOG_TAG, "date time file: " + datetimeFile );
+			
+			
 		}
 		
 		
@@ -151,4 +178,80 @@ public class MainActivity extends Activity implements OnClickListener {
 			image.setImageBitmap( result );
 		}
 	}
+	
+	private class GetGeoLocationTask extends AsyncTask<Float, Void, Address> {
+
+		@Override
+		protected Address doInBackground( Float... params ) {
+
+			float lat = params[0];
+			float lon = params[1];
+			
+			Log.d( LOG_TAG, "lat: " + lat + ", lon: " + lon );
+
+			List<Address> result;
+
+			try {
+				Geocoder geo = new Geocoder( MainActivity.this );
+				result = geo.getFromLocation( lat, lon, 1 );
+			} catch ( Exception e ) {
+				e.printStackTrace();
+				return null;
+			}
+			
+			Log.d( LOG_TAG, "result: " + result );
+
+			if ( null != result && result.size() > 0 ) {
+				return result.get( 0 );
+			}
+
+			return null;
+		}
+
+		@Override
+		protected void onPostExecute( Address result ) {
+			super.onPostExecute( result );
+			
+			if ( isCancelled() || isFinishing() ) return;
+
+			if ( null != result ) {
+				
+				StringBuilder finalString = new StringBuilder();
+				
+				if( null != result.getThoroughfare() ) {
+					finalString.append( result.getThoroughfare() );
+					
+					if( null != result.getSubThoroughfare() ) {
+						finalString.append( " " + result.getSubThoroughfare() );
+					}
+					
+					finalString.append( "\n" );
+				}
+				
+				if( null != result.getPostalCode() ) {
+					finalString.append( result.getPostalCode() );
+					
+					if( null != result.getLocality() ) {
+						finalString.append( " - " + result.getLocality() + "\n" );
+					}
+				} else {
+					if( null != result.getLocality() ) {
+						finalString.append( result.getLocality() + "\n" );
+					}
+				}
+				
+				if( null != result.getCountryName() ) {
+					finalString.append( result.getCountryName() );
+				} else if( null != result.getCountryCode() ) {
+					finalString.append( result.getCountryCode() );
+				}
+				
+				if( finalString.length() > 0 ) {
+					finalString.append( "\n" );
+					exifText.append( "Address:\n" );
+					exifText.append( finalString );
+				}
+			}
+		}
+	}	
 }

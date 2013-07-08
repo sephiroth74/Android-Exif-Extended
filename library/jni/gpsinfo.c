@@ -118,7 +118,7 @@ void ProcessGpsInfo(unsigned char * DirStart, unsigned char * OffsetBase, unsign
             ValuePtr = DirEntry+8;
         }
 
-        LOGI("Tag: %i", Tag);
+        // LOGI("Tag: %i", Tag);
 
         switch(Tag){
             char FmtString[21];
@@ -162,6 +162,21 @@ void ProcessGpsInfo(unsigned char * DirStart, unsigned char * OffsetBase, unsign
                 }else{
                     strncpy(ImageInfo.GpsLong+2, TempString, 29);
                 }
+
+//                sprintf(TempString, "%d/%d,%d/%d,%d/%d",
+//                    Get32s(ValuePtr), Get32s(4+(char*)ValuePtr),
+//                    Get32s(8+(char*)ValuePtr), Get32s(12+(char*)ValuePtr),
+//                    Get32s(16+(char*)ValuePtr), Get32s(20+(char*)ValuePtr));
+//
+//                LOGD("Raw value: %s", TempString);
+//
+//                if( Tag == TAG_GPS_LAT )
+//                {
+//                    strncpy(ImageInfo.GpsLatRaw, TempString, MAX_GPS_BUF_SIZE);
+//                } else {
+//                    strncpy(ImageInfo.GpsLongRaw, TempString, MAX_GPS_BUF_SIZE);
+//                }
+
                 break;
 
             case TAG_GPS_ALT_REF:

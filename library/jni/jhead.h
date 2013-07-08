@@ -67,6 +67,12 @@ extern int DumpExifMap;
 
 #define MAX_DATE_COPIES 10
 
+
+// Buffer size must large enough to hold maximum location string
+// containing six signed integers plus delimeters and terminator,
+// i.e.: 11 * 6 + 3(Ô/Õ) + 2(Õ,Õ) + 1(\0) = 72
+#define MAX_GPS_BUF_SIZE    72
+
 //--------------------------------------------------------------------------
 // This structure stores Exif header image elements in a simple manner
 // Used to store camera data as extracted from the various ways that it can be
@@ -435,9 +441,7 @@ typedef struct {
     int GpsInfoPresent;
 
     char GpsLat[31];
-
     char GpsLong[31];
-
     char GpsAlt[20];
 
     /* informational only, not an actual exif tag */

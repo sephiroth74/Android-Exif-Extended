@@ -661,26 +661,38 @@ static void ProcessExifDir(unsigned char * DirStart, unsigned char * OffsetBase,
 				break;
 
 			case TAG_DATETIME_ORIGINAL:
-				// If we get a DATETIME_ORIGINAL, we use that one.
-				strncpy(ImageInfo.DateTime, (char *) ValuePtr, 19);
-				strncpy(ImageInfo.DateTimeOriginal, (char *) ValuePtr, 19);
-
-				LOGD("DateTimeOriginal: %s", ImageInfo.DateTimeOriginal);
-				/* no break */
-
 			case TAG_DATETIME_DIGITIZED:
-				strncpy(ImageInfo.DateTimeDigitized, (char *) ValuePtr, 19);
-				LOGD("DateTimeDigitized: %s", ImageInfo.DateTimeDigitized);
-				/* no break */
-
 			case TAG_DATETIME:
-				LOGD("DateTime: %s", (char*) ValuePtr);
+
+
+				// if the datetime is not already stored, then use this tag
 				if (!isdigit(ImageInfo.DateTime[0]))
 				{
-					// If we don't already have a DATETIME_ORIGINAL, use whatever
-					// time fields we may have.
+					LOGD("Overriding the DateTime");
 					strncpy(ImageInfo.DateTime, (char *) ValuePtr, 19);
 				}
+
+				if( Tag == TAG_DATETIME_ORIGINAL )
+				{
+					strncpy(ImageInfo.DateTimeOriginal, (char *) ValuePtr, 19);
+					LOGD("DateTimeOriginal: %s", ImageInfo.DateTimeOriginal);
+				} else if( Tag == TAG_DATETIME_DIGITIZED )
+				{
+					strncpy(ImageInfo.DateTimeDigitized, (char *) ValuePtr, 19);
+					LOGD("DateTimeDigitized: %s", ValuePtr);
+				} else if( Tag == TAG_DATETIME )
+				{
+					// always use the DateTime tag, if present
+					strncpy(ImageInfo.DateTime, (char *) ValuePtr, 19);
+					LOGD("DateTime: %s", (char*) ValuePtr);
+				}
+
+				// if (!isdigit(ImageInfo.DateTime[0]))
+				// {
+				// If we don't already have a DATETIME_ORIGINAL, use whatever
+				// time fields we may have.
+				//	strncpy(ImageInfo.DateTime, (char *) ValuePtr, 19);
+				// }
 
 				if (ImageInfo.numDateTimeTags >= MAX_DATE_COPIES)
 				{

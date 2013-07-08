@@ -28,7 +28,9 @@
 package it.sephiroth.android.library.media;
 
 import java.io.IOException;
+import java.text.ParsePosition;
 import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Locale;
@@ -51,91 +53,32 @@ public class ExifInterfaceExtended {
 	 * Value is int<br />
 	 * Not an exif tag, this indicates the file size in bytes
 	 */
-	public static final String TAG_FILE_SIZE = "FileSize";
-
+	public static final String TAG_JPEG_FILESIZE = "FileSize";
+	
 	/**
-	 * Value is ascii string<br />
-	 * The manufacturer of the recording equipment. This is the manufacturer of the DSC, scanner, video digitizer or other equipment
-	 * that generated the image. When the field is left blank, it is treated as unknown.
+	 * Value is string(20).<br />
+	 * Not an exif tag, this indicates the file date time ( as stored in the file system )
 	 */
-	public static final String TAG_MAKE = "Make";
-
-	/**
-	 * Value is ascii string<br />
-	 * The model name or model number of the equipment. This is the model name of number of the DSC, scanner, video digitizer or
-	 * other equipment that generated the image. When the field is left blank, it is treated as unknown.
-	 */
-	public static final String TAG_MODEL = "Model";
-
-	/**
-	 * Value is ascii string (20)<br />
-	 * Date/Time of image was last modified. Data format is "YYYY:MM:DD HH:MM:SS"+0x00, total 20bytes. In usual, it has the same
-	 * value of DateTimeOriginal(0x9003)
-	 */
-	public static final String TAG_DATETIME = "DateTime";
-
-	/**
-	 * Value is ascii string (20)<br />
-	 * Date/Time of image digitized. Usually, it contains the same value of DateTimeOriginal(0x9003).
-	 */
-	public static final String TAG_DATETIME_DIGITIZED = "DateTimeDigitized";
-
-	/**
-	 * Value is ascii string (20)<br />
-	 * Date/Time of original image taken. This value should not be modified by user program.
-	 */
-	public static final String TAG_DATETIME_ORIGINAL = "DateTimeOriginal";
-
-	/**
-	 * Values is ascii string<br />
-	 * Shows copyright information
-	 */
-	public static final String TAG_COPYRIGHT = "Copyright";
-
-	/**
-	 * Vallue is ascii String<br />
-	 * This tag records the name of the camera owner, photographer or image creator. The detailed format is not specified, but it is
-	 * recommended that the information be written as in the example below for ease of Interoperability. When the field is left
-	 * blank, it is treated as unknown.
-	 */
-	public static final String TAG_ARTIST = "Artist";
-
-	/**
-	 * Value is ascii string<br />
-	 * Shows firmware(internal software of digicam) version number.
-	 */
-	public static final String TAG_SOFTWARE = "Software";
-
+	public static final String TAG_JPEG_FILE_DATETIME = "FileDateTime";
+	
 	/**
 	 * Value is int<br />
 	 * The number of columns of image data, equal to the number of pixels per row. In JPEG compressed data a JPEG marker is used
 	 * instead of this tag.
 	 */
-	public static final String TAG_IMAGE_WIDTH = "ImageWidth";
+	public static final String TAG_JPEG_IMAGE_WIDTH = "ImageWidth";
 
 	/**
 	 * Value is int<br />
 	 * The number of rows of image data. In JPEG compressed data a JPEG marker is used instead of this tag.
 	 */
-	public static final String TAG_IMAGE_HEIGHT = "ImageHeight";
-
+	public static final String TAG_JPEG_IMAGE_HEIGHT = "ImageHeight";
+	
 	/**
-	 * Value is int<br />
-	 * The orientation of the camera relative to the scene, when the image was captured. The start point of stored data is:
-	 * <ul>
-	 * <li>'0' undefined</li>
-	 * <li>'1' normal</li>
-	 * <li>'2' flip horizontal</li>
-	 * <li>'3' rotate 180</li>
-	 * <li>'4' flip vertical</li>
-	 * <li>'5' transpose, flipped about top-left <--> bottom-right axis</li>
-	 * <li>'6' rotate 90 cw</li>
-	 * <li>'7' transverse, flipped about top-right <--> bottom-left axis</li>
-	 * <li>'8' rotate 270</li>
-	 * <li>'9' undefined</li>
-	 * </ul>
+	 * Value is int.<br />
+	 * If present gives the quality used to compress the jpeg file
 	 */
-	public static final String TAG_ORIENTATION = "Orientation";
+	public static final String TAG_JPEG_QUALITY = "QualityGuess";
 
 	/**
 	 * Value is int<br />
@@ -157,7 +100,78 @@ public class ExifInterfaceExtended {
 	 * <li>'207' Differential lossless, arithmetic coding</li>
 	 * </ul>
 	 */
-	public static final String TAG_PROCESS = "Process";
+	public static final String TAG_JPEG_PROCESS = "Process";	
+
+	/**
+	 * Value is ascii string<br />
+	 * The manufacturer of the recording equipment. This is the manufacturer of the DSC, scanner, video digitizer or other equipment
+	 * that generated the image. When the field is left blank, it is treated as unknown.
+	 */
+	public static final String TAG_EXIF_MAKE = "Make";
+
+	/**
+	 * Value is ascii string<br />
+	 * The model name or model number of the equipment. This is the model name of number of the DSC, scanner, video digitizer or
+	 * other equipment that generated the image. When the field is left blank, it is treated as unknown.
+	 */
+	public static final String TAG_EXIF_MODEL = "Model";
+
+	/**
+	 * Value is ascii string (20)<br />
+	 * Date/Time of image was last modified. Data format is "YYYY:MM:DD HH:MM:SS"+0x00, total 20bytes. In usual, it has the same
+	 * value of DateTimeOriginal(0x9003)
+	 */
+	public static final String TAG_EXIF_DATETIME = "DateTime";
+
+	/**
+	 * Value is ascii string (20)<br />
+	 * Date/Time of image digitized. Usually, it contains the same value of DateTimeOriginal(0x9003).
+	 */
+	public static final String TAG_EXIF_DATETIME_DIGITIZED = "DateTimeDigitized";
+
+	/**
+	 * Value is ascii string (20)<br />
+	 * Date/Time of original image taken. This value should not be modified by user program.
+	 */
+	public static final String TAG_EXIF_DATETIME_ORIGINAL = "DateTimeOriginal";
+
+	/**
+	 * Values is ascii string<br />
+	 * Shows copyright information
+	 */
+	public static final String TAG_EXIF_COPYRIGHT = "Copyright";
+
+	/**
+	 * Vallue is ascii String<br />
+	 * This tag records the name of the camera owner, photographer or image creator. The detailed format is not specified, but it is
+	 * recommended that the information be written as in the example below for ease of Interoperability. When the field is left
+	 * blank, it is treated as unknown.
+	 */
+	public static final String TAG_EXIF_ARTIST = "Artist";
+
+	/**
+	 * Value is ascii string<br />
+	 * Shows firmware(internal software of digicam) version number.
+	 */
+	public static final String TAG_EXIF_SOFTWARE = "Software";
+
+	/**
+	 * Value is int<br />
+	 * The orientation of the camera relative to the scene, when the image was captured. The start point of stored data is:
+	 * <ul>
+	 * <li>'0' undefined</li>
+	 * <li>'1' normal</li>
+	 * <li>'2' flip horizontal</li>
+	 * <li>'3' rotate 180</li>
+	 * <li>'4' flip vertical</li>
+	 * <li>'5' transpose, flipped about top-left <--> bottom-right axis</li>
+	 * <li>'6' rotate 90 cw</li>
+	 * <li>'7' transverse, flipped about top-right <--> bottom-left axis</li>
+	 * <li>'8' rotate 270</li>
+	 * <li>'9' undefined</li>
+	 * </ul>
+	 */
+	public static final String TAG_EXIF_ORIENTATION = "Orientation";
 
 	/**
 	 * Value is unsigned integer<br />
@@ -200,25 +214,25 @@ public class ExifInterfaceExtended {
 	 * 
 	 * @see <a href="http://www.exif.org/Exif2-2.PDF">http://www.exif.org/Exif2-2.PDF</a>
 	 */
-	public static final String TAG_FLASH = "Flash";
+	public static final String TAG_EXIF_FLASH = "Flash";
 
 	/**
 	 * Value is unsigned double<br />
 	 * Focal length of lens used to take image. Unit is millimeter.
 	 */
-	public static final String TAG_FOCAL_LENGHT = "FocalLength";
+	public static final String TAG_EXIF_FOCAL_LENGHT = "FocalLength";
 
 	/**
 	 * Value is unsigned double<br />
 	 * Exposure time (reciprocal of shutter speed). Unit is second
 	 */
-	public static final String TAG_EXPOSURE_TIME = "ExposureTime";
+	public static final String TAG_EXIF_EXPOSURE_TIME = "ExposureTime";
 
 	/**
 	 * Value is unsigned double<br />
 	 * The actual F-number(F-stop) of lens when the image was taken
 	 */
-	public static final String TAG_FNUMBER = "FNumber";
+	public static final String TAG_EXIF_FNUMBER = "FNumber";
 
 	/**
 	 * Value is unsigned double<br />
@@ -230,13 +244,13 @@ public class ExifInterfaceExtended {
 	 * FNumber = Math.exp( ApertureValue * Math.log( 2 ) * 0.5 );
 	 * </pre>
 	 */
-	public static final String TAG_APERTURE_VALUE = "ApertureValue";
+	public static final String TAG_EXIF_APERTURE = "ApertureValue";
 
 	/**
 	 * Value is signed double<br />
 	 * Brightness of taken subject, unit is EV.
 	 */
-	public static final String TAG_BRIGHTNESS_VALUE = "BrightnessValue";
+	public static final String TAG_EXIF_BRIGHTNESS = "BrightnessValue";
 
 	/**
 	 * Value is unsigned double.<br />
@@ -247,26 +261,26 @@ public class ExifInterfaceExtended {
 	 * FNumber = Math.exp( MaxApertureValue * Math.log( 2 ) * 0.5 )
 	 * </pre>
 	 */
-	public static final String TAG_MAXAPERTURE_VALUE = "MaxApertureValue";
+	public static final String TAG_EXIF_MAXAPERTURE = "MaxApertureValue";
 
 	/**
 	 * Value if signed double.<br />
 	 * Distance to focus point, unit is meter. If value < 0 then focus point is infinite
 	 */
-	public static final String TAG_SUBJECT_DISTANCE = "SubjectDistance";
+	public static final String TAG_EXIF_SUBJECT_DISTANCE = "SubjectDistance";
 
 	/**
 	 * Value is signed double.<br />
 	 * The exposure bias. The unit is the APEX value. Ordinarily it is given in the range of -99.99 to 99.99
 	 */
-	public static final String TAG_EXPOSURE_BIAS_VALUE = "ExposureBiasValue";
+	public static final String TAG_EXIF_EXPOSURE_BIAS = "ExposureBiasValue";
 
 	/**
 	 * Value is double.<br />
 	 * This tag indicates the digital zoom ratio when the image was shot. If the numerator of the recorded value is 0, this indicates
 	 * that digital zoom was not used
 	 */
-	public static final String TAG_DIGITAL_ZOOM_RATIO = "DigitalZoomRatio";
+	public static final String TAG_EXIF_DIGITAL_ZOOM_RATIO = "DigitalZoomRatio";
 
 	/**
 	 * Value is unsigned int.<br />
@@ -278,7 +292,7 @@ public class ExifInterfaceExtended {
 	 * FocalLengthIn35mmFilm = ( FocalLength / CCDWidth * 36 + 0.5 );
 	 * </pre>
 	 */
-	public static final String TAG_FOCAL_LENGTH_35_MM = "FocalLengthIn35mmFilm";
+	public static final String TAG_EXIF_FOCAL_LENGTH_35_MM = "FocalLengthIn35mmFilm";
 
 	/**
 	 * Value is unsigned int.<br />
@@ -294,7 +308,7 @@ public class ExifInterfaceExtended {
 	 * <li>Other = reserved</li>
 	 * </ul>
 	 */
-	public static final String TAG_SENSING_METHOD = "SensingMethod";
+	public static final String TAG_EXIF_SENSING_METHOD = "SensingMethod";
 
 	/**
 	 * Value is int.<br />
@@ -305,7 +319,7 @@ public class ExifInterfaceExtended {
 	 * <li>Other = reserved</li>
 	 * </ul>
 	 */
-	public static final String TAG_WHITE_BALANCE = "Whitebalance";
+	public static final String TAG_EXIF_WHITE_BALANCE = "Whitebalance";
 
 	/**
 	 * Value is unsigned int.<br />
@@ -322,7 +336,7 @@ public class ExifInterfaceExtended {
 	 * <li>255 = other</li>
 	 * </ul>
 	 */
-	public static final String TAG_METERING_MODE = "MeteringMode";
+	public static final String TAG_EXIF_METERING_MODE = "MeteringMode";
 
 	/**
 	 * Value is unsigned int.<br />
@@ -338,7 +352,7 @@ public class ExifInterfaceExtended {
 	 * <li>'8' landscape mode.</li>
 	 * </ul>
 	 */
-	public static final String TAG_EXPOSURE_PROGRAM = "ExposureProgram";
+	public static final String TAG_EXIF_EXPOSURE_PROGRAM = "ExposureProgram";
 
 	/**
 	 * Value is int.<br />
@@ -351,14 +365,14 @@ public class ExifInterfaceExtended {
 	 * <li>Other = reserved</li>
 	 * </ul>
 	 */
-	public static final String TAG_EXPOSURE_MODE = "ExposureMode";
+	public static final String TAG_EXIF_EXPOSURE_MODE = "ExposureMode";
 
 	/**
 	 * Value is unsigned int.<br />
 	 * CCD sensitivity equivalent to Ag-Hr film speedrate.<br />
 	 * Indicates the ISO Speed and ISO Latitude of the camera or input device as specified in ISO 12232
 	 */
-	public static final String TAG_ISO_SPEED_RATINGS = "ISOSpeedRatings";
+	public static final String TAG_EXIF_ISO_SPEED_RATINGS = "ISOSpeedRatings";
 
 	/**
 	 * Value is unsigned int.<br />
@@ -388,7 +402,7 @@ public class ExifInterfaceExtended {
 	 * <li>Other = reserved</li>
 	 * </ul>
 	 */
-	public static final String TAG_LIGHT_SOURCE = "LightSource";
+	public static final String TAG_EXIF_LIGHT_SOURCE = "LightSource";
 
 	/**
 	 * Value is int.<br />
@@ -401,19 +415,19 @@ public class ExifInterfaceExtended {
 	 * <li>Other = reserved</li>
 	 * </ul>
 	 */
-	public static final String TAG_SUBJECT_DISTANCE_RANGE = "SubjectDistanceRange";
+	public static final String TAG_EXIF_SUBJECT_DISTANCE_RANGE = "SubjectDistanceRange";
 
 	/**
 	 * Value is unsigned double.<br />
 	 * Display/Print resolution of image. Large number of digicam uses 1/72inch, but it has no mean because personal computer doesn't
 	 * use this value to display/print out.
 	 */
-	public static final String TAG_X_RESOLUTION = "XResolution";
+	public static final String TAG_EXIF_X_RESOLUTION = "XResolution";
 
 	/**
 	 * @see #TAG_X_RESOLUTION
 	 */
-	public static final String TAG_Y_RESOLUTION = "YResolution";
+	public static final String TAG_EXIF_Y_RESOLUTION = "YResolution";
 
 	/**
 	 * Value is unsigned int.<br />
@@ -426,7 +440,7 @@ public class ExifInterfaceExtended {
 	 * <li>'5' micrometer</li>
 	 * </ul>
 	 */
-	public static final String TAG_RESOLUTION_UNIT = "ResolutionUnit";
+	public static final String TAG_EXIF_RESOLUTION_UNIT = "ResolutionUnit";
 
 	/**
 	 * Value is unsigned int.<br />
@@ -434,23 +448,23 @@ public class ExifInterfaceExtended {
 	 * the meaningful image shall be recorded in this tag, whether or not there is padding data or a restart marker. This tag should
 	 * not exist in an uncompressed file.
 	 */
-	public static final String TAG_PIXEL_X_DIMENSION = "PixelXDimension";
+	public static final String TAG_EXIF_PIXEL_X_DIMENSION = "PixelXDimension";
 
 	/**
 	 * Value is unsigned int.<br />
 	 * 
-	 * @see #TAG_PIXEL_X_DIMENSION
+	 * @see #TAG_EXIF_PIXEL_X_DIMENSION
 	 */
-	public static final String TAG_PIXEL_Y_DIMENSION = "PixelYDimension";
+	public static final String TAG_EXIF_PIXEL_Y_DIMENSION = "PixelYDimension";
 
 	/**
 	 * Value is unsigned double.<br />
 	 * Indicates the number of pixels in the image width (X) direction per FocalPlaneResolutionUnit on the camera focal plane. CCD's
 	 * pixel density
 	 * 
-	 * @see #TAG_FOCAL_PLANE_RESOLUTION_UNIT
+	 * @see #TAG_EXIF_FOCAL_PLANE_RESOLUTION_UNIT
 	 */
-	public static final String TAG_FOCAL_PLANE_X_RESOLUTION = "FocalPlaneXResolution";
+	public static final String TAG_EXIF_FOCAL_PLANE_X_RESOLUTION = "FocalPlaneXResolution";
 
 	/**
 	 * Value is unsigned int.<br />
@@ -469,14 +483,14 @@ public class ExifInterfaceExtended {
 	 * CCDWidth = ( PixelXDimension * FocalPlaneResolutionUnit / FocalPlaneXResolution )
 	 * </pre>
 	 */
-	public static final String TAG_FOCAL_PLANE_RESOLUTION_UNIT = "FocalPlaneResolutionUnit";
+	public static final String TAG_EXIF_FOCAL_PLANE_RESOLUTION_UNIT = "FocalPlaneResolutionUnit";
 
 	/**
 	 * Value is unsigned double.<br />
 	 * Indicates the number of pixels in the image height (Y) direction per FocalPlaneResolutionUnit on the camera focal plane. CCD's
 	 * pixel density.
 	 */
-	public static final String TAG_FOCAL_PLANE_Y_RESOLUTION = "FocalPlaneYResolution";
+	public static final String TAG_EXIF_FOCAL_PLANE_Y_RESOLUTION = "FocalPlaneYResolution";
 
 	/**
 	 * Value is int.<br />
@@ -490,14 +504,14 @@ public class ExifInterfaceExtended {
 	 * <li>Other = reserved</li>
 	 * </ul>
 	 */
-	public static final String TAG_SCENE_CAPTURE_TYPE = "SceneCaptureType";
+	public static final String TAG_EXIF_SCENE_CAPTURE_TYPE = "SceneCaptureType";
 
 	/**
 	 * Value is signed double.<br />
 	 * Shutter speed. To convert this value to ordinary 'Shutter Speed'; calculate this value's power of 2, then reciprocal. For
 	 * example, if value is '4', shutter speed is 1/(2^4)=1/16 second.
 	 */
-	public static final String TAG_SHUTTER_SPEED_VALUE = "ShutterSpeedValue";
+	public static final String TAG_EXIF_SHUTTER_SPEED_VALUE = "ShutterSpeedValue";
 
 	/**
 	 * ASCII string (4).<br />
@@ -517,7 +531,7 @@ public class ExifInterfaceExtended {
 	 * <li>'other' = Reserved</li>
 	 * </ul>
 	 */
-	public static final String TAG_COLOR_SPACE = "ColorSpace";
+	public static final String TAG_EXIF_COLOR_SPACE = "ColorSpace";
 
 	/**
 	 * Value is unsigned int.<br />
@@ -528,33 +542,28 @@ public class ExifInterfaceExtended {
 	 * <li>6 = JPEG compression (thumbnails only)</li>
 	 * <li>Other = reserved</li>
 	 */
-	public static final String TAG_COMPRESSION = "Compression";
+	public static final String TAG_EXIF_COMPRESSION = "Compression";
 
 	/**
 	 * Value is string.<br />
 	 * The latitude is expressed as degrees, minutes, and seconds, respectively.<br />
 	 * Example: N 40d 43m 1.4712s
 	 */
-	public static final String TAG_GPS_LATITUDE = "GpsLat";
+	public static final String TAG_EXIF_GPS_LATITUDE = "GpsLat";
 
 	/**
 	 * Value is string.<br />
 	 * The longitude is expressed as degrees, minutes, and seconds, respectively.<br />
 	 * Example: W 73d 57m 20.4235s
 	 */
-	public static final String TAG_GPS_LONGITUDE = "GpsLong";
+	public static final String TAG_EXIF_GPS_LONGITUDE = "GpsLong";
 
 	/**
 	 * Value is string.<br />
 	 * The altitude (in meters), example: -6.50m
 	 */
-	public static final String TAG_GPS_ALTITUDE = "GpsAlt";
+	public static final String TAG_EXIF_GPS_ALTITUDE = "GpsAlt";
 
-	/**
-	 * Value is string(20).<br />
-	 * Not an exif tag, this indicates the file date time ( as stored in the file system )
-	 */
-	public static final String TAG_FILE_DATETIME = "FileDateTime";
 
 	private HashMap<String, String> mAttributes;
 	private boolean mHasThumbnail;
@@ -608,6 +617,39 @@ public class ExifInterfaceExtended {
 			return defaultValue;
 		}
 	}
+	
+   /**
+    * Returns the double value of the specified rational tag. If there is no
+    * such tag in the JPEG file or the value cannot be parsed as double, return
+    * <var>defaultValue</var>.
+    *
+    * @param tag the name of the tag.
+    * @param defaultValue the value to return if the tag is not available.
+    */
+   public double getAttributeDouble(String tag, double defaultValue) {
+       String value = mAttributes.get(tag);
+       if (value == null) return defaultValue;
+       try {
+           int index = value.indexOf("/");
+           if (index == -1) return defaultValue;
+           double denom = Double.parseDouble(value.substring(index + 1));
+           if (denom == 0) return defaultValue;
+           double num = Double.parseDouble(value.substring(0, index));
+           return num / denom;
+       } catch (NumberFormatException ex) {
+           return defaultValue;
+       }
+   }
+   
+   /**
+    * Set the value of the specified tag.
+    *
+    * @param tag the name of the tag.
+    * @param value the value of the tag.
+    */
+   public void setAttribute(String tag, String value) {
+       mAttributes.put(tag, value);
+   }   
 
 	private void loadAttributes() throws IOException {
 		Log.i( LOG_TAG, "loadAttributes" );
@@ -696,13 +738,107 @@ public class ExifInterfaceExtended {
 	 * 
 	 * @return
 	 */
-	public int getQuality() {
-		if ( mAttributes.containsKey( "QualityGuess" ) ) {
-			return getAttributeInt( "QualityGuess", -1 );
-		}
-		return -1;
+	public int getJpegQuality() {
+		return getAttributeInt( TAG_JPEG_QUALITY, -1 );
 	}
 
+	/**
+	 * Stores the latitude and longitude value in a float array. The first element is the latitude, and the second element is the
+	 * longitude. Returns false if the Exif tags are not available.
+	 */
+	public boolean getLatLong( float output[] ) {
+		String latValue = mAttributes.get( TAG_EXIF_GPS_LATITUDE );
+		String lngValue = mAttributes.get( TAG_EXIF_GPS_LONGITUDE );
+
+		if ( latValue != null && lngValue != null ) {
+			try {
+				output[0] = convertRationalLatLonToFloat( latValue );
+				output[1] = convertRationalLatLonToFloat( lngValue );
+				return true;
+			} catch ( IllegalArgumentException e ) {
+				// if values are not parseable
+			}
+		}
+		return false;
+	}
+	
+   /**
+    * Return the altitude in meters. If the exif tag does not exist, return
+    * <var>defaultValue</var>.
+    *
+    * @param defaultValue the value to return if the tag is not available.
+    */
+   public double getAltitude(double defaultValue) {
+       String altitude = getAttribute(TAG_EXIF_GPS_ALTITUDE);
+       if( null != altitude ) {
+      	 try {
+      		 return Double.parseDouble( altitude.trim().substring( 0, altitude.length() - 1 ) );
+      	 } catch( NumberFormatException e ) {
+      		 // return the default value
+      	 }
+       }
+       return defaultValue;
+   }
+   
+   /**
+    * Returns number of milliseconds since Jan. 1, 1970, midnight.
+    * Returns -1 if the date time information if not available.
+    * @hide
+    */
+   public long getDateTime( String dateTimeString ) {
+       if (dateTimeString == null) return -1;
+
+       ParsePosition pos = new ParsePosition(0);
+       try {
+           Date datetime = sFormatter.parse(dateTimeString, pos);
+           if (datetime == null) return -1;
+           return datetime.getTime();
+       } catch (IllegalArgumentException ex) {
+           return -1;
+       }
+   }   
+
+	private static float convertRationalLatLonToFloat( String rationalString ) {
+		try {
+			
+			String[] parts = rationalString.split( "( )+" );
+			if( parts.length < 4 ) {
+				throw new IllegalArgumentException("Expecting 4 parts, " + parts.length + " found");
+			}
+
+			// first part is the reference ( N/S W/E )
+			String ref = parts[0].trim();
+			
+			String value = parts[1].trim();
+			value = value.substring( 0, value.length() - 1 );
+			double degrees = Double.parseDouble( value );
+
+			value = parts[2].trim();
+			value = value.substring( 0, value.length() - 1 );
+			double minutes = Double.parseDouble( value );
+
+			value = parts[3].trim();
+			value = value.substring( 0, value.length() - 1 );
+			double seconds = Double.parseDouble( value );
+			
+			double result = degrees + ( minutes / 60.0 ) + ( seconds / 3600.0 );
+			
+         if ((ref.equals("S") || ref.equals("W"))) {
+            return (float) -result;			
+         }
+         
+			return (float) result;
+		} catch ( NumberFormatException e ) {
+			// Some of the nubmers are not valid
+			throw new IllegalArgumentException();
+		} catch ( ArrayIndexOutOfBoundsException e ) {
+			// Some of the rational does not follow the correct format
+			throw new IllegalArgumentException();
+		} catch( IndexOutOfBoundsException e ) {
+			// String not valid
+			throw new IllegalArgumentException();
+		}
+	} 
 	
 	// -------------------
 	// NATIVE METHODS
