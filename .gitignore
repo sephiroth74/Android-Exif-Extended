@@ -23,3 +23,5 @@ library/.DS_Store
 library/obj
 
 library/libs/armeabi/libexif_extended.so
+
+.DS_Store

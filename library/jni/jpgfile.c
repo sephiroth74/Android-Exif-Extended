@@ -238,6 +238,7 @@ int ReadJpegSections (FILE * infile, ReadMode_t ReadMode)
                     // Discard this section.
                     free(Sections[--SectionsRead].Data);
                 }else{
+               	 // TODO: discard comments for now...
                     //process_COM(Data, itemlen);
                     //HaveCom = TRUE;
                 }
