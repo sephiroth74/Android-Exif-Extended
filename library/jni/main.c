@@ -317,7 +317,7 @@ extern "C" {
 			if (bufLen == 0) return NULL;
 		}
 
-		if (ImageInfo.ExposureMode)
+		if (ImageInfo.ExposureMode >= 0)
 		{
 			bufLen = addKeyValueInt(&buf, bufLen, "ExposureMode", ImageInfo.ExposureMode);
 			if (bufLen == 0) return NULL;
@@ -329,7 +329,7 @@ extern "C" {
 			if (bufLen == 0) return NULL;
 		}
 
-		if(ImageInfo.LightSource)
+		if(ImageInfo.LightSource >= 0)
 		{
 			bufLen = addKeyValueInt(&buf, bufLen, "LightSource", ImageInfo.LightSource);
 			if (bufLen == 0) return NULL;
@@ -395,7 +395,7 @@ extern "C" {
 			if (bufLen == 0) return NULL;
 		}
 
-		if( ImageInfo.SceneCaptureType)
+		if( ImageInfo.SceneCaptureType >= 0)
 		{
 			bufLen = addKeyValueInt(&buf, bufLen, "SceneCaptureType", ImageInfo.SceneCaptureType);
 			if (bufLen == 0) return NULL;

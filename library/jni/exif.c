@@ -1248,10 +1248,15 @@ void process_EXIF(unsigned char * ExifSection, unsigned int length)
 	// if FocalLengthIn35mmFilm is not yet stored
 	// inside the ImageInfo object, there's no reason
 	// we should not compute and pass it back
-	if( ImageInfo.FocalLengthIn35mmFilm == 0 && ImageInfo.FocalLength )
+	if( !ImageInfo.FocalLengthIn35mmFilm > 0 && ImageInfo.FocalLength != 0 )
 	{
+		LOGI("Compute the CCD width");
+		LOGD("FocalPlaneXResolution: %.4f, FocalPlaneYResolution: %.4f", ImageInfo.FocalPlaneXResolution, ImageInfo.FocalPlaneYResolution);
+		LOGD("PixelXDimension: %i, PixelYDimension: %i", ImageInfo.PixelXDimension, ImageInfo.PixelYDimension);
+
+
 		// Compute the CCD width, in millimeters.
-		if ( ImageInfo.FocalPlaneXResolution != 0 && ( ImageInfo.PixelXDimension > 0 || ImageInfo.PixelYDimension ) )
+		if ( ImageInfo.FocalPlaneXResolution != 0 && ( ImageInfo.PixelXDimension > 0 || ImageInfo.PixelYDimension > 0 ) )
 		{
 			// Note: With some cameras, its not possible to compute this correctly because
 			// they don't adjust the indicated focal plane resolution units when using less
@@ -1259,7 +1264,9 @@ void process_EXIF(unsigned char * ExifSection, unsigned int length)
 			// that Jhad can do about it - its a camera problem.
 
 			int ExifImageWidth = fmax( ImageInfo.PixelXDimension, ImageInfo.PixelYDimension );
+			LOGI("ExifImageWidth: %i", ExifImageWidth);
 			double FocalplaneUnits = computeResolutionUnit( ImageInfo.FocalPlaneResolutionUnit );
+			LOGD("FocalplaneUnits: %.2f", FocalplaneUnits);
 
 			float ccdWidth = (float) (ExifImageWidth * FocalplaneUnits / ImageInfo.FocalPlaneXResolution);
 			LOGD("Computed CCD Width: %4.2f", ccdWidth);
@@ -1267,6 +1274,7 @@ void process_EXIF(unsigned char * ExifSection, unsigned int length)
 			// Compute 35 mm equivalent focal length based on sensor geometry if we haven't
 			// already got it explicitly from a tag.
 			ImageInfo.FocalLengthIn35mmFilm = (int) (ImageInfo.FocalLength / ccdWidth * 36 + 0.5);
+			LOGD("FocalLengthIn35mmFilm: %d", ImageInfo.FocalLengthIn35mmFilm);
 		}
 	}
 }

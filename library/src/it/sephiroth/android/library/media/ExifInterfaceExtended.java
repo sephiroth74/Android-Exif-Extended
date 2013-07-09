@@ -563,6 +563,22 @@ public class ExifInterfaceExtended {
 	 * The altitude (in meters), example: -6.50m
 	 */
 	public static final String TAG_EXIF_GPS_ALTITUDE = "GpsAlt";
+	
+	// Constants used for the Orientation Exif tag.
+	public static final int ORIENTATION_UNDEFINED = 0;
+	public static final int ORIENTATION_NORMAL = 1;
+	public static final int ORIENTATION_FLIP_HORIZONTAL = 2; // left right reversed mirror
+	public static final int ORIENTATION_ROTATE_180 = 3;
+	public static final int ORIENTATION_FLIP_VERTICAL = 4; // upside down mirror
+	public static final int ORIENTATION_TRANSPOSE = 5; // flipped about top-left <--> bottom-right axis
+	public static final int ORIENTATION_ROTATE_90 = 6; // rotate 90 cw to right it
+	public static final int ORIENTATION_TRANSVERSE = 7; // flipped about top-right <--> bottom-left axis
+	public static final int ORIENTATION_ROTATE_270 = 8; // rotate 270 to right it	
+	
+	public static final int RESOLUTION_UNIT_INCHES = 2;
+	public static final int RESOLUTION_UNIT_CENTIMETERS = 3;	
+	public static final int RESOLUTION_UNIT_MILLIMETERS = 4;	
+	public static final int RESOLUTION_UNIT_MICROMETERS = 5;	
 
 
 	private HashMap<String, String> mAttributes;
@@ -587,6 +603,15 @@ public class ExifInterfaceExtended {
 	 */
 	public Set<String> keySet() {
 		return new HashSet<String>( mAttributes.keySet() );
+	}
+	
+	/**
+	 * Returns true if the passed key has the corresponding value
+	 * @param key
+	 * @return
+	 */
+	public boolean hasAttribute( final String key ) {
+		return mAttributes.containsKey( key );
 	}
 
 	/**
@@ -618,28 +643,124 @@ public class ExifInterfaceExtended {
 		}
 	}
 	
-   /**
-    * Returns the double value of the specified rational tag. If there is no
-    * such tag in the JPEG file or the value cannot be parsed as double, return
-    * <var>defaultValue</var>.
-    *
-    * @param tag the name of the tag.
-    * @param defaultValue the value to return if the tag is not available.
-    */
-   public double getAttributeDouble(String tag, double defaultValue) {
-       String value = mAttributes.get(tag);
-       if (value == null) return defaultValue;
-       try {
-           int index = value.indexOf("/");
-           if (index == -1) return defaultValue;
-           double denom = Double.parseDouble(value.substring(index + 1));
-           if (denom == 0) return defaultValue;
-           double num = Double.parseDouble(value.substring(0, index));
-           return num / denom;
-       } catch (NumberFormatException ex) {
-           return defaultValue;
-       }
-   }
+	/**
+	 * Returns the double value of the specified rational tag. If there is no such tag in the JPEG file or the value cannot be parsed
+	 * as double, return <var>defaultValue</var>.
+	 * 
+	 * @param tag
+	 *           the name of the tag.
+	 * @param defaultValue
+	 *           the value to return if the tag is not available.
+	 */
+	public double getAttributeDouble( String tag, double defaultValue ) {
+		String value = mAttributes.get( tag );
+		if ( value == null ) return defaultValue;
+		try {
+			return Double.parseDouble( value );
+		} catch ( NumberFormatException ex ) {
+			ex.printStackTrace();
+			return defaultValue;
+		}
+	}
+	
+	/**
+	 * Return the F-Number value.<br />
+	 * 
+	 * @return
+	 */
+	public double getApertureSize() {
+		double value = getAttributeDouble( TAG_EXIF_FNUMBER, 0 );
+		if( value > 0 ) {
+			return value;
+		}
+		
+		value = getAttributeDouble( TAG_EXIF_APERTURE, 0 );
+		if( value > 0 ) {
+			return Math.exp( value * Math.log( 2 ) * 0.5 );
+		}
+		
+		value = getAttributeDouble( TAG_EXIF_MAXAPERTURE, 0 );
+		if( value > 0 ) {
+			return Math.exp( value * Math.log( 2 ) * 0.5 );
+		}
+		
+		return 0;
+	}
+   
+	/**
+	 * Returns the orientation in degress.
+	 * @return
+	 */
+
+	public int getOrientation() {
+		final int orientation = getAttributeInt( TAG_EXIF_ORIENTATION, -1 );
+		if ( orientation != -1 ) {
+			switch ( orientation ) {
+				case ORIENTATION_UNDEFINED:
+				case ORIENTATION_NORMAL:
+					return 0;
+				case ORIENTATION_ROTATE_90:
+					return 90;
+				case ORIENTATION_ROTATE_180:
+					return 180;
+				case ORIENTATION_ROTATE_270:
+					return 270;
+				default:
+					return 0;
+			}
+		}
+		return 0;
+	}
+	
+	/**
+	 * Given the value from {@link #TAG_EXIF_FOCAL_PLANE_RESOLUTION_UNIT} or {@link #TAG_EXIF_RESOLUTION_UNIT}
+	 * this method will return the corresponding value in millimeters
+	 * @param resolution
+	 * @return resolution in millimeters
+	 */
+	public double getResolutionUnit( int resolution ) {
+		switch ( resolution ) {
+			case 1:
+			case RESOLUTION_UNIT_INCHES:
+				return 25.4;
+
+			case RESOLUTION_UNIT_CENTIMETERS:
+				return 10;
+
+			case RESOLUTION_UNIT_MILLIMETERS:
+				return 1;
+
+			case RESOLUTION_UNIT_MICROMETERS:
+				return .001;
+
+			default:
+				return 25.4;
+		}
+	}
+	
+	/**
+	 * Returns the CCD (Charge-Coupled Device), if it can be computed.<br />
+	 * To be computed the following tags must be present:
+	 * <ul>
+	 * <li>{@link #TAG_EXIF_FOCAL_PLANE_X_RESOLUTION}</li>
+	 * <li>{@link #TAG_EXIF_PIXEL_X_DIMENSION}</li>
+	 * <li>{@link #TAG_EXIF_FOCAL_PLANE_RESOLUTION_UNIT}</li>
+	 * </ul>
+	 * @return the CCD width value, in millimeters, or -1 if the value cannot be computed
+	 */
+	public double getCCDWidth() {
+		double focalPlaneXResolution = getAttributeDouble( ExifInterfaceExtended.TAG_EXIF_FOCAL_PLANE_X_RESOLUTION, 0 );
+		int pixel_x_dimen = getAttributeInt( ExifInterfaceExtended.TAG_EXIF_PIXEL_X_DIMENSION, 0 );
+		int pixel_y_dimen = getAttributeInt( ExifInterfaceExtended.TAG_EXIF_PIXEL_Y_DIMENSION, 0 );
+
+		if ( focalPlaneXResolution > 0 && ( pixel_x_dimen > 0 || pixel_y_dimen > 0 ) ) {
+			int size = Math.max( pixel_x_dimen, pixel_y_dimen );
+			int resolution_unit = getAttributeInt( ExifInterfaceExtended.TAG_EXIF_FOCAL_PLANE_RESOLUTION_UNIT, 0 );
+			double resolution_mm = getResolutionUnit( resolution_unit );
+			return ( size * resolution_mm / focalPlaneXResolution );
+		}
+		return -1;
+	}
    
    /**
     * Set the value of the specified tag.
