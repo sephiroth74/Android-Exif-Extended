@@ -37,6 +37,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
+import android.os.Bundle;
 import android.util.Log;
 
 public class ExifInterfaceExtended {
@@ -917,7 +918,43 @@ public class ExifInterfaceExtended {
        } catch (IllegalArgumentException ex) {
            return -1;
        }
-   }   
+   }
+
+	/**
+	 * This method will copy all the available attributes into the given Bundle
+	 * @param out
+	 * @return the number of attributes written
+	 */
+	public int copyTo( Bundle out ) {
+
+		int total = 0;
+
+		for ( String tag : mAttributes.keySet() ) {
+			String value = getAttribute( tag );
+			if ( null != value ) {
+				out.putString( tag, value );
+				total++;
+			}
+		}
+		return total;
+	}
+
+	/**
+	 * This method will copy all the attributes from the given Bundle into the current object.<br />
+	 * 
+	 * @param in
+	 *           the src Bundle
+	 * @param overwrite
+	 *           if true all the attrbiutes will be copied, if false only those tags not already present will be copied
+	 */
+	public void copyFrom( Bundle in, boolean overwrite ) {
+		for ( String tag : in.keySet() ) {
+			if ( overwrite || !hasAttribute( tag ) ) {
+				String value = in.getString( tag );
+				setAttribute( tag, value );
+			}
+		}
+	}
 
 	private static float convertRationalLatLonToFloat( String rationalString ) {
 		try {
