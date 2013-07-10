@@ -142,7 +142,7 @@ typedef struct {
      * The number of columns and rows of image data, equal to the number of pixels per row. In JPEG compressed data a JPEG  marker is used instead of this tag.
      */
     int ImageWidth;
-    int ImageHeight;
+    int ImageLength;
 
 
     /* unsigned short
@@ -440,9 +440,9 @@ typedef struct {
     /* information only, tells if the GPS tags are present */
     int GpsInfoPresent;
 
-    char GpsLat[31];
-    char GpsLong[31];
-    char GpsAlt[20];
+    char GpsLatitude[31];
+    char GpsLongitude[31];
+    char GpsAltitude[20];
 
     /* informational only, not an actual exif tag */
     int  QualityGuess;
@@ -509,6 +509,21 @@ typedef enum {
     READ_ANY = 5        // Don't abort on non-jpeg files.
 }ReadMode_t;
 
+typedef struct {
+    int Tag;     // tag value, i.e. TAG_MODEL
+    int Format;             // format of data
+    char* Value;            // value of data in string format
+    int DataLength;         // length of string when format says Value is a string
+    int GpsTag;             // bool - the tag is related to GPS info
+} ExifElement_t;
+
+typedef struct {
+    int Tag;
+    char * Desc;
+    int Format;
+    int DataLength;         // Number of elements in Format. -1 means any length.
+} TagTable_t;
+
 
 // prototypes for jhead.c functions
 void ErrFatal(const char * msg);
@@ -528,6 +543,16 @@ unsigned Get32u(void * Long);
 int Get32s(void * Long);
 void Put32u(void * Value, unsigned PutValue);
 void create_EXIF(void);
+
+// Added
+void create_EXIF_Elements(ExifElement_t* elements, int exifTagCount, int gpsTagCount, int elementTableSize, int hasDateTimeTag);
+int IsGpsTag(const char* tag);
+int GpsTagNameToValue(const char* tagName);
+TagTable_t* GpsTagToTagTableEntry(unsigned short tag);
+int TagNameToValue(const char* tagName);
+int IsDateTimeTag(unsigned short tag);
+
+static const char ExifAsciiPrefix[] = { 0x41, 0x53, 0x43, 0x49, 0x49, 0x0, 0x0, 0x0 };
 
 //--------------------------------------------------------------------------
 // Exif format descriptor stuff
@@ -579,7 +604,7 @@ int ReplaceThumbnail(const char * ThumbFileName);
 int SaveThumbnail(char * ThumbFileName);
 int RemoveSectionType(int SectionType);
 int RemoveUnknownSections(void);
-void WriteJpegFile(const char * FileName);
+int WriteJpegFile(const char * FileName);
 Section_t * FindSection(int SectionType);
 Section_t * CreateSection(int SectionType, unsigned char * Data, int size);
 void ResetJpgfile(void);

@@ -32,11 +32,12 @@ import java.text.ParsePosition;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
+import java.util.TreeSet;
 import android.os.Bundle;
 import android.util.Log;
 
@@ -73,7 +74,7 @@ public class ExifInterfaceExtended {
 	 * Value is int<br />
 	 * The number of rows of image data. In JPEG compressed data a JPEG marker is used instead of this tag.
 	 */
-	public static final String TAG_JPEG_IMAGE_HEIGHT = "ImageHeight";
+	public static final String TAG_JPEG_IMAGE_HEIGHT = "ImageLength";
 	
 	/**
 	 * Value is int.<br />
@@ -550,20 +551,20 @@ public class ExifInterfaceExtended {
 	 * The latitude is expressed as degrees, minutes, and seconds, respectively.<br />
 	 * Example: N 40d 43m 1.4712s
 	 */
-	public static final String TAG_EXIF_GPS_LATITUDE = "GpsLat";
+	public static final String TAG_EXIF_GPS_LATITUDE = "GpsLatitude";
 
 	/**
 	 * Value is string.<br />
 	 * The longitude is expressed as degrees, minutes, and seconds, respectively.<br />
 	 * Example: W 73d 57m 20.4235s
 	 */
-	public static final String TAG_EXIF_GPS_LONGITUDE = "GpsLong";
+	public static final String TAG_EXIF_GPS_LONGITUDE = "GpsLongitude";
 
 	/**
 	 * Value is string.<br />
 	 * The altitude (in meters), example: -6.50m
 	 */
-	public static final String TAG_EXIF_GPS_ALTITUDE = "GpsAlt";
+	public static final String TAG_EXIF_GPS_ALTITUDE = "GpsAltitude";
 	
 	// Constants used for the Orientation Exif tag.
 	public static final int ORIENTATION_UNDEFINED = 0;
@@ -599,11 +600,11 @@ public class ExifInterfaceExtended {
 	}
 
 	/**
-	 * Returns a set containing all the exif attributes loaded
+	 * Returns a {@link TreeSet} containing all the exif attributes loaded
 	 * @return
 	 */
 	public Set<String> keySet() {
-		return new HashSet<String>( mAttributes.keySet() );
+		return new TreeSet<String>( mAttributes.keySet() );
 	}
 	
 	/**
@@ -904,7 +905,11 @@ public class ExifInterfaceExtended {
    
    /**
     * Returns number of milliseconds since Jan. 1, 1970, midnight.
-    * Returns -1 if the date time information if not available.
+    * Returns -1 if the date time information if not available.<br />
+    * Example:
+    * <pre>
+    * Date datetime = new Date( exif.getDateTime( exif.getAttribute( ExifInterfaceExtended.TAG_EXIF_DATETIME ) ) );
+    * </pre>
     * @hide
     */
    public long getDateTime( String dateTimeString ) {
@@ -919,6 +924,17 @@ public class ExifInterfaceExtended {
            return -1;
        }
    }
+   
+	/**
+	 * Return a string formatted date that can be used as {@link #TAG_EXIF_DATETIME}, {@link #TAG_EXIF_DATETIME_DIGITIZED} or
+	 * {@link #TAG_EXIF_DATETIME_ORIGINAL}
+	 * 
+	 * @param date the date object to format
+	 * @return the formatted date
+	 */
+	public static String formatDate( Date date ) {
+		return sFormatter.format( date );
+	}
 
 	/**
 	 * This method will copy all the available attributes into the given Bundle
@@ -955,6 +971,36 @@ public class ExifInterfaceExtended {
 			}
 		}
 	}
+	
+	/**
+	 * Removes an attrbiute
+	 * @param key
+	 * @return true if the attribute was removed
+	 */
+	public boolean removeAttribute( final String key ) {
+		return mAttributes.remove( key ) != null;
+	}
+	
+	/**
+	 * Remove all the attributes
+	 */
+	public void removeAll() {
+		mAttributes.clear();
+	}
+	
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder("ExifInterfaceExtended{");
+
+		Set<String> keys = mAttributes.keySet();
+		Iterator<String> iterator = keys.iterator();
+		while ( iterator.hasNext() ) {
+			String key = iterator.next();
+			sb.append( key + ": " + getAttribute( key ) + ", " );
+		}
+		sb.append( "hasThumbnail: " + hasThumbnail() + "}" );
+		return sb.toString();
+	}	
 
 	private static float convertRationalLatLonToFloat( String rationalString ) {
 		try {

@@ -7,6 +7,7 @@
 // Matthias Wandel
 //--------------------------------------------------------------------------
 #include "jhead.h"
+#include "utils/log.h"
 
 // Storage for simplified info extracted from file.
 ImageInfo_t ImageInfo;
@@ -76,7 +77,7 @@ static void process_SOFn (const uchar * Data, int marker)
     int data_precision, num_components;
 
     data_precision = Data[2];
-    ImageInfo.ImageHeight = Get16m(Data+3);
+    ImageInfo.ImageLength = Get16m(Data+3);
     ImageInfo.ImageWidth = Get16m(Data+5);
     num_components = Data[7];
 
@@ -90,7 +91,7 @@ static void process_SOFn (const uchar * Data, int marker)
 
     if (ShowTags){
         printf("JPEG image is %uw * %uh, %d color components, %d bits per sample\n",
-                   ImageInfo.ImageWidth, ImageInfo.ImageHeight, num_components, data_precision);
+                   ImageInfo.ImageWidth, ImageInfo.ImageLength, num_components, data_precision);
     }
 }
 
@@ -553,18 +554,20 @@ void DiscardAllButExif(void)
 //--------------------------------------------------------------------------
 // Write image data back to disk.
 //--------------------------------------------------------------------------
-void WriteJpegFile(const char * FileName)
+int WriteJpegFile(const char * FileName)
 {
     FILE * outfile;
     int a;
 
     if (!HaveAll){
         ErrFatal("Can't write back - didn't read all");
+        return FALSE;
     }
 
     outfile = fopen(FileName,"wb");
     if (outfile == NULL){
         ErrFatal("Could not open file for write");
+        return FALSE;
     }
 
     // Initial static jpeg marker.
@@ -613,18 +616,35 @@ void WriteJpegFile(const char * FileName)
         }
     }
 
+    int writeOk = FALSE;
+    int nWrite = 0;
 
     // Write all the misc sections
     for (a=0;a<SectionsRead-1;a++){
         fputc(0xff,outfile);
         fputc((unsigned char)Sections[a].Type, outfile);
-        fwrite(Sections[a].Data, Sections[a].Size, 1, outfile);
+        nWrite = fwrite(Sections[a].Data, 1, Sections[a].Size, outfile);
+        writeOk = (nWrite == Sections[a].Size);
+        if(!writeOk)
+        {
+           LOGE("write section %d failed expect %d actual %d",a,Sections[a].Size,nWrite);
+           break;
+        }
     }
 
     // Write the remaining image data.
-    fwrite(Sections[a].Data, Sections[a].Size, 1, outfile);
+    if( writeOk )
+    {
+   	 nWrite = fwrite(Sections[a].Data, 1, Sections[a].Size, outfile);
+   	 writeOk = (nWrite == Sections[a].Size);
+   	 if( !writeOk )
+   	 {
+   		 LOGE("write section %d failed expect %d actual %d",a,Sections[a].Size,nWrite);
+   	 }
+    }
        
     fclose(outfile);
+    return writeOk;
 }
 
 

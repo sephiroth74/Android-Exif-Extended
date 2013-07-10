@@ -32,7 +32,7 @@ LOCAL_SRC_FILES:= \
 
 LOCAL_MODULE    := libexif_extended
 
-LOCAL_CFLAGS += -DLOG_ENABLED
+LOCAL_CFLAGS += -DLOG_ENABLED -g -O0
 
 LOCAL_SHARED_LIBRARIES := \
 	libcutils \

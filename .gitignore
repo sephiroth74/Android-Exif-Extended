@@ -25,3 +25,7 @@ library/obj
 library/libs/armeabi/libexif_extended.so
 
 .DS_Store
+
+library/libs/armeabi/gdb.setup
+
+library/libs/armeabi/gdbserver

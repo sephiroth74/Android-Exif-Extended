@@ -2,11 +2,14 @@ package it.sephiroth.android.example.exifsample;
 
 import it.sephiroth.android.example.exifsample.utils.IOUtils;
 import it.sephiroth.android.library.media.ExifInterfaceExtended;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
 import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Bitmap;
@@ -16,6 +19,7 @@ import android.location.Geocoder;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Environment;
 import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -30,6 +34,7 @@ public class MainActivity extends Activity implements OnClickListener {
 	Button button1, button2;
 	ImageView image;
 	TextView exifText;
+	ExifInterfaceExtended mExif;
 
 	@Override
 	protected void onCreate( Bundle savedInstanceState ) {
@@ -60,6 +65,78 @@ public class MainActivity extends Activity implements OnClickListener {
 		startActivityForResult( chooser, REQUEST_FILE );
 	}
 	
+	public void saveImage() {
+		if( null != mExif ) {
+			Log.i( LOG_TAG, "saving: " + mExif );
+
+			/*
+			mExif.removeAttribute( ExifInterfaceExtended.TAG_EXIF_VERSION );
+			mExif.removeAttribute( ExifInterfaceExtended.TAG_EXIF_MAKE );
+			mExif.removeAttribute( ExifInterfaceExtended.TAG_EXIF_MODEL );
+			mExif.removeAttribute( ExifInterfaceExtended.TAG_EXIF_SOFTWARE );
+			mExif.removeAttribute( ExifInterfaceExtended.TAG_EXIF_COPYRIGHT );
+			mExif.removeAttribute( ExifInterfaceExtended.TAG_EXIF_ORIENTATION );
+			mExif.removeAttribute( ExifInterfaceExtended.TAG_EXIF_DATETIME );
+			mExif.removeAttribute( ExifInterfaceExtended.TAG_EXIF_DATETIME_DIGITIZED );
+			mExif.removeAttribute( ExifInterfaceExtended.TAG_EXIF_DATETIME_ORIGINAL );
+			mExif.removeAttribute( ExifInterfaceExtended.TAG_EXIF_FLASH );
+			mExif.removeAttribute( ExifInterfaceExtended.TAG_EXIF_FOCAL_LENGHT );
+			mExif.removeAttribute( ExifInterfaceExtended.TAG_EXIF_FOCAL_LENGTH_35_MM );
+			mExif.removeAttribute( ExifInterfaceExtended.TAG_EXIF_APERTURE );
+			mExif.removeAttribute( ExifInterfaceExtended.TAG_EXIF_BRIGHTNESS );
+			mExif.removeAttribute( ExifInterfaceExtended.TAG_EXIF_COLOR_SPACE );
+			mExif.removeAttribute( ExifInterfaceExtended.TAG_EXIF_ISO_SPEED_RATINGS );
+			mExif.removeAttribute( ExifInterfaceExtended.TAG_EXIF_LIGHT_SOURCE );
+			mExif.removeAttribute( ExifInterfaceExtended.TAG_EXIF_METERING_MODE );
+			mExif.removeAttribute( ExifInterfaceExtended.TAG_EXIF_EXPOSURE_PROGRAM );
+			mExif.removeAttribute( ExifInterfaceExtended.TAG_EXIF_EXPOSURE_MODE );
+			mExif.removeAttribute( ExifInterfaceExtended.TAG_EXIF_SHUTTER_SPEED_VALUE );
+			mExif.removeAttribute( ExifInterfaceExtended.TAG_EXIF_SENSING_METHOD );
+			mExif.removeAttribute( ExifInterfaceExtended.TAG_EXIF_SCENE_CAPTURE_TYPE );
+			mExif.removeAttribute( ExifInterfaceExtended.TAG_EXIF_MAXAPERTURE );
+			mExif.removeAttribute( ExifInterfaceExtended.TAG_EXIF_PIXEL_X_DIMENSION );
+			mExif.removeAttribute( ExifInterfaceExtended.TAG_EXIF_PIXEL_Y_DIMENSION );
+			mExif.removeAttribute( ExifInterfaceExtended.TAG_EXIF_X_RESOLUTION );
+			mExif.removeAttribute( ExifInterfaceExtended.TAG_EXIF_Y_RESOLUTION );
+			mExif.removeAttribute( ExifInterfaceExtended.TAG_EXIF_FOCAL_PLANE_X_RESOLUTION );
+			mExif.removeAttribute( ExifInterfaceExtended.TAG_EXIF_COMPRESSION );
+			*/
+			
+			mExif.setAttribute( ExifInterfaceExtended.TAG_EXIF_DATETIME, ExifInterfaceExtended.formatDate( new Date() ) );
+			mExif.setAttribute( ExifInterfaceExtended.TAG_EXIF_ARTIST, "Alessandro Crugnola" );
+			
+			try {
+				mExif.saveAttributes();
+			} catch ( IOException e ) {
+				e.printStackTrace();
+			}
+		}
+	}
+	
+	private void dumpToFile( ExifInterfaceExtended exif ) {
+		File dir = new File( Environment.getExternalStorageDirectory(), getPackageName() );
+		if( !dir.exists() ) {
+			dir.mkdirs();
+		}
+		
+		try {
+			File file = new File( dir, "exif.txt");
+			FileOutputStream stream = new FileOutputStream( file );
+			
+			Set<String> keys = exif.keySet();
+			for( String key : keys ) {
+				String line = key + " = " + exif.getAttribute( key ) + "\n";
+				stream.write( line.getBytes() );
+			}
+			stream.flush();
+			stream.close();
+			
+		} catch ( IOException e ) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
 	private void processFile( Uri uri ) {
 		String filename = IOUtils.getRealFilePath( this, uri );
 		
@@ -70,130 +147,131 @@ public class MainActivity extends Activity implements OnClickListener {
 		image.setImageBitmap( null );
 		exifText.setText( "" );
 
-		ExifInterfaceExtended exif = null;
+		mExif = null;
 		
 		try {
-			exif = new ExifInterfaceExtended( filename );
+			mExif = new ExifInterfaceExtended( filename );
+			dumpToFile( mExif );
 		} catch ( IOException e ) {
 			e.printStackTrace();
 		}
 		
-		if( null != exif ) {
+		if( null != mExif ) {
 			
 			NumberFormat numberFormatter = DecimalFormat.getNumberInstance();
 			
 			exifText.setText( "JPEG Info:\n" );
 			
-			if( exif.hasAttribute( ExifInterfaceExtended.TAG_JPEG_FILESIZE )) {
-				String value = DecimalFormat.getInstance().format( ((double) exif.getAttributeInt( ExifInterfaceExtended.TAG_JPEG_FILESIZE, 0 ) / 1024.0 ) );
+			if( mExif.hasAttribute( ExifInterfaceExtended.TAG_JPEG_FILESIZE )) {
+				String value = DecimalFormat.getInstance().format( ((double) mExif.getAttributeInt( ExifInterfaceExtended.TAG_JPEG_FILESIZE, 0 ) / 1024.0 ) );
 				exifText.append( "File size: " + value + "Kb\n" );
 			}
 			
-			if( exif.hasAttribute( ExifInterfaceExtended.TAG_JPEG_FILE_DATETIME )) {
-				Date datetimeFile = new Date( exif.getDateTime( exif.getAttribute( ExifInterfaceExtended.TAG_JPEG_FILE_DATETIME ) ) );
+			if( mExif.hasAttribute( ExifInterfaceExtended.TAG_JPEG_FILE_DATETIME )) {
+				Date datetimeFile = new Date( mExif.getDateTime( mExif.getAttribute( ExifInterfaceExtended.TAG_JPEG_FILE_DATETIME ) ) );
 				exifText.append( "File datetime: " + datetimeFile + "\n" );
 			}
 			
-			if( exif.hasAttribute( ExifInterfaceExtended.TAG_JPEG_IMAGE_WIDTH ) && exif.hasAttribute( ExifInterfaceExtended.TAG_JPEG_IMAGE_HEIGHT )) {
-				exifText.append( "Image size: " + exif.getAttributeInt( ExifInterfaceExtended.TAG_JPEG_IMAGE_WIDTH, 0 ) + "x" + exif.getAttributeInt( ExifInterfaceExtended.TAG_JPEG_IMAGE_HEIGHT, 0 ) + "\n" );
+			if( mExif.hasAttribute( ExifInterfaceExtended.TAG_JPEG_IMAGE_WIDTH ) && mExif.hasAttribute( ExifInterfaceExtended.TAG_JPEG_IMAGE_HEIGHT )) {
+				exifText.append( "Image size: " + mExif.getAttributeInt( ExifInterfaceExtended.TAG_JPEG_IMAGE_WIDTH, 0 ) + "x" + mExif.getAttributeInt( ExifInterfaceExtended.TAG_JPEG_IMAGE_HEIGHT, 0 ) + "\n" );
 			}
 			
-			if( exif.hasAttribute( ExifInterfaceExtended.TAG_JPEG_PROCESS )) {
-				int process = exif.getAttributeInt( ExifInterfaceExtended.TAG_JPEG_PROCESS, 0 );
+			if( mExif.hasAttribute( ExifInterfaceExtended.TAG_JPEG_PROCESS )) {
+				int process = mExif.getAttributeInt( ExifInterfaceExtended.TAG_JPEG_PROCESS, 0 );
 				exifText.append( "Process: " + parseProcess( process ) + "\n" );
 			}
 			
-			if( exif.hasAttribute( ExifInterfaceExtended.TAG_JPEG_QUALITY )) {
-				exifText.append( "JPEG Quality: " + exif.getAttributeInt( ExifInterfaceExtended.TAG_JPEG_QUALITY, 0 ) + "\n" );
+			if( mExif.hasAttribute( ExifInterfaceExtended.TAG_JPEG_QUALITY )) {
+				exifText.append( "JPEG Quality: " + mExif.getAttributeInt( ExifInterfaceExtended.TAG_JPEG_QUALITY, 0 ) + "\n" );
 			}
 			
 			exifText.append( "\nEXIF Tags:\n" );
 			
 			
-			if( exif.hasAttribute( ExifInterfaceExtended.TAG_EXIF_VERSION )){
-				exifText.append( "Exif Version: " + exif.getAttribute( ExifInterfaceExtended.TAG_EXIF_VERSION ) + "\n" );
+			if( mExif.hasAttribute( ExifInterfaceExtended.TAG_EXIF_VERSION )){
+				exifText.append( "Exif Version: " + mExif.getAttribute( ExifInterfaceExtended.TAG_EXIF_VERSION ) + "\n" );
 			}
 			
-			if( exif.hasAttribute( ExifInterfaceExtended.TAG_EXIF_MAKE )) {
-				exifText.append( "Camera: " + exif.getAttribute( ExifInterfaceExtended.TAG_EXIF_MAKE ) + "\n" );
+			if( mExif.hasAttribute( ExifInterfaceExtended.TAG_EXIF_MAKE )) {
+				exifText.append( "Camera: " + mExif.getAttribute( ExifInterfaceExtended.TAG_EXIF_MAKE ) + "\n" );
 			}
 			
-			if(exif.hasAttribute( ExifInterfaceExtended.TAG_EXIF_MODEL )) {
-				exifText.append( "Model: " + exif.getAttribute( ExifInterfaceExtended.TAG_EXIF_MODEL ) + "\n" );
+			if(mExif.hasAttribute( ExifInterfaceExtended.TAG_EXIF_MODEL )) {
+				exifText.append( "Model: " + mExif.getAttribute( ExifInterfaceExtended.TAG_EXIF_MODEL ) + "\n" );
 			}
 			
-			if( exif.hasAttribute( ExifInterfaceExtended.TAG_EXIF_SOFTWARE )) {
-				exifText.append( "Software: " + exif.getAttribute( ExifInterfaceExtended.TAG_EXIF_SOFTWARE ) + "\n" );
+			if( mExif.hasAttribute( ExifInterfaceExtended.TAG_EXIF_SOFTWARE )) {
+				exifText.append( "Software: " + mExif.getAttribute( ExifInterfaceExtended.TAG_EXIF_SOFTWARE ) + "\n" );
 			}
 			
-			if( exif.hasAttribute( ExifInterfaceExtended.TAG_EXIF_ARTIST )) {
-				exifText.append( "Artist: " + exif.getAttribute( ExifInterfaceExtended.TAG_EXIF_ARTIST ) + "\n" );
+			if( mExif.hasAttribute( ExifInterfaceExtended.TAG_EXIF_ARTIST )) {
+				exifText.append( "Artist: " + mExif.getAttribute( ExifInterfaceExtended.TAG_EXIF_ARTIST ) + "\n" );
 			}
 			
-			if( exif.hasAttribute( ExifInterfaceExtended.TAG_EXIF_COPYRIGHT )) {
-				exifText.append( "Copyright: " + exif.getAttribute( ExifInterfaceExtended.TAG_EXIF_COPYRIGHT ) + "\n" );
+			if( mExif.hasAttribute( ExifInterfaceExtended.TAG_EXIF_COPYRIGHT )) {
+				exifText.append( "Copyright: " + mExif.getAttribute( ExifInterfaceExtended.TAG_EXIF_COPYRIGHT ) + "\n" );
 			}
 			
-			if( exif.hasAttribute( ExifInterfaceExtended.TAG_EXIF_ORIENTATION )) {
-				exifText.append( "Orientation: " + exif.getOrientation() + "¡\n" );
+			if( mExif.hasAttribute( ExifInterfaceExtended.TAG_EXIF_ORIENTATION )) {
+				exifText.append( "Orientation: " + mExif.getOrientation() + "¡\n" );
 			}
 			
-			if( exif.hasAttribute( ExifInterfaceExtended.TAG_EXIF_DATETIME )) {
-				Date datetime = new Date( exif.getDateTime( exif.getAttribute( ExifInterfaceExtended.TAG_EXIF_DATETIME ) ) );
+			if( mExif.hasAttribute( ExifInterfaceExtended.TAG_EXIF_DATETIME )) {
+				Date datetime = new Date( mExif.getDateTime( mExif.getAttribute( ExifInterfaceExtended.TAG_EXIF_DATETIME ) ) );
 				exifText.append( "DateTime: " + datetime + "\n" );
 			}
 			
-			if( exif.hasAttribute( ExifInterfaceExtended.TAG_EXIF_DATETIME_DIGITIZED )) {
-				Date datetime = new Date( exif.getDateTime( exif.getAttribute( ExifInterfaceExtended.TAG_EXIF_DATETIME_DIGITIZED ) ) );
+			if( mExif.hasAttribute( ExifInterfaceExtended.TAG_EXIF_DATETIME_DIGITIZED )) {
+				Date datetime = new Date( mExif.getDateTime( mExif.getAttribute( ExifInterfaceExtended.TAG_EXIF_DATETIME_DIGITIZED ) ) );
 				exifText.append( "DateTime Digitized: " + datetime + "\n" );
 			}
 			
-			if( exif.hasAttribute( ExifInterfaceExtended.TAG_EXIF_DATETIME_ORIGINAL )) {
-				Date datetime = new Date( exif.getDateTime( exif.getAttribute( ExifInterfaceExtended.TAG_EXIF_DATETIME_ORIGINAL ) ) );
+			if( mExif.hasAttribute( ExifInterfaceExtended.TAG_EXIF_DATETIME_ORIGINAL )) {
+				Date datetime = new Date( mExif.getDateTime( mExif.getAttribute( ExifInterfaceExtended.TAG_EXIF_DATETIME_ORIGINAL ) ) );
 				exifText.append( "DateTime Original: " + datetime + "\n" );
 			}
 			
-			if( exif.hasAttribute( ExifInterfaceExtended.TAG_EXIF_FLASH )) {
-				int flash = exif.getAttributeInt( ExifInterfaceExtended.TAG_EXIF_FLASH, 0 );
+			if( mExif.hasAttribute( ExifInterfaceExtended.TAG_EXIF_FLASH )) {
+				int flash = mExif.getAttributeInt( ExifInterfaceExtended.TAG_EXIF_FLASH, 0 );
 				exifText.append( "Flash: " + processFlash(flash) + "\n" );
 			}
 			
-			if( exif.hasAttribute( ExifInterfaceExtended.TAG_EXIF_FOCAL_LENGHT ) ) {
-				exifText.append( "Focal Length: " + exif.getAttributeDouble( ExifInterfaceExtended.TAG_EXIF_FOCAL_LENGHT, 0 ) + "mm\n" );
+			if( mExif.hasAttribute( ExifInterfaceExtended.TAG_EXIF_FOCAL_LENGHT ) ) {
+				exifText.append( "Focal Length: " + mExif.getAttributeDouble( ExifInterfaceExtended.TAG_EXIF_FOCAL_LENGHT, 0 ) + "mm\n" );
 				
-				if( exif.hasAttribute( ExifInterfaceExtended.TAG_EXIF_FOCAL_LENGTH_35_MM )) {
-					exifText.append( "35mm Equivalent: " + exif.getAttributeInt( ExifInterfaceExtended.TAG_EXIF_FOCAL_LENGTH_35_MM, 0 ) + "mm\n" );
+				if( mExif.hasAttribute( ExifInterfaceExtended.TAG_EXIF_FOCAL_LENGTH_35_MM )) {
+					exifText.append( "35mm Equivalent: " + mExif.getAttributeInt( ExifInterfaceExtended.TAG_EXIF_FOCAL_LENGTH_35_MM, 0 ) + "mm\n" );
 				}
 			}
 			
-			if( exif.hasAttribute( ExifInterfaceExtended.TAG_EXIF_DIGITAL_ZOOM_RATIO )) {
-				exifText.append( "Digital Zoom: " + exif.getAttributeDouble( ExifInterfaceExtended.TAG_EXIF_DIGITAL_ZOOM_RATIO, 0 ) + "X\n" );
+			if( mExif.hasAttribute( ExifInterfaceExtended.TAG_EXIF_DIGITAL_ZOOM_RATIO )) {
+				exifText.append( "Digital Zoom: " + mExif.getAttributeDouble( ExifInterfaceExtended.TAG_EXIF_DIGITAL_ZOOM_RATIO, 0 ) + "X\n" );
 			}
 			
-			double ccd_width = exif.getCCDWidth();
+			double ccd_width = mExif.getCCDWidth();
 			if( ccd_width > 0 ) {
 				exifText.append( "CCD Width: " + DecimalFormat.getNumberInstance().format( ccd_width ) + "mm\n" );
 			}
 			
-			if( exif.hasAttribute( ExifInterfaceExtended.TAG_EXIF_EXPOSURE_TIME )) {
-				exifText.append( "Exposure Time: " + exif.getAttributeDouble( ExifInterfaceExtended.TAG_EXIF_EXPOSURE_TIME, 0 ) + "s\n" );
+			if( mExif.hasAttribute( ExifInterfaceExtended.TAG_EXIF_EXPOSURE_TIME )) {
+				exifText.append( "Exposure Time: " + mExif.getAttributeDouble( ExifInterfaceExtended.TAG_EXIF_EXPOSURE_TIME, 0 ) + "s\n" );
 			}
 			
-			double fNumber = exif.getApertureSize();
+			double fNumber = mExif.getApertureSize();
 			if( fNumber > 0 ) {
 				exifText.append( "Aperture Size: f/" + fNumber + "\n" );
 			}
 
-			if( exif.hasAttribute( ExifInterfaceExtended.TAG_EXIF_BRIGHTNESS ) ) {
-				exifText.append( "Brightness: " + exif.getAttributeDouble( ExifInterfaceExtended.TAG_EXIF_BRIGHTNESS, 0 ) + "\n" );
+			if( mExif.hasAttribute( ExifInterfaceExtended.TAG_EXIF_BRIGHTNESS ) ) {
+				exifText.append( "Brightness: " + mExif.getAttributeDouble( ExifInterfaceExtended.TAG_EXIF_BRIGHTNESS, 0 ) + "\n" );
 			}
 			
-			if( exif.hasAttribute( ExifInterfaceExtended.TAG_EXIF_COLOR_SPACE ) ) {
-				exifText.append( "Color Space: " + processColorSpace( exif.getAttributeInt( ExifInterfaceExtended.TAG_EXIF_COLOR_SPACE, 0 ) ) + "\n" );
+			if( mExif.hasAttribute( ExifInterfaceExtended.TAG_EXIF_COLOR_SPACE ) ) {
+				exifText.append( "Color Space: " + processColorSpace( mExif.getAttributeInt( ExifInterfaceExtended.TAG_EXIF_COLOR_SPACE, 0 ) ) + "\n" );
 			}
 			
-			if( exif.hasAttribute( ExifInterfaceExtended.TAG_EXIF_SUBJECT_DISTANCE )) {
-				double distance = exif.getAttributeDouble( ExifInterfaceExtended.TAG_EXIF_SUBJECT_DISTANCE, 0 );
+			if( mExif.hasAttribute( ExifInterfaceExtended.TAG_EXIF_SUBJECT_DISTANCE )) {
+				double distance = mExif.getAttributeDouble( ExifInterfaceExtended.TAG_EXIF_SUBJECT_DISTANCE, 0 );
 				if( distance > 0 ) {
 					exifText.append( "Subject Distance: " + distance + "m\n" );
 				} else {
@@ -201,63 +279,63 @@ public class MainActivity extends Activity implements OnClickListener {
 				}
 			}
 			
-			if( exif.hasAttribute( ExifInterfaceExtended.TAG_EXIF_SUBJECT_DISTANCE_RANGE )) {
-				int value = exif.getAttributeInt( ExifInterfaceExtended.TAG_EXIF_SUBJECT_DISTANCE_RANGE, 0 );
+			if( mExif.hasAttribute( ExifInterfaceExtended.TAG_EXIF_SUBJECT_DISTANCE_RANGE )) {
+				int value = mExif.getAttributeInt( ExifInterfaceExtended.TAG_EXIF_SUBJECT_DISTANCE_RANGE, 0 );
 				exifText.append( "Subject Distance Range: " + processSubjectDistanceRange( value ) + "\n" );
 			}
 			
-			if( exif.hasAttribute( ExifInterfaceExtended.TAG_EXIF_ISO_SPEED_RATINGS )) {
-				exifText.append( "ISO equiv. " + exif.getAttributeInt( ExifInterfaceExtended.TAG_EXIF_ISO_SPEED_RATINGS, 0 ) + "\n" );
+			if( mExif.hasAttribute( ExifInterfaceExtended.TAG_EXIF_ISO_SPEED_RATINGS )) {
+				exifText.append( "ISO equiv. " + mExif.getAttributeInt( ExifInterfaceExtended.TAG_EXIF_ISO_SPEED_RATINGS, 0 ) + "\n" );
 			}
 			
-			if( exif.hasAttribute( ExifInterfaceExtended.TAG_EXIF_EXPOSURE_BIAS )) {
-				exifText.append( "Exposure Bias: " + exif.getAttributeDouble( ExifInterfaceExtended.TAG_EXIF_EXPOSURE_BIAS, 0 ) + "\n" );
+			if( mExif.hasAttribute( ExifInterfaceExtended.TAG_EXIF_EXPOSURE_BIAS )) {
+				exifText.append( "Exposure Bias: " + mExif.getAttributeDouble( ExifInterfaceExtended.TAG_EXIF_EXPOSURE_BIAS, 0 ) + "\n" );
 			}
 			
-			if( exif.hasAttribute( ExifInterfaceExtended.TAG_EXIF_WHITE_BALANCE )) {
-				exifText.append( "White Balance: " + processWhiteBalance( exif.getAttributeInt( ExifInterfaceExtended.TAG_EXIF_WHITE_BALANCE, 0 )) + "\n" );
+			if( mExif.hasAttribute( ExifInterfaceExtended.TAG_EXIF_WHITE_BALANCE )) {
+				exifText.append( "White Balance: " + processWhiteBalance( mExif.getAttributeInt( ExifInterfaceExtended.TAG_EXIF_WHITE_BALANCE, 0 )) + "\n" );
 			}
 			
-			if( exif.hasAttribute( ExifInterfaceExtended.TAG_EXIF_LIGHT_SOURCE )) {
-				exifText.append( "Light Source: " + processLightSource( exif.getAttributeInt( ExifInterfaceExtended.TAG_EXIF_LIGHT_SOURCE, 0 ) ) + "\n" );
+			if( mExif.hasAttribute( ExifInterfaceExtended.TAG_EXIF_LIGHT_SOURCE )) {
+				exifText.append( "Light Source: " + processLightSource( mExif.getAttributeInt( ExifInterfaceExtended.TAG_EXIF_LIGHT_SOURCE, 0 ) ) + "\n" );
 			}
 			
-			if( exif.hasAttribute( ExifInterfaceExtended.TAG_EXIF_METERING_MODE )) {
-				exifText.append( "Metering Mode: " + processMeteringMode( exif.getAttributeInt( ExifInterfaceExtended.TAG_EXIF_METERING_MODE, 0 ) ) + "\n" );
+			if( mExif.hasAttribute( ExifInterfaceExtended.TAG_EXIF_METERING_MODE )) {
+				exifText.append( "Metering Mode: " + processMeteringMode( mExif.getAttributeInt( ExifInterfaceExtended.TAG_EXIF_METERING_MODE, 0 ) ) + "\n" );
 			}
 			
-			if( exif.hasAttribute( ExifInterfaceExtended.TAG_EXIF_EXPOSURE_PROGRAM )) {
-				exifText.append( "Exposure Program: " + processExposureProgram( exif.getAttributeInt( ExifInterfaceExtended.TAG_EXIF_EXPOSURE_PROGRAM, 0 ) ) + "\n" );
+			if( mExif.hasAttribute( ExifInterfaceExtended.TAG_EXIF_EXPOSURE_PROGRAM )) {
+				exifText.append( "Exposure Program: " + processExposureProgram( mExif.getAttributeInt( ExifInterfaceExtended.TAG_EXIF_EXPOSURE_PROGRAM, 0 ) ) + "\n" );
 			}
 			
-			if( exif.hasAttribute( ExifInterfaceExtended.TAG_EXIF_EXPOSURE_MODE )) {
-				exifText.append( "Exposure Mode: " + processExposureMode( exif.getAttributeInt( ExifInterfaceExtended.TAG_EXIF_EXPOSURE_MODE, 0 ) ) + "\n" );
+			if( mExif.hasAttribute( ExifInterfaceExtended.TAG_EXIF_EXPOSURE_MODE )) {
+				exifText.append( "Exposure Mode: " + processExposureMode( mExif.getAttributeInt( ExifInterfaceExtended.TAG_EXIF_EXPOSURE_MODE, 0 ) ) + "\n" );
 			}
 			
-			if( exif.getAttributeDouble( ExifInterfaceExtended.TAG_EXIF_SHUTTER_SPEED_VALUE, 0 ) > 0 ) {
-				double value = exif.getAttributeDouble( ExifInterfaceExtended.TAG_EXIF_SHUTTER_SPEED_VALUE, 0 );
+			if( mExif.getAttributeDouble( ExifInterfaceExtended.TAG_EXIF_SHUTTER_SPEED_VALUE, 0 ) > 0 ) {
+				double value = mExif.getAttributeDouble( ExifInterfaceExtended.TAG_EXIF_SHUTTER_SPEED_VALUE, 0 );
 				
 				numberFormatter.setMaximumFractionDigits( 1 );
 				String string = "1/" + numberFormatter.format( Math.pow( 2, value )) + "s";
 				exifText.append( "Shutter Speed: " + string + "\n" );
 			}
 			
-			if( exif.hasAttribute( ExifInterfaceExtended.TAG_EXIF_SENSING_METHOD )) {
-				exifText.append( "Sensing Method: " + processSensingMethod( exif.getAttributeInt( ExifInterfaceExtended.TAG_EXIF_SENSING_METHOD, 0 )) + "\n" );
+			if( mExif.hasAttribute( ExifInterfaceExtended.TAG_EXIF_SENSING_METHOD )) {
+				exifText.append( "Sensing Method: " + processSensingMethod( mExif.getAttributeInt( ExifInterfaceExtended.TAG_EXIF_SENSING_METHOD, 0 )) + "\n" );
 			}
 			
-			if( exif.hasAttribute( ExifInterfaceExtended.TAG_EXIF_SCENE_CAPTURE_TYPE )) {
-				exifText.append( "Scene Capture Type: " + processSceneCaptureType( exif.getAttributeInt( ExifInterfaceExtended.TAG_EXIF_SCENE_CAPTURE_TYPE, 0 )) + "\n" );
+			if( mExif.hasAttribute( ExifInterfaceExtended.TAG_EXIF_SCENE_CAPTURE_TYPE )) {
+				exifText.append( "Scene Capture Type: " + processSceneCaptureType( mExif.getAttributeInt( ExifInterfaceExtended.TAG_EXIF_SCENE_CAPTURE_TYPE, 0 )) + "\n" );
 			}
 			
 			// GPS
 			float[] output = new float[2];
-			if( exif.getLatLong( output ) ) {
+			if( mExif.getLatLong( output ) ) {
 				
 				exifText.append( "\nGPS Info:\n" );
-				exifText.append( "Latitude: " + exif.getAttribute( ExifInterfaceExtended.TAG_EXIF_GPS_LATITUDE ) + "\n" );
-				exifText.append( "Longitude: " + exif.getAttribute( ExifInterfaceExtended.TAG_EXIF_GPS_LATITUDE ) + "\n" );
-				exifText.append( "Altitude: " + exif.getAttribute( ExifInterfaceExtended.TAG_EXIF_GPS_ALTITUDE ) + "\n" );
+				exifText.append( "Latitude: " + mExif.getAttribute( ExifInterfaceExtended.TAG_EXIF_GPS_LATITUDE ) + "\n" );
+				exifText.append( "Longitude: " + mExif.getAttribute( ExifInterfaceExtended.TAG_EXIF_GPS_LATITUDE ) + "\n" );
+				exifText.append( "Altitude: " + mExif.getAttribute( ExifInterfaceExtended.TAG_EXIF_GPS_ALTITUDE ) + "\n" );
 				
 				GetGeoLocationTask task = new GetGeoLocationTask();
 				task.execute( output[0], output[1] );
@@ -446,7 +524,7 @@ public class MainActivity extends Activity implements OnClickListener {
 		if ( id == button1.getId() ) {
 			loadImage();
 		} else if ( id == button2.getId() ) {
-
+			saveImage();
 		}
 	}
 

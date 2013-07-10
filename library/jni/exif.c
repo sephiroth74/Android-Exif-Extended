@@ -24,25 +24,23 @@ typedef struct
 {
 	unsigned short Tag;
 	char * Desc;
-} TagTable_t;
+} ProcessTagTable_t;
 
 //--------------------------------------------------------------------------
 // Table of Jpeg encoding process names
-static const TagTable_t ProcessTable[] = {
-		{ M_SOF0, "Baseline" },
-		{ M_SOF1, "Extended sequential" },
-		{ M_SOF2, "Progressive" },
-		{ M_SOF3, "Lossless" },
-		{ M_SOF5, "Differential sequential" },
-		{ M_SOF6, "Differential progressive" },
-		{ M_SOF7, "Differential lossless" },
-		{ M_SOF9, "Extended sequential, arithmetic coding" },
-      { M_SOF10, "Progressive, arithmetic coding" },
-      { M_SOF11, "Lossless, arithmetic coding" },
-      { M_SOF13, "Differential sequential, arithmetic coding" },
-      { M_SOF14, "Differential progressive, arithmetic coding" },
-      { M_SOF15, "Differential lossless, arithmetic coding" },
-};
+static const ProcessTagTable_t ProcessTable[] = { { M_SOF0, "Baseline" },
+   { M_SOF1, "Extended sequential" },
+   { M_SOF2, "Progressive" },
+   { M_SOF3, "Lossless" },
+   { M_SOF5, "Differential sequential" },
+   { M_SOF6, "Differential progressive" },
+   { M_SOF7, "Differential lossless" },
+   { M_SOF9, "Extended sequential, arithmetic coding" },
+   { M_SOF10, "Progressive, arithmetic coding" },
+   { M_SOF11, "Lossless, arithmetic coding" },
+   { M_SOF13, "Differential sequential, arithmetic coding" },
+   { M_SOF14, "Differential progressive, arithmetic coding" },
+   { M_SOF15, "Differential lossless, arithmetic coding" }, };
 
 #define PROCESS_TABLE_SIZE  (sizeof(ProcessTable) / sizeof(TagTable_t))
 
@@ -60,13 +58,13 @@ static const TagTable_t ProcessTable[] = {
 // option to pass to jpegtran to right the image
 
 static const char * OrientTab[9] = { "Undefined", "Normal", // 1
-      "flip horizontal", // left right reversed mirror
-      "rotate 180", // 3
-      "flip vertical", // upside down mirror
-      "transpose", // Flipped about top-left <--> bottom-right axis.
-      "rotate 90", // rotate 90 cw to right it.
-      "transverse", // flipped about top-right <--> bottom-left axis
-      "rotate 270", // rotate 270 to right it.
+   "flip horizontal", // left right reversed mirror
+   "rotate 180", // 3
+   "flip vertical", // upside down mirror
+   "transpose", // Flipped about top-left <--> bottom-right axis.
+   "rotate 90", // rotate 90 cw to right it.
+   "transverse", // flipped about top-right <--> bottom-left axis
+   "rotate 270", // rotate 270 to right it.
       };
 
 const int BytesPerFormat[] = { 0, 1, 1, 2, 4, 8, 1, 1, 2, 4, 8, 4, 8 };
@@ -182,48 +180,135 @@ const int BytesPerFormat[] = { 0, 1, 1, 2, 4, 8, 1, 1, 2, 4, 8, 4, 8 };
 #define TAG_DISTANCE_RANGE         0xA40C
 #define TAG_IMAGE_UNIQUE_ID        0xA420
 
-static const TagTable_t TagTable[] = { { TAG_INTEROP_INDEX, "InteropIndex" }, { TAG_INTEROP_VERSION, "InteropVersion" }, {
-      TAG_IMAGE_WIDTH, "ImageWidth" }, { TAG_IMAGE_LENGTH, "ImageLength" }, { TAG_BITS_PER_SAMPLE, "BitsPerSample" }, {
-      TAG_COMPRESSION, "Compression" }, { TAG_PHOTOMETRIC_INTERP, "PhotometricInterpretation" }, { TAG_FILL_ORDER, "FillOrder" }, {
-      TAG_DOCUMENT_NAME, "DocumentName" }, { TAG_IMAGE_DESCRIPTION, "ImageDescription" }, { TAG_MAKE, "Make" },
-      { TAG_MODEL, "Model" }, { TAG_SRIP_OFFSET, "StripOffsets" }, { TAG_ORIENTATION, "Orientation" }, { TAG_SAMPLES_PER_PIXEL,
-            "SamplesPerPixel" }, { TAG_ROWS_PER_STRIP, "RowsPerStrip" }, { TAG_STRIP_BYTE_COUNTS, "StripByteCounts" }, {
-            TAG_X_RESOLUTION, "XResolution" }, { TAG_Y_RESOLUTION, "YResolution" }, { TAG_PLANAR_CONFIGURATION,
-            "PlanarConfiguration" }, { TAG_RESOLUTION_UNIT, "ResolutionUnit" }, { TAG_TRANSFER_FUNCTION, "TransferFunction" }, {
-            TAG_SOFTWARE, "Software" }, { TAG_DATETIME, "DateTime" }, { TAG_ARTIST, "Artist" }, { TAG_WHITE_POINT, "WhitePoint" }, {
-            TAG_PRIMARY_CHROMATICITIES, "PrimaryChromaticities" }, { TAG_TRANSFER_RANGE, "TransferRange" }, { TAG_JPEG_PROC,
-            "JPEGProc" }, { TAG_THUMBNAIL_OFFSET, "ThumbnailOffset" }, { TAG_THUMBNAIL_LENGTH, "ThumbnailLength" }, {
-            TAG_Y_CB_CR_COEFFICIENTS, "YCbCrCoefficients" }, { TAG_Y_CB_CR_SUB_SAMPLING, "YCbCrSubSampling" }, {
-            TAG_Y_CB_CR_POSITIONING, "YCbCrPositioning" }, { TAG_REFERENCE_BLACK_WHITE, "ReferenceBlackWhite" }, {
-            TAG_RELATED_IMAGE_WIDTH, "RelatedImageWidth" }, { TAG_RELATED_IMAGE_LENGTH, "RelatedImageLength" }, {
-            TAG_CFA_REPEAT_PATTERN_DIM, "CFARepeatPatternDim" }, { TAG_CFA_PATTERN1, "CFAPattern" }, { TAG_BATTERY_LEVEL,
-            "BatteryLevel" }, { TAG_COPYRIGHT, "Copyright" }, { TAG_EXPOSURETIME, "ExposureTime" }, { TAG_FNUMBER, "FNumber" }, {
-            TAG_IPTC_NAA, "IPTC/NAA" }, { TAG_EXIF_OFFSET, "ExifOffset" }, { TAG_INTER_COLOR_PROFILE, "InterColorProfile" }, {
-            TAG_EXPOSURE_PROGRAM, "ExposureProgram" }, { TAG_SPECTRAL_SENSITIVITY, "SpectralSensitivity" }, { TAG_GPSINFO,
-            "GPS Dir offset" }, { TAG_ISO_EQUIVALENT, "ISOSpeedRatings" }, { TAG_OECF, "OECF" },
-      { TAG_EXIF_VERSION, "ExifVersion" }, { TAG_DATETIME_ORIGINAL, "DateTimeOriginal" }, { TAG_DATETIME_DIGITIZED,
-            "DateTimeDigitized" }, { TAG_COMPONENTS_CONFIG, "ComponentsConfiguration" }, { TAG_CPRS_BITS_PER_PIXEL,
-            "CompressedBitsPerPixel" }, { TAG_SHUTTERSPEED, "ShutterSpeedValue" }, { TAG_APERTURE, "ApertureValue" }, {
-            TAG_BRIGHTNESS_VALUE, "BrightnessValue" }, { TAG_EXPOSURE_BIAS, "ExposureBiasValue" }, { TAG_MAXAPERTURE,
-            "MaxApertureValue" }, { TAG_SUBJECT_DISTANCE, "SubjectDistance" }, { TAG_METERING_MODE, "MeteringMode" }, {
-            TAG_LIGHT_SOURCE, "LightSource" }, { TAG_FLASH, "Flash" }, { TAG_FOCALLENGTH, "FocalLength" }, { TAG_MAKER_NOTE,
-            "MakerNote" }, { TAG_USERCOMMENT, "UserComment" }, { TAG_SUBSEC_TIME, "SubSecTime" }, { TAG_SUBSEC_TIME_ORIG,
-            "SubSecTimeOriginal" }, { TAG_SUBSEC_TIME_DIG, "SubSecTimeDigitized" }, { TAG_WINXP_TITLE, "Windows-XP Title" }, {
-            TAG_WINXP_COMMENT, "Windows-XP comment" }, { TAG_WINXP_AUTHOR, "Windows-XP author" }, { TAG_WINXP_KEYWORDS,
-            "Windows-XP keywords" }, { TAG_WINXP_SUBJECT, "Windows-XP subject" }, { TAG_FLASH_PIX_VERSION, "FlashPixVersion" }, {
-            TAG_COLOR_SPACE, "ColorSpace" }, { TAG_PIXEL_X_DIMENSION, "ExifImageWidth" },
-      { TAG_PIXEL_Y_DIMENSION, "ExifImageLength" }, { TAG_RELATED_AUDIO_FILE, "RelatedAudioFile" }, { TAG_INTEROP_OFFSET,
-            "InteroperabilityOffset" }, { TAG_FLASH_ENERGY, "FlashEnergy" }, { TAG_SPATIAL_FREQ_RESP, "SpatialFrequencyResponse" },
-      { TAG_FOCAL_PLANE_XRES, "FocalPlaneXResolution" }, { TAG_FOCAL_PLANE_YRES, "FocalPlaneYResolution" }, { TAG_FOCAL_PLANE_UNITS,
-            "FocalPlaneResolutionUnit" }, { TAG_SUBJECT_LOCATION, "SubjectLocation" }, { TAG_EXPOSURE_INDEX, "ExposureIndex" }, {
-            TAG_SENSING_METHOD, "SensingMethod" }, { TAG_FILE_SOURCE, "FileSource" }, { TAG_SCENE_TYPE, "SceneType" }, {
-            TAG_CFA_PATTERN, "CFA Pattern" }, { TAG_CUSTOM_RENDERED, "CustomRendered" }, { TAG_EXPOSURE_MODE, "ExposureMode" }, {
-            TAG_WHITEBALANCE, "WhiteBalance" }, { TAG_DIGITALZOOMRATIO, "DigitalZoomRatio" }, { TAG_FOCALLENGTH_35MM,
-            "FocalLengthIn35mmFilm" }, { TAG_SUBJECTAREA, "SubjectArea" }, { TAG_SCENE_CAPTURE_TYPE, "SceneCaptureType" }, {
-            TAG_GAIN_CONTROL, "GainControl" }, { TAG_CONTRAST, "Contrast" }, { TAG_SATURATION, "Saturation" }, { TAG_SHARPNESS,
-            "Sharpness" }, { TAG_DISTANCE_RANGE, "SubjectDistanceRange" }, { TAG_IMAGE_UNIQUE_ID, "ImageUniqueId" }, };
+static const TagTable_t TagTable[] = { { TAG_INTEROP_INDEX, "InteropIndex", 0, 0 },
+   { TAG_INTEROP_VERSION, "InteropVersion", 0, 0 },
+   { TAG_IMAGE_WIDTH, "ImageWidth", 0, 1 },
+   { TAG_IMAGE_LENGTH, "ImageLength", 0, 1 },
+   { TAG_BITS_PER_SAMPLE, "BitsPerSample", FMT_USHORT, 3 },
+   { TAG_COMPRESSION, "Compression", FMT_USHORT, 1 },
+   { TAG_PHOTOMETRIC_INTERP, "PhotometricInterpretation", FMT_USHORT, 1 },
+   { TAG_FILL_ORDER, "FillOrder", 0, 0 },
+   { TAG_DOCUMENT_NAME, "DocumentName", 0, 0 },
+   { TAG_IMAGE_DESCRIPTION, "ImageDescription", 0, 0 },
+   { TAG_MAKE, "Make", FMT_STRING, -1 },
+   { TAG_MODEL, "Model", FMT_STRING, -1 },
+   { TAG_SRIP_OFFSET, "StripOffsets", FMT_USHORT, 1 },
+   { TAG_ORIENTATION, "Orientation", FMT_USHORT, 1 },
+   { TAG_SAMPLES_PER_PIXEL, "SamplesPerPixel", FMT_USHORT, 3 },
+   { TAG_ROWS_PER_STRIP, "RowsPerStrip", FMT_USHORT, 1 },
+   { TAG_STRIP_BYTE_COUNTS, "StripByteCounts", FMT_USHORT, 1 },
+   { TAG_X_RESOLUTION, "XResolution", FMT_URATIONAL, 1 },
+   { TAG_Y_RESOLUTION, "YResolution", FMT_URATIONAL, 1 },
+   { TAG_PLANAR_CONFIGURATION, "PlanarConfiguration", FMT_USHORT, 1 },
+   { TAG_RESOLUTION_UNIT, "ResolutionUnit", FMT_USHORT, 1 },
+   { TAG_TRANSFER_FUNCTION, "TransferFunction", FMT_USHORT, 768 },
+   { TAG_SOFTWARE, "Software", FMT_STRING, -1 },
+   { TAG_DATETIME, "DateTime", FMT_STRING, 20 },
+   { TAG_ARTIST, "Artist", FMT_STRING, -1 },
+   { TAG_WHITE_POINT, "WhitePoint", FMT_SRATIONAL, 2 },
+   { TAG_PRIMARY_CHROMATICITIES, "PrimaryChromaticities", FMT_SRATIONAL, 6 },
+   { TAG_TRANSFER_RANGE, "TransferRange", 0, 0 },
+   { TAG_JPEG_PROC, "JPEGProc", 0, 0 },
+   { TAG_THUMBNAIL_OFFSET, "ThumbnailOffset", 0, 0 },
+   { TAG_THUMBNAIL_LENGTH, "ThumbnailLength", 0, 0 },
+   { TAG_Y_CB_CR_COEFFICIENTS, "YCbCrCoefficients", FMT_SRATIONAL, 3 },
+   { TAG_Y_CB_CR_SUB_SAMPLING, "YCbCrSubSampling", FMT_USHORT, 2 },
+   { TAG_Y_CB_CR_POSITIONING, "YCbCrPositioning", FMT_USHORT, 1 },
+   { TAG_REFERENCE_BLACK_WHITE, "ReferenceBlackWhite", FMT_SRATIONAL, 6 },
+   { TAG_RELATED_IMAGE_WIDTH, "RelatedImageWidth", 0, 0 },
+   { TAG_RELATED_IMAGE_LENGTH, "RelatedImageLength", 0, 0 },
+   { TAG_CFA_REPEAT_PATTERN_DIM, "CFARepeatPatternDim", 0, 0 },
+   { TAG_CFA_PATTERN1, "CFAPattern", 0, 0 },
+   { TAG_BATTERY_LEVEL, "BatteryLevel", 0, 0 },
+   { TAG_COPYRIGHT, "Copyright", FMT_STRING, -1 },
+   { TAG_EXPOSURETIME, "ExposureTime", FMT_SRATIONAL, 1 },
+   { TAG_FNUMBER, "FNumber", FMT_SRATIONAL, 1 },
+   { TAG_IPTC_NAA, "IPTC/NAA", 0, 0 },
+   { TAG_EXIF_OFFSET, "ExifOffset", 0, 0 },
+   { TAG_INTER_COLOR_PROFILE, "InterColorProfile", 0, 0 },
+   { TAG_EXPOSURE_PROGRAM, "ExposureProgram", FMT_SSHORT, 1 },
+   { TAG_SPECTRAL_SENSITIVITY, "SpectralSensitivity", FMT_STRING, -1 },
+   { TAG_GPSINFO, "GPS Dir offset", 0, 0 },
+   { TAG_ISO_EQUIVALENT, "ISOSpeedRatings", FMT_SSHORT, -1 },
+   { TAG_OECF, "OECF", 0, 0 },
+   { TAG_EXIF_VERSION, "ExifVersion", FMT_BYTE, 4 },
+   { TAG_DATETIME_ORIGINAL, "DateTimeOriginal", FMT_STRING, 20 },
+   { TAG_DATETIME_DIGITIZED, "DateTimeDigitized", FMT_STRING, 20 },
+   { TAG_COMPONENTS_CONFIG, "ComponentsConfiguration", FMT_BYTE, 4 },
+   { TAG_CPRS_BITS_PER_PIXEL, "CompressedBitsPerPixel", FMT_SRATIONAL, 1 },
+   { TAG_SHUTTERSPEED, "ShutterSpeedValue", FMT_SRATIONAL, 1 },
+   { TAG_APERTURE, "ApertureValue", FMT_URATIONAL, 1 },
+   { TAG_BRIGHTNESS_VALUE, "BrightnessValue", FMT_SRATIONAL, 1 },
+   { TAG_EXPOSURE_BIAS, "ExposureBiasValue", FMT_SRATIONAL, 1 },
+   { TAG_MAXAPERTURE, "MaxApertureValue", FMT_URATIONAL, 1 },
+   { TAG_SUBJECT_DISTANCE, "SubjectDistance", FMT_URATIONAL, 1 },
+   { TAG_METERING_MODE, "MeteringMode", FMT_USHORT, 1 },
+   { TAG_LIGHT_SOURCE, "LightSource", FMT_USHORT, 1 },
+   { TAG_FLASH, "Flash", FMT_USHORT, 1 },
+   { TAG_FOCALLENGTH, "FocalLength", FMT_URATIONAL, 1 },
+   { TAG_MAKER_NOTE, "MakerNote", FMT_STRING, 1 },
+   { TAG_USERCOMMENT, "UserComment", FMT_STRING, -1 },
+   { TAG_SUBSEC_TIME, "SubSecTime", FMT_STRING, -1 },
+   { TAG_SUBSEC_TIME_ORIG, "SubSecTimeOriginal", FMT_STRING, -1 },
+   { TAG_SUBSEC_TIME_DIG, "SubSecTimeDigitized", FMT_STRING, -1 },
+   { TAG_WINXP_TITLE, "Windows-XP Title", 0, 0 },
+   { TAG_WINXP_COMMENT, "Windows-XP comment", 0, 0 },
+   { TAG_WINXP_AUTHOR, "Windows-XP author", 0, 0 },
+   { TAG_WINXP_KEYWORDS, "Windows-XP keywords", 0, 0 },
+   { TAG_WINXP_SUBJECT, "Windows-XP subject", 0, 0 },
+   { TAG_FLASH_PIX_VERSION, "FlashPixVersion", FMT_BYTE, 4 },
+   { TAG_COLOR_SPACE, "ColorSpace", FMT_USHORT, 1 },
+   { TAG_PIXEL_X_DIMENSION, "PixelXDimension", FMT_ULONG, 1 },
+   { TAG_PIXEL_Y_DIMENSION, "PixelYDimension", FMT_ULONG, 1 },
+   { TAG_RELATED_AUDIO_FILE, "RelatedAudioFile", 0, 0 },
+   { TAG_INTEROP_OFFSET, "InteroperabilityOffset", 0, 0 },
+   { TAG_FLASH_ENERGY, "FlashEnergy", FMT_URATIONAL, 1 },
+   { TAG_SPATIAL_FREQ_RESP, "SpatialFrequencyResponse", FMT_STRING, -1 },
+   { TAG_FOCAL_PLANE_XRES, "FocalPlaneXResolution", FMT_URATIONAL, 1 },
+   { TAG_FOCAL_PLANE_YRES, "FocalPlaneYResolution", FMT_URATIONAL, 1 },
+   { TAG_FOCAL_PLANE_UNITS, "FocalPlaneResolutionUnit", FMT_USHORT, 1 },
+   { TAG_SUBJECT_LOCATION, "SubjectLocation", FMT_USHORT, 2 },
+   { TAG_EXPOSURE_INDEX, "ExposureIndex", FMT_URATIONAL, 1 },
+   { TAG_SENSING_METHOD, "SensingMethod", FMT_USHORT, 1 },
+   { TAG_FILE_SOURCE, "FileSource", 0, 1 },
+   { TAG_SCENE_TYPE, "SceneType", 0, 1 },
+   { TAG_CFA_PATTERN, "CFA Pattern", 0, -1 },
+   { TAG_CUSTOM_RENDERED, "CustomRendered", FMT_USHORT, 1 },
+   { TAG_EXPOSURE_MODE, "ExposureMode", FMT_USHORT, 1 },
+   { TAG_WHITEBALANCE, "WhiteBalance", FMT_USHORT, 1 },
+   { TAG_DIGITALZOOMRATIO, "DigitalZoomRatio", FMT_URATIONAL, 1 },
+   { TAG_FOCALLENGTH_35MM, "FocalLengthIn35mmFilm", FMT_USHORT, 1 },
+   { TAG_SUBJECTAREA, "SubjectArea", 0, 0 },
+   { TAG_SCENE_CAPTURE_TYPE, "SceneCaptureType", FMT_USHORT, 1 },
+   { TAG_GAIN_CONTROL, "GainControl", FMT_URATIONAL, 1 },
+   { TAG_CONTRAST, "Contrast", FMT_USHORT, 1 },
+   { TAG_SATURATION, "Saturation", FMT_USHORT, 1 },
+   { TAG_SHARPNESS, "Sharpness", FMT_USHORT, 1 },
+   { TAG_DISTANCE_RANGE, "SubjectDistanceRange", FMT_USHORT, 1 },
+   { TAG_IMAGE_UNIQUE_ID, "ImageUniqueId", FMT_STRING, 33 }, };
 
 #define TAG_TABLE_SIZE  (sizeof(TagTable) / sizeof(TagTable_t))
+
+// Given a tag name string returns the corresponding int value
+// from the TagTable
+int TagNameToValue(const char* tagName)
+{
+	unsigned int i;
+	for (i = 0; i < TAG_TABLE_SIZE; i++)
+	{
+		if (strcmp(TagTable[i].Desc, tagName) == 0 && TagTable[i].Format > 0 )
+		{
+			return TagTable[i].Tag;
+		}
+	}
+	return -1;
+}
+
+// Returns true if the passed tag is a DateTime tag
+int IsDateTimeTag(unsigned short tag)
+{
+	return ((tag == TAG_DATETIME) ? TRUE : FALSE);
+}
 
 //--------------------------------------------------------------------------
 // Convert a 16 bit unsigned value to file's native byte order
@@ -428,6 +513,99 @@ double ConvertAnyFormat(void * ValuePtr, int Format)
 }
 
 //--------------------------------------------------------------------------
+// Convert a double value into a signed or unsigned rational number.
+//--------------------------------------------------------------------------
+static void float2urat(double value, unsigned int max, unsigned int *numerator, unsigned int *denominator)
+{
+	if (value <= 0)
+	{
+		*numerator = 0;
+		*denominator = 1;
+		return;
+	}
+
+	if (value > max)
+	{
+		*numerator = max;
+		*denominator = 1;
+		return;
+	}
+
+	// For values less than 1e-9, scale as much as possible
+	if (value < 1e-9)
+	{
+		unsigned int n = (unsigned int) (value * max);
+		if (n == 0)
+		{
+			*numerator = 0;
+			*denominator = 1;
+		} else
+		{
+			*numerator = n;
+			*denominator = max;
+		}
+		return;
+	}
+
+	// Try to use a denominator of 1e9, 1e8, ..., until the numerator fits
+	unsigned int d;
+	for (d = 1000000000; d >= 1; d /= 10)
+	{
+		double s = value * d;
+		if (s <= max)
+		{
+			// Remove the trailing zeros from both.
+			unsigned int n = (unsigned int) s;
+			while (n % 10 == 0 && d >= 10)
+			{
+				n /= 10;
+				d /= 10;
+			}
+			*numerator = n;
+			*denominator = d;
+			return;
+		}
+	}
+
+	// Shouldn't reach here because the denominator 1 should work
+	// above. But just in case.
+	*numerator = 0;
+	*denominator = 1;
+}
+
+static void ConvertDoubleToURational(double value, unsigned int *numerator, unsigned int *denominator)
+{
+	LOGI("ConvertDoubleToURational: %.4f", value);
+	float2urat(value, 0xFFFFFFFFU, numerator, denominator);
+	LOGV("result: %i.%i", *numerator, *denominator);
+}
+
+
+static void ConvertDoubleToSRational(double value, int *numerator, int *denominator)
+{
+	LOGI("ConvertDoubleToSRational: %.4f", value);
+
+	int negative = 0;
+
+	if (value < 0)
+	{
+		value = -value;
+		negative = 1;
+	}
+
+	unsigned int n, d;
+	float2urat(value, 0x7FFFFFFFU, &n, &d);
+	*numerator = (int) n;
+	*denominator = (int) d;
+	if (negative)
+	{
+		*numerator = -*numerator;
+	}
+
+	LOGV("result: %i.%i", *numerator, *denominator);
+}
+
+//--------------------------------------------------------------------------
 // Process one of the nested EXIF directories.
 //--------------------------------------------------------------------------
 static void ProcessExifDir(unsigned char * DirStart, unsigned char * OffsetBase, unsigned ExifLength, int NestingLevel)
@@ -494,13 +672,13 @@ static void ProcessExifDir(unsigned char * DirStart, unsigned char * OffsetBase,
 		if ((Format - 1) >= NUM_FORMATS)
 		{
 			// (-1) catches illegal zero case as unsigned underflows to positive large.
-			ErrNonfatal("Illegal number format %d for tag %04x in Exif", Format, Tag);
+			ErrNonfatal("Illegal number format %d for tag x%04x in Exif", Format, Tag);
 			continue;
 		}
 
 		if ((unsigned) Components > 0x10000)
 		{
-			ErrNonfatal("Too many components %d for tag %04x in Exif", Components, Tag);
+			ErrNonfatal("Too many components %d for tag x%04x in Exif", Components, Tag);
 			continue;
 		}
 
@@ -616,7 +794,7 @@ static void ProcessExifDir(unsigned char * DirStart, unsigned char * OffsetBase,
 		switch (Tag)
 		{
 			case TAG_SENSING_METHOD:
-				ImageInfo.SensingMethod = (int) ConvertAnyFormat( ValuePtr, Format);
+				ImageInfo.SensingMethod = (int) ConvertAnyFormat(ValuePtr, Format);
 				LOGD("SensingMethod: %i", ImageInfo.SensingMethod);
 				break;
 
@@ -664,7 +842,6 @@ static void ProcessExifDir(unsigned char * DirStart, unsigned char * OffsetBase,
 			case TAG_DATETIME_DIGITIZED:
 			case TAG_DATETIME:
 
-
 				// if the datetime is not already stored, then use this tag
 				if (!isdigit(ImageInfo.DateTime[0]))
 				{
@@ -672,15 +849,15 @@ static void ProcessExifDir(unsigned char * DirStart, unsigned char * OffsetBase,
 					strncpy(ImageInfo.DateTime, (char *) ValuePtr, 19);
 				}
 
-				if( Tag == TAG_DATETIME_ORIGINAL )
+				if (Tag == TAG_DATETIME_ORIGINAL)
 				{
 					strncpy(ImageInfo.DateTimeOriginal, (char *) ValuePtr, 19);
 					LOGD("DateTimeOriginal: %s", ImageInfo.DateTimeOriginal);
-				} else if( Tag == TAG_DATETIME_DIGITIZED )
+				} else if (Tag == TAG_DATETIME_DIGITIZED)
 				{
 					strncpy(ImageInfo.DateTimeDigitized, (char *) ValuePtr, 19);
 					LOGD("DateTimeDigitized: %s", ValuePtr);
-				} else if( Tag == TAG_DATETIME )
+				} else if (Tag == TAG_DATETIME)
 				{
 					// always use the DateTime tag, if present
 					strncpy(ImageInfo.DateTime, (char *) ValuePtr, 19);
@@ -967,7 +1144,7 @@ static void ProcessExifDir(unsigned char * DirStart, unsigned char * OffsetBase,
 			case TAG_EXIF_OFFSET:
 				if (ShowTags)
 					printf("%s    Exif Dir:", IndentString);
-					/* no break */
+				/* no break */
 
 			case TAG_INTEROP_OFFSET:
 				if (Tag == TAG_INTEROP_OFFSET && ShowTags)
@@ -987,8 +1164,7 @@ static void ProcessExifDir(unsigned char * DirStart, unsigned char * OffsetBase,
 				break;
 
 			case TAG_GPSINFO:
-				if (ShowTags)
-					printf("%s    GPS info dir:", IndentString);
+				LOGI("%s    GPS info dir:", IndentString);
 				{
 					unsigned char * SubdirStart;
 					SubdirStart = OffsetBase + Get32u(ValuePtr);
@@ -1049,10 +1225,12 @@ static void ProcessExifDir(unsigned char * DirStart, unsigned char * OffsetBase,
 				break;
 
 			case TAG_EXIF_VERSION:
-				if( ByteCount == 4 ) {
+				if (ByteCount == 4)
+				{
 					strncpy(ImageInfo.ExifVersion, (char *) ValuePtr, ByteCount);
-					LOGD("ExifVersion: %s", ImageInfo.ExifVersion );
-				} else {
+					LOGD("ExifVersion: %s", ImageInfo.ExifVersion);
+				} else
+				{
 					ErrNonfatal("ExifVersion invalid byte count: %i ( it should be %i )", ByteCount, 4);
 				}
 				break;
@@ -1067,17 +1245,17 @@ static void ProcessExifDir(unsigned char * DirStart, unsigned char * OffsetBase,
 //				break;
 
 			case TAG_COLOR_SPACE:
-				ImageInfo.ColorSpace =  (int) ConvertAnyFormat( ValuePtr, Format );
+				ImageInfo.ColorSpace = (int) ConvertAnyFormat(ValuePtr, Format);
 				LOGD("ColorSpace: %i", ImageInfo.ColorSpace);
 				break;
 
 			case TAG_COMPRESSION:
-				ImageInfo.Compression = (int) ConvertAnyFormat( ValuePtr, Format );
+				ImageInfo.Compression = (int) ConvertAnyFormat(ValuePtr, Format);
 				LOGD("Compression: %i", ImageInfo.Compression);
 				break;
 
 			default:
-				LOGV("Unprocessed tag: %x, count: %i", Tag, ByteCount);
+				LOGV("Unprocessed tag: x%x, count: %i", Tag, ByteCount);
 				break;
 
 		}
@@ -1162,6 +1340,407 @@ static void ProcessExifDir(unsigned char * DirStart, unsigned char * OffsetBase,
 	}
 }
 
+static const TagTable_t* TagToTagTableEntry(unsigned short tag)
+{
+	unsigned int i;
+	for (i = 0; i < TAG_TABLE_SIZE; i++)
+	{
+		if (TagTable[i].Tag == tag)
+		{
+			int format = TagTable[i].Format;
+			if (format == 0)
+			{
+				LOGW("tag %s format not defined ***** YOU MUST ADD THE FORMAT TO THE TagTable in exif.c!!!!", TagTable[i].Desc);
+				return NULL;
+			}
+			return &TagTable[i];
+		}
+	}
+	LOGW("tag %d (x%x) NOT FOUND", tag, tag);
+	return NULL;
+}
+
+char* formatStr(int format)
+{
+    switch (format)
+    {
+        case FMT_BYTE: return "FMT_BYTE"; break;
+        case FMT_STRING: return "FMT_STRING"; break;
+        case FMT_USHORT: return "FMT_USHORT"; break;
+        case FMT_ULONG: return "FMT_ULONG"; break;
+        case FMT_URATIONAL: return "FMT_URATIONAL"; break;
+        case FMT_SBYTE: return "FMT_SBYTE"; break;
+        case FMT_UNDEFINED: return "FMT_UNDEFINED"; break;
+        case FMT_SSHORT: return "FMT_SSHORT"; break;
+        case FMT_SLONG: return "FMT_SLONG"; break;
+        case FMT_SRATIONAL: return "FMT_SRATIONAL"; break;
+        case FMT_SINGLE: return "FMT_SINGLE"; break;
+        case FMT_DOUBLE: return "FMT_SINGLE"; break;
+        default: return "UNKNOWN";
+    }
+}
+
+static void writeExifTagAndData(int tag, int format, long components, long value, int valueInString, char* Buffer, int* DirIndex,
+      int* DataWriteIndex)
+{
+	LOGI(
+	      "writeExifTagAndData: x%4X, format: %i, components: %lu, valueInString: %i, dirIndex: %i, dataWriteIndex: %i", tag, format, components, valueInString, *DirIndex, *DataWriteIndex);
+	void* componentsPosition = NULL; // for saving component position
+
+	Put16u(Buffer + (*DirIndex), tag); // Tag
+	Put16u(Buffer + (*DirIndex) + 2, format); // Format
+	if (format == FMT_STRING && components == -1)
+	{
+		components = strlen((char*) value) + 1; // account for null terminator
+		if (components & 1)
+			++components; // no odd lengths
+	} else if (format == FMT_SSHORT && components == -1)
+	{
+		// jhead only supports reading one SSHORT anyway
+		components = 1;
+	}
+	if (format == FMT_UNDEFINED && components == -1)
+	{
+		// check if this UNDEFINED format is actually ASCII (as it usually is)
+		// if so, we can calculate the size
+		if (memcmp((char*) value, ExifAsciiPrefix, sizeof(ExifAsciiPrefix)) == 0)
+		{
+			components = sizeof(ExifAsciiPrefix) + strlen((char*) value + sizeof(ExifAsciiPrefix)) + 1;
+			if (components & 1)
+				++components; // no odd lengths
+		}
+	}
+	Put32u(Buffer + (*DirIndex) + 4, components); // Components
+	componentsPosition = Buffer + (*DirIndex) + 4; // components # can change for lists
+
+	LOGD("# components: %ld", components);
+
+	if (format == FMT_STRING)
+	{
+		// short strings can fit right in the long, otherwise have to
+		// go in the data area
+		if (components <= 4)
+		{
+			strcpy(Buffer + (*DirIndex) + 8, (char*) value);
+		} else
+		{
+			Put32u(Buffer + (*DirIndex) + 8, (*DataWriteIndex) - 8); // Pointer
+			LOGV("(1) copying value '%s' to %d", (char*) value, (*DataWriteIndex));
+			strncpy(Buffer + (*DataWriteIndex), (char*) value, components);
+			(*DataWriteIndex) += components;
+		}
+	} else if ((format == FMT_UNDEFINED) && (memcmp((char*) value, ExifAsciiPrefix, sizeof(ExifAsciiPrefix)) == 0))
+	{
+		// short strings can fit right in the long, otherwise have to
+		// go in the data area
+		if (components <= 4)
+		{
+			memcpy(Buffer + (*DirIndex) + 8, (char*) value, components);
+		} else
+		{
+			Put32u(Buffer + (*DirIndex) + 8, (*DataWriteIndex) - 8); // Pointer
+			LOGV("(2) copying '%s' to %d", (char*) value + sizeof(ExifAsciiPrefix), (*DataWriteIndex));
+			memcpy(Buffer + (*DataWriteIndex), (char*) value, components);
+			(*DataWriteIndex) += components;
+		}
+	} else if (!valueInString)
+	{
+		Put32u(Buffer + (*DirIndex) + 8, value); // Value
+	} else
+	{
+		Put32u(Buffer + (*DirIndex) + 8, (*DataWriteIndex) - 8); // Pointer
+		// Usually the separator is ',', but sometimes ':' is used, like
+		// TAG_GPS_TIMESTAMP.
+		char* curElement = strtok((char*) value, ",:");
+		int i;
+
+		// (components == -1) Need to handle lists with unknown length too
+		for (i = 0; ((i < components) || (components == -1)) && curElement != NULL; i++)
+		{
+			LOGV("processing component %s format %s, components: %lu", curElement, formatStr(format), components);
+			// elements are separated by commas
+			if (format == FMT_URATIONAL)
+			{
+				unsigned int numerator;
+				unsigned int denominator;
+				char* separator = strchr(curElement, '/');
+				if (separator)
+				{
+					numerator = atoi(curElement);
+					denominator = atoi(separator + 1);
+				} else
+				{
+					double value = atof(curElement);
+					ConvertDoubleToURational(value, &numerator, &denominator);
+				}
+				Put32u(Buffer + (*DataWriteIndex), numerator);
+				Put32u(Buffer + (*DataWriteIndex) + 4, denominator);
+				(*DataWriteIndex) += 8;
+			} else if (format == FMT_SRATIONAL)
+			{
+				int numerator;
+				int denominator;
+				char* separator = strchr(curElement, '/');
+				if (separator)
+				{
+					numerator = atoi(curElement);
+					denominator = atoi(separator + 1);
+				} else
+				{
+					double value = atof(curElement);
+					ConvertDoubleToSRational(value, &numerator, &denominator);
+				}
+				Put32u(Buffer + (*DataWriteIndex), numerator);
+				Put32u(Buffer + (*DataWriteIndex) + 4, denominator);
+				(*DataWriteIndex) += 8;
+			} else if ((components == -1) && ((format == FMT_USHORT) || (format == FMT_SSHORT)))
+			{
+				// variable components need to go into data write area
+				value = atoi(curElement);
+				Put16u(Buffer + (*DataWriteIndex), value);
+				(*DataWriteIndex) += 4;
+			} else if( format == FMT_BYTE && components <= 4 )
+			{
+				memcpy(Buffer + (*DirIndex) + 8, (char*) value, components);
+			} else
+			{
+				// TODO: doesn't handle multiple components yet -- if more than one, have to put in data write area.
+				value = atoi(curElement);
+				Put32u(Buffer + (*DirIndex) + 8, value); // Value
+			}
+			curElement = strtok(NULL, ",:");
+		}
+		if (components == -1)
+			Put32u(componentsPosition, i); // update component # for unknowns
+	}
+	(*DirIndex) += 12;
+}
+
+//--------------------------------------------------------------------------
+// Create minimal exif header - just date and thumbnail pointers,
+// so that date and thumbnail may be filled later.
+//--------------------------------------------------------------------------
+static void create_EXIF_internal(ExifElement_t* elements, int exifTagCount, int gpsTagCount, int elementTableSize, int hasDateTimeTag, char* Buffer)
+{
+	LOGI("create_EXIF_internal: %p", elements);
+
+	unsigned short NumEntries;
+	int DataWriteIndex;
+	int DirIndex;
+	int DirExifLink = 0;
+
+	LOGV("create_EXIF, exif elements: %d, gps elements: %d, table size: %i", exifTagCount, gpsTagCount, elementTableSize);
+	LOGV("hasDateTimeTag: %i", hasDateTimeTag);
+
+	MotorolaOrder = 0;
+
+	memcpy(Buffer + 2, "Exif\0\0II", 8);
+	Put16u(Buffer + 10, 0x2a);
+
+	DataWriteIndex = 16;
+	Put32u(Buffer + 12, DataWriteIndex - 8); // first IFD offset.  Means start 16 bytes in.
+
+	{
+		DirIndex = DataWriteIndex;
+		NumEntries = 1 + exifTagCount; // the extra is the thumbnail
+		if (gpsTagCount)
+		{
+			++NumEntries; // allow for the GPS info tag
+		}
+		if (!hasDateTimeTag)
+		{
+			// We have to write extra date time tag. The entry number should be adjusted.
+			++NumEntries;
+		}
+
+		LOGD("NumEntries: %i", NumEntries);
+
+		DataWriteIndex += 2 + NumEntries * 12 + 4;
+
+		Put16u(Buffer + DirIndex, NumEntries); // Number of entries
+		DirIndex += 2;
+
+		// Entries go here...
+		if (!hasDateTimeTag)
+		{
+			LOGV("DateTime not found, we will add one");
+			// Date/time entry
+			char* dateTime = NULL;
+			char dateBuf[20];
+			if (ImageInfo.numDateTimeTags)
+			{
+				// If we had a pre-existing exif header, use time from that.
+				dateTime = ImageInfo.DateTime;
+			} else
+			{
+				// Oterwise, use the file's timestamp.
+				FileTimeAsString(dateBuf);
+				dateTime = dateBuf;
+			}
+			LOGV("Adding '%s' as date time", dateTime);
+			writeExifTagAndData(TAG_DATETIME, FMT_STRING, 20, (long) (char*) dateTime, FALSE, Buffer, &DirIndex, &DataWriteIndex);
+		}
+
+		LOGE("Writing EXIF Tags: %i", exifTagCount);
+
+		if (exifTagCount > 0)
+		{
+			int processed = 0;
+			int i;
+			for (i = 0; i < elementTableSize; i++)
+			{
+				LOGD("index: %i (tag:x%x, format:%i), processed: %i of %i", i, elements[i].Tag, elements[i].Format, processed, exifTagCount);
+
+				if( processed >= exifTagCount ) {
+					LOGW("reached the maximum number of valid tags");
+					break;
+				}
+
+				if (elements[i].GpsTag)
+				{
+					LOGV("is gps tag, continue...");
+					continue;
+				}
+
+				const TagTable_t* entry = TagToTagTableEntry(elements[i].Tag);
+
+				if( entry )
+				{
+					LOGV("saving tag x%x (%s) value \"%s\"", elements[i].Tag, entry->Desc, elements[i].Value);
+					writeExifTagAndData(elements[i].Tag, entry->Format, entry->DataLength, (long) elements[i].Value, TRUE, Buffer, &DirIndex, &DataWriteIndex);
+					processed++;
+				} else {
+					LOGW("entry is null for tag x%x, with value: %s", elements[i].Tag, elements[i].Value );
+					continue;
+				}
+			}
+
+			if (gpsTagCount)
+			{
+				// Link to gps dir entry
+				LOGE("Link to gps dir entry");
+				writeExifTagAndData( TAG_GPSINFO, FMT_ULONG, 1, DataWriteIndex - 8, FALSE, Buffer, &DirIndex, &DataWriteIndex );
+			}
+
+			// Link to exif dir entry
+			int exifDirPtr = DataWriteIndex - 8;
+			if (gpsTagCount)
+			{
+				exifDirPtr += 2 + gpsTagCount * 12 + 4;
+			}
+			DirExifLink = DirIndex;
+
+			LOGE("writing exif data exif offset: %i", exifDirPtr);
+			writeExifTagAndData(TAG_EXIF_OFFSET, FMT_ULONG, 1, exifDirPtr, FALSE, Buffer, &DirIndex, &DataWriteIndex);
+		}
+
+		// End of directory - contains optional link to continued directory.
+		Put32u(Buffer + DirIndex, 0);
+		LOGV("Ending Exif section DirIndex = %d DataWriteIndex %d", DirIndex, DataWriteIndex);
+	}
+
+	// GPS Section
+	LOGE("Writing GPS Tags: %i", gpsTagCount);
+
+	if (gpsTagCount)
+	{
+		DirIndex = DataWriteIndex;
+		LOGV("Starting GPS section DirIndex = %d", DirIndex);
+		NumEntries = gpsTagCount;
+		DataWriteIndex += 2 + NumEntries * 12 + 4;
+
+		Put16u(Buffer + DirIndex, NumEntries); // Number of entries
+		DirIndex += 2;
+		{
+			int i;
+			int processed = 0;
+			for (i = 0; i < elementTableSize; i++)
+			{
+				LOGD("index: %i (tag:x%x, format:%i), processed: %i of %i", i, elements[i].Tag, elements[i].Format, processed, gpsTagCount);
+
+				if( processed >= gpsTagCount ) {
+					LOGW("reached the maximum number of valid tags");
+					break;
+				}
+
+				if (!elements[i].GpsTag)
+				{
+					LOGW("not a gps tag, continue...");
+					continue;
+				}
+
+				const TagTable_t* entry = GpsTagToTagTableEntry(elements[i].Tag);
+
+				if( entry )
+				{
+					LOGV("create_EXIF saving GPS tag x%x (%s) value \"%s\"",elements[i].Tag, entry->Desc, elements[i].Value);
+					writeExifTagAndData(elements[i].Tag, entry->Format, entry->DataLength, (long) elements[i].Value, TRUE, Buffer, &DirIndex, &DataWriteIndex);
+					processed++;
+				} else {
+					LOGW("gps entry is null for tag: x%x", elements[i].Tag);
+					continue;
+				}
+			}
+		}
+
+		// End of directory - contains optional link to continued directory.
+		Put32u(Buffer + DirIndex, 0);
+		LOGV("Ending GPS section DirIndex = %d DataWriteIndex %d", DirIndex, DataWriteIndex);
+	}
+
+	{
+		// Overwriting TAG_EXIF_OFFSET which links to this directory
+		Put32u(Buffer + DirExifLink + 8, DataWriteIndex - 8);
+
+		LOGV("Starting Thumbnail section DirIndex = %d", DirIndex);
+		DirIndex = DataWriteIndex;
+		NumEntries = 2;
+		DataWriteIndex += 2 + NumEntries * 12 + 4;
+
+		Put16u(Buffer + DirIndex, NumEntries); // Number of entries
+		DirIndex += 2;
+
+		// Link to exif dir entry
+		writeExifTagAndData(TAG_THUMBNAIL_OFFSET, FMT_ULONG, 1, DataWriteIndex - 8, FALSE, Buffer, &DirIndex, &DataWriteIndex);
+
+		// Link to exif dir entry
+		writeExifTagAndData(TAG_THUMBNAIL_LENGTH, FMT_ULONG, 1, 0, FALSE, Buffer, &DirIndex, &DataWriteIndex);
+
+		// End of directory - contains optional link to continued directory.
+		Put32u(Buffer + DirIndex, 0);
+		LOGV("Ending Thumbnail section DirIndex = %d DataWriteIndex %d", DirIndex, DataWriteIndex);
+	}
+
+	Buffer[0] = (unsigned char) (DataWriteIndex >> 8);
+	Buffer[1] = (unsigned char) DataWriteIndex;
+
+	// Remove old exif section, if there was one.
+	RemoveSectionType(M_EXIF);
+
+	{
+		// Sections need malloced buffers, so do that now, especially because
+		// we now know how big it needs to be allocated.
+		LOGD("allocating new buffer with size: %i", DataWriteIndex);
+
+		unsigned char * NewBuf = malloc(DataWriteIndex);
+		if (NewBuf == NULL)
+		{
+			ErrFatal("Could not allocate memory");
+		}
+		memcpy(NewBuf, Buffer, DataWriteIndex);
+
+		CreateSection(M_EXIF, NewBuf, DataWriteIndex);
+
+		// Re-parse new exif section, now that its in place
+		// otherwise, we risk touching data that has already been freed.
+		LOGV("NewBuf: %s", (NewBuf+2));
+
+		ShowTags = TRUE;
+		DumpExifMap = FALSE;
+		process_EXIF(NewBuf, DataWriteIndex);
+	}
+}
+
 //--------------------------------------------------------------------------
 // Process a EXIF marker
 // Describes all the drivel that most digital cameras include...
@@ -1206,7 +1785,7 @@ void process_EXIF(unsigned char * ExifSection, unsigned int length)
 		}
 	}
 
-	// Check the next value for correctness.
+// Check the next value for correctness.
 	if (Get16u(ExifSection + 10) != 0x2a)
 	{
 		ErrNonfatal("Invalid Exif start (1)", 0, 0);
@@ -1227,7 +1806,7 @@ void process_EXIF(unsigned char * ExifSection, unsigned int length)
 
 	DirWithThumbnailPtrs = NULL;
 
-	// First directory starts 16 bytes in.  All offset are relative to 8 bytes in.
+// First directory starts 16 bytes in.  All offset are relative to 8 bytes in.
 	ProcessExifDir(ExifSection + 8 + FirstOffset, ExifSection + 8, length - 8, 0);
 
 	ImageInfo.ThumbnailAtEnd = ImageInfo.ThumbnailOffset >= ImageInfo.LargestExifOffset ? TRUE : FALSE;
@@ -1235,37 +1814,37 @@ void process_EXIF(unsigned char * ExifSection, unsigned int length)
 	if (DumpExifMap)
 	{
 		unsigned a, b;
-		printf("Map: %05d- End of exif\n", length - 8);
+		LOGV("Map: %05d- End of exif\n", length - 8);
 		for (a = 0; a < length - 8; a += 10)
 		{
-			printf("Map: %05d ", a);
+			LOGV("Map: %05d ", a);
 			for (b = 0; b < 10; b++)
-				printf(" %02x", *(ExifSection + 8 + a + b));
-			printf("\n");
+				LOGV(" %02x", *(ExifSection + 8 + a + b));
+			LOGV("\n");
 		}
 	}
 
-	// if FocalLengthIn35mmFilm is not yet stored
-	// inside the ImageInfo object, there's no reason
-	// we should not compute and pass it back
-	if( !ImageInfo.FocalLengthIn35mmFilm > 0 && ImageInfo.FocalLength != 0 )
+// if FocalLengthIn35mmFilm is not yet stored
+// inside the ImageInfo object, there's no reason
+// we should not compute and pass it back
+	if (!ImageInfo.FocalLengthIn35mmFilm > 0 && ImageInfo.FocalLength != 0)
 	{
 		LOGI("Compute the CCD width");
-		LOGD("FocalPlaneXResolution: %.4f, FocalPlaneYResolution: %.4f", ImageInfo.FocalPlaneXResolution, ImageInfo.FocalPlaneYResolution);
+		LOGD(
+		      "FocalPlaneXResolution: %.4f, FocalPlaneYResolution: %.4f", ImageInfo.FocalPlaneXResolution, ImageInfo.FocalPlaneYResolution);
 		LOGD("PixelXDimension: %i, PixelYDimension: %i", ImageInfo.PixelXDimension, ImageInfo.PixelYDimension);
 
-
 		// Compute the CCD width, in millimeters.
-		if ( ImageInfo.FocalPlaneXResolution != 0 && ( ImageInfo.PixelXDimension > 0 || ImageInfo.PixelYDimension > 0 ) )
+		if (ImageInfo.FocalPlaneXResolution != 0 && (ImageInfo.PixelXDimension > 0 || ImageInfo.PixelYDimension > 0))
 		{
 			// Note: With some cameras, its not possible to compute this correctly because
 			// they don't adjust the indicated focal plane resolution units when using less
 			// than maximum resolution, so the CCDWidth value comes out too small.  Nothing
 			// that Jhad can do about it - its a camera problem.
 
-			int ExifImageWidth = fmax( ImageInfo.PixelXDimension, ImageInfo.PixelYDimension );
+			int ExifImageWidth = fmax(ImageInfo.PixelXDimension, ImageInfo.PixelYDimension);
 			LOGI("ExifImageWidth: %i", ExifImageWidth);
-			double FocalplaneUnits = computeResolutionUnit( ImageInfo.FocalPlaneResolutionUnit );
+			double FocalplaneUnits = computeResolutionUnit(ImageInfo.FocalPlaneResolutionUnit);
 			LOGD("FocalplaneUnits: %.2f", FocalplaneUnits);
 
 			float ccdWidth = (float) (ExifImageWidth * FocalplaneUnits / ImageInfo.FocalPlaneXResolution);
@@ -1276,6 +1855,35 @@ void process_EXIF(unsigned char * ExifSection, unsigned int length)
 			ImageInfo.FocalLengthIn35mmFilm = (int) (ImageInfo.FocalLength / ccdWidth * 36 + 0.5);
 			LOGD("FocalLengthIn35mmFilm: %d", ImageInfo.FocalLengthIn35mmFilm);
 		}
+	}
+}
+
+/**
+ *
+ * @param elements the element table, containing all the data
+ * @param exifTagCount the number of valid exif tags
+ * @param gpsTagCount the number of valid gps tags
+ * @param elementTableSize the element table size
+ * @param hasDateTimeTag true if the element table already contains the DateTime tag
+ */
+void create_EXIF_Elements(ExifElement_t* elements, int exifTagCount, int gpsTagCount, int elementTableSize, int hasDateTimeTag)
+{
+	LOGI("create_EXIF, elements: %p, exifTagCount: %i, gpsTagCount: %i, hasDateTimeTag: %i", elements, exifTagCount, gpsTagCount, hasDateTimeTag);
+
+	// It is hard to calculate exact necessary size for editing the exif
+	// header dynamically, so we are using the maximum size of EXIF, 64K
+
+	const int EXIF_MAX_SIZE = 1024 * 64;
+	char* Buffer = malloc(EXIF_MAX_SIZE);
+
+	if (Buffer != NULL && ( exifTagCount + gpsTagCount ) <= elementTableSize )
+	{
+		create_EXIF_internal(elements, exifTagCount, gpsTagCount, elementTableSize, hasDateTimeTag, Buffer);
+		LOGD("final buffer: %s", (Buffer+2));
+		free(Buffer);
+	} else
+	{
+		ErrFatal("Could not allocate memory");
 	}
 }
 
@@ -1399,7 +2007,7 @@ void create_EXIF(void)
 	Buffer[0] = (unsigned char) (DataWriteIndex >> 8);
 	Buffer[1] = (unsigned char) DataWriteIndex;
 
-	// Remove old exif section, if there was one.
+// Remove old exif section, if there was one.
 	RemoveSectionType(M_EXIF);
 
 	{
@@ -1472,9 +2080,9 @@ int Exif2tm(struct tm * timeptr, char * ExifTime)
 
 	timeptr->tm_wday = -1;
 
-	// Check for format: YYYY:MM:DD HH:MM:SS format.
-	// Date and time normally separated by a space, but also seen a ':' there, so
-	// skip the middle space with '%*c' so it can be any character.
+// Check for format: YYYY:MM:DD HH:MM:SS format.
+// Date and time normally separated by a space, but also seen a ':' there, so
+// skip the middle space with '%*c' so it can be any character.
 	timeptr->tm_sec = 0;
 	a = sscanf(ExifTime, "%d%*c%d%*c%d%*c%d:%d:%d", &timeptr->tm_year, &timeptr->tm_mon, &timeptr->tm_mday, &timeptr->tm_hour,
 	      &timeptr->tm_min, &timeptr->tm_sec);
@@ -1531,7 +2139,7 @@ void ShowImageInfo(int ShowFileInfo)
 	{
 		LOGD("Date/Time    : %s\n", ImageInfo.DateTime);
 	}
-	LOGD("Resolution   : %d x %d\n", ImageInfo.ImageWidth, ImageInfo.ImageHeight);
+	LOGD("Resolution   : %d x %d\n", ImageInfo.ImageWidth, ImageInfo.ImageLength);
 
 	if (ImageInfo.Orientation > 1)
 	{
@@ -1539,10 +2147,10 @@ void ShowImageInfo(int ShowFileInfo)
 		LOGD("Orientation  : %s\n", OrientTab[ImageInfo.Orientation]);
 	}
 
-	//if (ImageInfo.IsColor == 0)
-	//{
-	//	LOGD("Color/bw     : Black and white\n");
-	//}
+//if (ImageInfo.IsColor == 0)
+//{
+//	LOGD("Color/bw     : Black and white\n");
+//}
 
 	if (ImageInfo.Flash >= 0)
 	{
@@ -1632,7 +2240,7 @@ void ShowImageInfo(int ShowFileInfo)
 		LOGD("Digital Zoom : %1.3fx\n", (double)ImageInfo.DigitalZoomRatio);
 	}
 
-	// calculate CCD Width
+// calculate CCD Width
 
 	if (ImageInfo.FocalPlaneXResolution != 0 && ImageInfo.PixelXDimension > 0)
 	{
@@ -1641,7 +2249,8 @@ void ShowImageInfo(int ShowFileInfo)
 		// than maximum resolution, so the CCDWidth value comes out too small.  Nothing
 		// that Jhad can do about it - its a camera problem.
 		double unit = 25.4;
-		switch(ImageInfo.FocalPlaneResolutionUnit) {
+		switch (ImageInfo.FocalPlaneResolutionUnit)
+		{
 			case 1:
 			case 2:
 				unit = 25.4;
@@ -1673,7 +2282,6 @@ void ShowImageInfo(int ShowFileInfo)
 			LOGD("focal 35mm: %i", focal35mm);
 		}
 	}
-
 
 	if (ImageInfo.ExposureTime)
 	{
@@ -1727,7 +2335,7 @@ void ShowImageInfo(int ShowFileInfo)
 			break;
 	}
 
-	//Quercus: 17-1-2004 Added LightSource, some cams return this, whitebalance or both
+//Quercus: 17-1-2004 Added LightSource, some cams return this, whitebalance or both
 	switch (ImageInfo.LightSource)
 	{
 		case 1:
@@ -1750,8 +2358,8 @@ void ShowImageInfo(int ShowFileInfo)
 			break;
 		default:
 			; //Quercus: 17-1-2004 There are many more modes for this, check Exif2.2 specs
-			// If it just says 'unknown' or we don't know it, then
-			// don't bother showing it - it doesn't add any useful information.
+			  // If it just says 'unknown' or we don't know it, then
+			  // don't bother showing it - it doesn't add any useful information.
 			break;
 	}
 
@@ -1872,10 +2480,10 @@ void ShowImageInfo(int ShowFileInfo)
 
 	if (ImageInfo.GpsInfoPresent)
 	{
-		LOGD("GPS Latitude : %s\n", ImageInfo.GpsLat);
-		LOGD("GPS Longitude: %s\n", ImageInfo.GpsLong);
-		if (ImageInfo.GpsAlt[0])
-			LOGD("GPS Altitude : %s\n", ImageInfo.GpsAlt);
+		LOGD("GpsLatitude : %s\n", ImageInfo.GpsLatitude);
+		LOGD("GpsLongitude: %s\n", ImageInfo.GpsLongitude);
+		if (ImageInfo.GpsAltitude[0])
+			LOGD("GpsAltitude : %s\n", ImageInfo.GpsAltitude);
 	}
 
 	if (ImageInfo.QualityGuess)
@@ -1883,7 +2491,7 @@ void ShowImageInfo(int ShowFileInfo)
 		LOGD("JPEG Quality : %d\n", ImageInfo.QualityGuess);
 	}
 
-	// Print the comment. Print 'Comment:' for each new line of comment.
+// Print the comment. Print 'Comment:' for each new line of comment.
 //	if (ImageInfo.Comments[0])
 //	{
 //		int a, c;
@@ -1925,7 +2533,7 @@ void ShowConciseImageInfo(void)
 {
 	printf("\"%s\"", ImageInfo.FileName);
 
-	printf(" %dx%d", ImageInfo.ImageWidth, ImageInfo.ImageHeight);
+	printf(" %dx%d", ImageInfo.ImageWidth, ImageInfo.ImageLength);
 
 	if (ImageInfo.ExposureTime)
 	{
@@ -1953,10 +2561,10 @@ void ShowConciseImageInfo(void)
 		printf(" (flash)");
 	}
 
-	//if (ImageInfo.IsColor == 0)
-	//{
-	//	printf(" (bw)");
-	//}
+//if (ImageInfo.IsColor == 0)
+//{
+//	printf(" (bw)");
+//}
 
 	printf("\n");
 }

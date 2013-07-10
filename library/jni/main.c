@@ -18,7 +18,8 @@
 #include "utils/log.h"
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
 #ifndef NELEM
@@ -105,22 +106,296 @@ extern "C" {
 		return ReadJpegFile(FileName, ReadMode);
 	}
 
+
+	static void saveJPGFile(const char* filename)
+	{
+		LOGI("saveJPGFile: %s", filename);
+
+		char backupName[400];
+		struct stat buf;
+
+		LOGV("Modified: %s\n", filename);
+
+		strncpy(backupName, filename, 395);
+		strcat(backupName, ".t");
+
+		// Remove any .old file name that may pre-exist
+		LOGV("removing backup %s", backupName);
+
+		unlink(backupName);
+
+		// Rename the old file.
+		LOGV("rename %s to %s", filename, backupName);
+
+		rename(filename, backupName);
+
+		// Write the new file.
+		LOGD("WriteJpegFile %s", filename);
+
+		if (WriteJpegFile(filename))
+		{
+			// Copy the access rights from original file
+			LOGV("stating old file %s", backupName);
+			if (stat(backupName, &buf) == 0)
+			{
+				// set Unix access rights and time to new file
+				struct utimbuf mtime;
+				chmod(filename, buf.st_mode);
+
+				mtime.actime = buf.st_mtime;
+				mtime.modtime = buf.st_mtime;
+
+				utime(filename, &mtime);
+			}
+
+			// Now that we are done, remove original file.
+			LOGV("unlinking old file %s", backupName);
+			unlink(backupName);
+
+			LOGV("returning from saveJPGFile");
+		} else
+		{
+			LOGE("WriteJpegFile failed, restoring from backup file");
+			// move back the backup file
+			rename(backupName, filename);
+		}
+	}
+
 // JNI Methods
 
 	static jboolean appendThumbnail(JNIEnv *env, jobject jobj, jstring jfilename, jstring jthumbnailfilename)
 	{
-		LOGI("appendThumbnail");
+		LOGI("******************************** appendThumbnail");
 		return JNI_FALSE;
+	}
+
+	void copyThumbnailData(uchar* thumbnailData, int thumbnailLen)
+	{
+		LOGI("******************************** copyThumbnailData");
+
+		Section_t* ExifSection = FindSection(M_EXIF);
+
+		if (ExifSection == NULL) {
+			return;
+		}
+
+		int NewExifSize = ImageInfo.ThumbnailOffset+8+thumbnailLen;
+		ExifSection->Data = (uchar *)realloc(ExifSection->Data, NewExifSize);
+
+		if (ExifSection->Data == NULL) {
+			LOGW("ExifSection->Data = NULL");
+			return;
+		}
+
+		uchar* ThumbnailPointer = ExifSection->Data+ImageInfo.ThumbnailOffset+8;
+		memcpy(ThumbnailPointer, thumbnailData, thumbnailLen);
+
+		ImageInfo.ThumbnailSize = thumbnailLen;
+
+		Put32u(ExifSection->Data+ImageInfo.ThumbnailSizeOffset+8, thumbnailLen);
+
+		ExifSection->Data[0] = (uchar)(NewExifSize >> 8);
+		ExifSection->Data[1] = (uchar)NewExifSize;
+		ExifSection->Size = NewExifSize;
 	}
 
 	static void saveAttributes(JNIEnv *env, jobject jobj, jstring jfilename, jstring jattributes)
 	{
-		LOGI("saveAttributes");
+		LOGI("******************************** saveAttributes");
+
+		// format of attributes string passed from java:
+		// "attrCnt attr1=valueLen value1attr2=value2Len value2..."
+		// example input: "4 ImageLength=4 1024Model=6 FooImageWidth=4 1280Make=3 FOO"
+
+		ExifElement_t* exifElementTable = NULL;
+		const char* filename = NULL;
+		uchar* thumbnailData = NULL;
+		int attrCnt = 0;
+		const char* attributes = (*env)->GetStringUTFChars(env, jattributes, NULL);
+		if (attributes == NULL)
+		{
+			goto exit;
+		}
+		LOGD("attributes %s\n", attributes);
+
+		// Get the number of attributes - it's the first number in the string.
+		attrCnt = atoi(attributes);
+		char* attrPtr = strchr(attributes, ' ') + 1;
+
+		LOGD("attribute count %d attrPtr %s\n", attrCnt, attrPtr);
+
+		// Load all the hash exif elements into a more c-like structure
+		exifElementTable = malloc(sizeof(ExifElement_t) * attrCnt);
+		if (exifElementTable == NULL)
+		{
+			goto exit;
+		}
+
+
+		int i;
+		char tag[100];
+		int hasDateTimeTag = FALSE;
+		int gpsTagCount = 0;
+		int exifTagCount = 0;
+		int tagValue;
+		int tagFound;
+		ExifElement_t* item;
+
+		for (i = 0; i < attrCnt; i++)
+		{
+			// get an element from the attribute string and add it to the c structure
+			// first, extract the attribute name
+			tagFound = 0;
+			char* tagEnd = strchr(attrPtr, '=');
+			if (tagEnd == 0)
+			{
+				LOGE("saveAttributes: couldn't find end of tag");
+				goto exit;
+			}
+			if (tagEnd - attrPtr > 99)
+			{
+				LOGE("saveAttributes: attribute tag way too long");
+				goto exit;
+			}
+
+			memcpy(tag, attrPtr, tagEnd - attrPtr);
+			tag[tagEnd - attrPtr] = 0;
+
+			exifElementTable[i].Format = 0;
+			exifElementTable[i].Tag = 0;
+			exifElementTable[i].GpsTag = FALSE;
+
+			if (IsGpsTag(tag))
+			{
+				tagValue = GpsTagNameToValue(tag);
+				if( tagValue > -1 )
+				{
+					LOGV("Tag '%s' with value: X%x", tag, tagValue);
+					exifElementTable[i].GpsTag = TRUE;
+					exifElementTable[i].Tag = GpsTagNameToValue(tag);
+					++gpsTagCount;
+					tagFound = 1;
+				} else {
+					LOGE("Skipping gps tag: %s = %i", tag, tagValue);
+				}
+			} else
+			{
+				tagValue = TagNameToValue(tag);
+				if( tagValue > -1 )
+				{
+					LOGV("Tag '%s' with value: X%x", tag, tagValue);
+					exifElementTable[i].GpsTag = FALSE;
+					exifElementTable[i].Tag = tagValue;
+					++exifTagCount;
+					tagFound = 1;
+				} else {
+					LOGE("Skipping tag %s = %i", tag, tagValue);
+				}
+			}
+
+			LOGV("tagFound: %i", tagFound);
+
+			attrPtr = tagEnd + 1;
+			// next get the length of the attribute value
+			int valueLen = atoi(attrPtr);
+
+			if (IsDateTimeTag(exifElementTable[i].Tag))
+			{
+				hasDateTimeTag = TRUE;
+			}
+
+
+			attrPtr = strchr(attrPtr, ' ') + 1;
+			if (attrPtr == 0)
+			{
+				LOGE("saveAttributes: couldn't find end of value len");
+				goto exit;
+			}
+
+
+			exifElementTable[i].Value = malloc(valueLen + 1);
+			if (exifElementTable[i].Value == NULL)
+			{
+				goto exit;
+			}
+
+			memcpy(exifElementTable[i].Value, attrPtr, valueLen);
+			exifElementTable[i].Value[valueLen] = 0;
+			exifElementTable[i].DataLength = valueLen;
+
+			attrPtr += valueLen;
+
+			LOGD("tag %s id %d value %s data length=%d isGps=%d", tag, exifElementTable[i].Tag,
+					exifElementTable[i].Value, exifElementTable[i].DataLength, exifElementTable[i].GpsTag);
+		}
+
+		LOGD("Total tags: %i - %i ( total was: %i )", exifTagCount, gpsTagCount, attrCnt);
+
+		filename = (*env)->GetStringUTFChars(env, jfilename, NULL);
+		LOGD("Call loadAttributes() with filename is %s. Loading exif info\n", filename);
+		loadExifInfo(filename, TRUE);
+
+		// DEBUG ONLY ----------
+		// ShowTags = TRUE;
+		// ShowImageInfo(TRUE);
+		// LOGD("create exif 2");
+		// ---------------------
+
+		// If the jpg file has a thumbnail, preserve it.
+		int thumbnailLength = ImageInfo.ThumbnailSize;
+		if (ImageInfo.ThumbnailOffset)
+		{
+			Section_t* ExifSection = FindSection(M_EXIF);
+			if (ExifSection)
+			{
+				uchar* thumbnailPointer = ExifSection->Data + ImageInfo.ThumbnailOffset + 8;
+				thumbnailData = (uchar*)malloc(ImageInfo.ThumbnailSize);
+				// if the malloc fails, we just won't copy the thumbnail
+				if (thumbnailData)
+				{
+					memcpy(thumbnailData, thumbnailPointer, thumbnailLength);
+				}
+			}
+		}
+
+		create_EXIF_Elements(exifElementTable, exifTagCount, gpsTagCount, attrCnt, hasDateTimeTag);
+
+		if (thumbnailData)
+		{
+			copyThumbnailData(thumbnailData, thumbnailLength);
+		}
+
+		exit:
+		LOGE("cleaning up now in saveAttributes");
+		// try to clean up resources
+		if (attributes)
+		{
+			(*env)->ReleaseStringUTFChars(env, jattributes, attributes);
+		}
+		if (filename)
+		{
+			(*env)->ReleaseStringUTFChars(env, jfilename, filename);
+		}
+		if (exifElementTable)
+		{
+			// free the table
+			for (i = 0; i < attrCnt; i++)
+			{
+				free(exifElementTable[i].Value);
+			}
+			free(exifElementTable);
+		}
+		if (thumbnailData)
+		{
+			free(thumbnailData);
+		}
+
+		LOGD("returning from saveAttributes");
 	}
 
 	static jstring getAttributes(JNIEnv *env, jobject jobj, jstring jfilename)
 	{
-		LOGI("getAttributes");
+		LOGI("******************************** getAttributes");
 
 		const char* filename = (*env)->GetStringUTFChars(env, jfilename, NULL);
 		LOGD("filename: %s", filename);
@@ -196,12 +471,12 @@ extern "C" {
 			if( bufLen == 0 ) return NULL;
 		}
 
-		if( ImageInfo.ImageWidth > 0 && ImageInfo.ImageHeight > 0 )
+		if( ImageInfo.ImageWidth > 0 && ImageInfo.ImageLength > 0 )
 		{
 			bufLen = addKeyValueInt(&buf, bufLen, "ImageWidth", ImageInfo.ImageWidth);
 			if (bufLen == 0) return NULL;
 
-			bufLen = addKeyValueInt(&buf, bufLen, "ImageHeight", ImageInfo.ImageHeight);
+			bufLen = addKeyValueInt(&buf, bufLen, "ImageLength", ImageInfo.ImageLength);
 			if (bufLen == 0) return NULL;
 		}
 
@@ -448,21 +723,21 @@ extern "C" {
 		// GPS
 		if (ImageInfo.GpsInfoPresent)
 		{
-			if (ImageInfo.GpsLat[0])
+			if (ImageInfo.GpsLatitude[0])
 			{
-				bufLen = addKeyValueString(&buf, bufLen, "GpsLat", ImageInfo.GpsLat);
+				bufLen = addKeyValueString(&buf, bufLen, "GpsLatitude", ImageInfo.GpsLatitude);
 				if (bufLen == 0) return NULL;
 			}
 
-			if (ImageInfo.GpsLong[0])
+			if (ImageInfo.GpsLongitude[0])
 			{
-				bufLen = addKeyValueString(&buf, bufLen, "GpsLong", ImageInfo.GpsLong);
+				bufLen = addKeyValueString(&buf, bufLen, "GpsLongitude", ImageInfo.GpsLongitude);
 				if (bufLen == 0) return NULL;
 			}
 
-			if (ImageInfo.GpsAlt[0])
+			if (ImageInfo.GpsAltitude[0])
 			{
-				bufLen = addKeyValueString(&buf, bufLen, "GpsAlt", ImageInfo.GpsAlt);
+				bufLen = addKeyValueString(&buf, bufLen, "GpsAltitude", ImageInfo.GpsAltitude);
 				if (bufLen == 0) return NULL;
 			}
 		}
@@ -494,56 +769,64 @@ extern "C" {
 
 	static void commitChanges(JNIEnv *env, jobject jobj, jstring jfilename)
 	{
-		LOGI("commitChanges");
+		LOGI("******************************** commitChanges\n");
+
+		const char* filename = (*env)->GetStringUTFChars(env, jfilename, NULL);
+
+		if (filename)
+		{
+			saveJPGFile(filename);
+			DiscardData();
+			(*env)->ReleaseStringUTFChars(env, jfilename, filename);
+		}
 	}
 
-static jbyteArray getThumbnail(JNIEnv *env, jobject jobj, jstring jfilename)
-{
-	LOGI("getThumbnail");
-
-	const char* filename = (*env)->GetStringUTFChars(env, jfilename, NULL);
-
-	if (filename)
+	static jbyteArray getThumbnail(JNIEnv *env, jobject jobj, jstring jfilename)
 	{
-		loadExifInfo(filename, FALSE);
-		Section_t* ExifSection = FindSection(M_EXIF);
-		if (ExifSection == NULL || ImageInfo.ThumbnailSize == 0)
+		LOGI("getThumbnail");
+
+		const char* filename = (*env)->GetStringUTFChars(env, jfilename, NULL);
+
+		if (filename)
 		{
-			LOGE("no exif section or size == 0, so no thumbnail\n");
-			goto noThumbnail;
+			loadExifInfo(filename, FALSE);
+			Section_t* ExifSection = FindSection(M_EXIF);
+			if (ExifSection == NULL || ImageInfo.ThumbnailSize == 0)
+			{
+				LOGE("no exif section or size == 0, so no thumbnail\n");
+				goto noThumbnail;
+			}
+			uchar* thumbnailPointer = ExifSection->Data + ImageInfo.ThumbnailOffset + 8;
+			jbyteArray byteArray = (*env)->NewByteArray(env, ImageInfo.ThumbnailSize);
+			if (byteArray == NULL)
+			{
+				LOGE("couldn't allocate thumbnail memory, so no thumbnail\n");
+				goto noThumbnail;
+			}
+			(*env)->SetByteArrayRegion(env, byteArray, 0, ImageInfo.ThumbnailSize, thumbnailPointer);
+			LOGD("thumbnail size %d\n", ImageInfo.ThumbnailSize);
+			(*env)->ReleaseStringUTFChars(env, jfilename, filename);
+			DiscardData();
+			return byteArray;
 		}
-		uchar* thumbnailPointer = ExifSection->Data + ImageInfo.ThumbnailOffset + 8;
-		jbyteArray byteArray = (*env)->NewByteArray(env, ImageInfo.ThumbnailSize);
-		if (byteArray == NULL)
+		noThumbnail: if (filename)
 		{
-			LOGE("couldn't allocate thumbnail memory, so no thumbnail\n");
-			goto noThumbnail;
+			(*env)->ReleaseStringUTFChars(env, jfilename, filename);
 		}
-		(*env)->SetByteArrayRegion(env, byteArray, 0, ImageInfo.ThumbnailSize, thumbnailPointer);
-		LOGD("thumbnail size %d\n", ImageInfo.ThumbnailSize);
-		(*env)->ReleaseStringUTFChars(env, jfilename, filename);
 		DiscardData();
-		return byteArray;
+		return NULL;
 	}
-	noThumbnail: if (filename)
-	{
-		(*env)->ReleaseStringUTFChars(env, jfilename, filename);
-	}
-	DiscardData();
-	return NULL;
-}
 
 // JNI load
 
 	static JNINativeMethod methods[] =
 	{
-		{	"saveAttributesNative", "(Ljava/lang/String;Ljava/lang/String;)V", (void*) saveAttributes},
-		{	"getAttributesNative", "(Ljava/lang/String;)Ljava/lang/String;", (void*) getAttributes},
-		{	"appendThumbnailNative",
-			"(Ljava/lang/String;Ljava/lang/String;)Z", (void*) appendThumbnail},
-		{	"commitChangesNative", "(Ljava/lang/String;)V",
-			(void*) commitChanges},
-		{	"getThumbnailNative", "(Ljava/lang/String;)[B", (void*) getThumbnail},};
+		{ "saveAttributesNative", "(Ljava/lang/String;Ljava/lang/String;)V", (void*) saveAttributes},
+		{ "getAttributesNative", "(Ljava/lang/String;)Ljava/lang/String;", (void*) getAttributes},
+		{ "appendThumbnailNative", "(Ljava/lang/String;Ljava/lang/String;)Z", (void*) appendThumbnail},
+		{ "commitChangesNative", "(Ljava/lang/String;)V", (void*) commitChanges},
+		{ "getThumbnailNative", "(Ljava/lang/String;)[B", (void*) getThumbnail},
+	};
 
 	/*
 	 * Register several native methods for one class.
