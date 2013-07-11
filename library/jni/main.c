@@ -216,7 +216,6 @@ extern "C"
 		{
 			goto exit;
 		}
-		LOGD("attributes %s\n", attributes);
 
 		// Get the number of attributes - it's the first number in the string.
 		attrCnt = atoi(attributes);
@@ -276,7 +275,7 @@ extern "C"
 					++gpsTagCount;
 					tagFound = 1;
 				} else {
-					LOGE("Skipping gps tag: %s = %i", tag, tagValue);
+					LOGE("(GPS) Skipping gps tag: %s = %i", tag, tagValue);
 				}
 			} else
 			{
@@ -289,7 +288,7 @@ extern "C"
 					++exifTagCount;
 					tagFound = 1;
 				} else {
-					LOGE("Skipping tag %s = %i", tag, tagValue);
+					LOGE("(EXIF) Skipping tag %s = %i", tag, tagValue);
 				}
 			}
 
@@ -723,6 +722,24 @@ extern "C"
 		// GPS
 		if (ImageInfo.GpsInfoPresent)
 		{
+			if (ImageInfo.GpsLatitudeRef[0])
+			{
+				bufLen = addKeyValueString(&buf, bufLen, "GpsLatitudeRef", ImageInfo.GpsLatitudeRef);
+				if (bufLen == 0) return NULL;
+			}
+
+			if (ImageInfo.GpsLongitudeRef[0])
+			{
+				bufLen = addKeyValueString(&buf, bufLen, "GpsLongitudeRef", ImageInfo.GpsLongitudeRef);
+				if (bufLen == 0) return NULL;
+			}
+
+			if (ImageInfo.GpsAltitudeRef == 0 || ImageInfo.GpsAltitudeRef == 1)
+			{
+				bufLen = addKeyValueInt(&buf, bufLen, "GpsAltitudeRef", ImageInfo.GpsAltitudeRef);
+				if (bufLen == 0) return NULL;
+			}
+
 			if (ImageInfo.GpsLatitude[0])
 			{
 				bufLen = addKeyValueString(&buf, bufLen, "GpsLatitude", ImageInfo.GpsLatitude);
@@ -738,6 +755,18 @@ extern "C"
 			if (ImageInfo.GpsAltitude[0])
 			{
 				bufLen = addKeyValueString(&buf, bufLen, "GpsAltitude", ImageInfo.GpsAltitude);
+				if (bufLen == 0) return NULL;
+			}
+
+			if( ImageInfo.GpsSpeedRef[0])
+			{
+				bufLen = addKeyValueString(&buf, bufLen, "GpsSpeedRef", ImageInfo.GpsSpeedRef);
+				if (bufLen == 0) return NULL;
+			}
+
+			if (ImageInfo.GpsSpeed[0])
+			{
+				bufLen = addKeyValueString(&buf, bufLen, "GpsSpeed", ImageInfo.GpsSpeed);
 				if (bufLen == 0) return NULL;
 			}
 		}

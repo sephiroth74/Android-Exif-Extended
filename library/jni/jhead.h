@@ -440,9 +440,22 @@ typedef struct {
     /* information only, tells if the GPS tags are present */
     int GpsInfoPresent;
 
-    char GpsLatitude[31];
-    char GpsLongitude[31];
-    char GpsAltitude[20];
+    // char GpsLatitude[31];
+    // char GpsLongitude[31];
+    // char GpsAltitude[20];
+
+    // reference ( N/S - W/E )
+    char GpsLatitudeRef[2];
+    char GpsLongitudeRef[2];
+    char GpsSpeedRef[2];
+    char GpsAltitudeRef; // - or +
+
+    // contains the raw values
+    char GpsLatitude[MAX_GPS_BUF_SIZE];
+    char GpsLongitude[MAX_GPS_BUF_SIZE];
+    char GpsAltitude[MAX_GPS_BUF_SIZE];
+    char GpsSpeed[MAX_GPS_BUF_SIZE];
+
 
     /* informational only, not an actual exif tag */
     int  QualityGuess;

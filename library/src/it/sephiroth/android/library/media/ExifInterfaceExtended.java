@@ -38,9 +38,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.TreeSet;
+import android.annotation.SuppressLint;
 import android.os.Bundle;
 import android.util.Log;
 
+@SuppressLint("DefaultLocale")
 public class ExifInterfaceExtended {
 
 	private static final String LOG_TAG = "ExifInterfaceExtended";
@@ -548,23 +550,59 @@ public class ExifInterfaceExtended {
 
 	/**
 	 * Value is string.<br />
-	 * The latitude is expressed as degrees, minutes, and seconds, respectively.<br />
-	 * Example: N 40d 43m 1.4712s
+	 * Indicates the latitude. The latitude is expressed as three RATIONAL values giving the degrees, minutes, and 
+	 * seconds, respectively. If latitude is expressed as degrees, minutes and seconds, a typical format would be 
+	 * dd/1,mm/1,ss/1. When degrees and minutes are used and, for example, fractions of minutes are given up to two 
+	 * decimal places, the format would be dd/1,mmmm/100,0/1.
 	 */
 	public static final String TAG_EXIF_GPS_LATITUDE = "GpsLatitude";
+	
+	/**
+	 * Value is string(1)<br />
+	 * Indicates whether the latitude is north or south latitude. The ASCII value 'N' indicates north latitude, and 'S' is south latitude.
+	 */
+	public static final String TAG_EXIF_GPS_LATITUDE_REF = "GpsLatitudeRef";
 
 	/**
 	 * Value is string.<br />
-	 * The longitude is expressed as degrees, minutes, and seconds, respectively.<br />
-	 * Example: W 73d 57m 20.4235s
+	 * Indicates the longitude. The longitude is expressed as three RATIONAL values giving the degrees, minutes, and 
+	 * seconds, respectively. If longitude is expressed as degrees, minutes and seconds, a typical format would be 
+	 * ddd/1,mm/1,ss/1. When degrees and minutes are used and, for example, fractions of minutes are given up to two 
+	 * decimal places, the format would be ddd/1,mmmm/100,0/1.
 	 */
 	public static final String TAG_EXIF_GPS_LONGITUDE = "GpsLongitude";
+	
+	/**
+	 * Value is string(1)<br />
+	 * Indicates whether the longitude is east or west longitude. ASCII 'E' indicates east longitude, and 'W' is west longitude.
+	 */
+	public static final String TAG_EXIF_GPS_LONGITUDE_REF = "GpsLongitudeRef";
 
 	/**
 	 * Value is string.<br />
-	 * The altitude (in meters), example: -6.50m
+	 * Indicates the altitude based on the reference in GPSAltitudeRef. Altitude is expressed as one RATIONAL value. The reference unit is meters.
 	 */
 	public static final String TAG_EXIF_GPS_ALTITUDE = "GpsAltitude";
+	
+	/**
+	 * Value is byte<br />
+	 * Indicates the altitude used as the reference altitude. If the reference is sea level and the altitude is above sea level, 
+	 * 0 is given. If the altitude is below sea level, a value of 1 is given and the altitude is indicated as an absolute value in 
+	 * the GPSAltitude tag. The reference unit is meters. Note that this tag is BYTE type, unlike other reference tags
+	 */
+	public static final String TAG_EXIF_GPS_ALTITUDE_REF = "GpsAltitudeRef";
+	
+	/**
+	 * Value is string(1).<br />
+	 * Indicates the unit used to express the GPS receiver speed of movement. 'K' 'M' and 'N' represents kilometers per  hour, miles per hour, and knots.
+	 */
+	public static final String TAG_EXIF_GPS_SPEED_REF = "GpsSpeedRef";
+	
+	/**
+	 * Value is string.<br />
+	 * Indicates the speed of GPS receiver movement
+	 */
+	public static final String TAG_EXIF_GPS_SPEED = "GpsSpeed";
 	
 	// Constants used for the Orientation Exif tag.
 	public static final int ORIENTATION_UNDEFINED = 0;
@@ -870,20 +908,72 @@ public class ExifInterfaceExtended {
 	 * longitude. Returns false if the Exif tags are not available.
 	 */
 	public boolean getLatLong( float output[] ) {
-		String latValue = mAttributes.get( TAG_EXIF_GPS_LATITUDE );
-		String lngValue = mAttributes.get( TAG_EXIF_GPS_LONGITUDE );
+      String latValue = mAttributes.get(TAG_EXIF_GPS_LATITUDE);
+      String latRef = mAttributes.get(TAG_EXIF_GPS_LATITUDE_REF);
+      
+      String lngValue = mAttributes.get(TAG_EXIF_GPS_LONGITUDE);
+      String lngRef = mAttributes.get(TAG_EXIF_GPS_LONGITUDE_REF);
 
-		if ( latValue != null && lngValue != null ) {
-			try {
-				output[0] = convertRationalLatLonToFloat( latValue );
-				output[1] = convertRationalLatLonToFloat( lngValue );
-				return true;
-			} catch ( IllegalArgumentException e ) {
-				// if values are not parseable
+      if (latValue != null && latRef != null && lngValue != null && lngRef != null) {
+          try {
+              output[0] = convertRationalLatLonToFloat(latValue, latRef);
+              output[1] = convertRationalLatLonToFloat(lngValue, lngRef);
+              return true;
+          } catch (IllegalArgumentException e) {
+              // if values are not parseable
+          }
+      }
+      return false;
+	}
+	
+	/**
+	 * Returns a formatted String with the latitude representation:<br />
+	 * 39¡ 8' 16.8" N
+	 * @return
+	 */
+	public String getLatitude() {
+		if( hasAttribute( TAG_EXIF_GPS_LATITUDE ) && hasAttribute( TAG_EXIF_GPS_LATITUDE_REF )) {
+			return convertRationalLatLonToString( getAttribute( TAG_EXIF_GPS_LATITUDE ), getAttribute( TAG_EXIF_GPS_LATITUDE_REF ) );
+		}
+		return null;
+	}
+
+	/**
+	 * Returns a formatted String with the longitude representation:<br />
+	 * 77¡ 37' 51.6" W
+	 * @return
+	 */
+	public String getLongitude() {
+		if( hasAttribute( TAG_EXIF_GPS_LONGITUDE ) && hasAttribute( TAG_EXIF_GPS_LONGITUDE_REF )) {
+			return convertRationalLatLonToString( getAttribute( TAG_EXIF_GPS_LONGITUDE ), getAttribute( TAG_EXIF_GPS_LONGITUDE_REF ) );
+		}
+		return null;
+	}
+	
+	public String getGpsSpeed() {
+		if( hasAttribute( TAG_EXIF_GPS_SPEED ) && hasAttribute( TAG_EXIF_GPS_SPEED_REF ) ) {
+			String ref = getAttribute( TAG_EXIF_GPS_SPEED_REF ).toUpperCase();
+			String value = getAttribute( TAG_EXIF_GPS_SPEED );
+			
+			double speed = convertURationalToDouble( value, 0 );
+			if( speed > 0 ) {
+				
+				String speedRef = "";
+				
+				if( "K".equals( ref ) ) {
+					speedRef = "Kilometers per hour";
+				} else if( "M".equals( ref )) {
+					speedRef = "Miles per hour";
+				} else if( "K".equals( ref )) {
+					speedRef = "Knots per hour";
+				}
+				
+				return String.format( "%1$.0f %2$s", speed, speedRef );
 			}
 		}
-		return false;
+		return null;
 	}
+	
 	
    /**
     * Return the altitude in meters. If the exif tag does not exist, return
@@ -892,16 +982,17 @@ public class ExifInterfaceExtended {
     * @param defaultValue the value to return if the tag is not available.
     */
    public double getAltitude(double defaultValue) {
-       String altitude = getAttribute(TAG_EXIF_GPS_ALTITUDE);
-       if( null != altitude ) {
-      	 try {
-      		 return Double.parseDouble( altitude.trim().substring( 0, altitude.length() - 1 ) );
-      	 } catch( NumberFormatException e ) {
-      		 // return the default value
-      	 }
-       }
-       return defaultValue;
-   }
+   	
+   	int ref = getAttributeInt(TAG_EXIF_GPS_ALTITUDE_REF, -1);
+   	
+   	if( hasAttribute( TAG_EXIF_GPS_ALTITUDE ) ) {
+   		double meters = convertURationalToDouble( getAttribute( TAG_EXIF_GPS_ALTITUDE ), defaultValue );
+   		if( meters >= 0 ) {
+   			return (double) (meters * ((ref == 1) ? -1 : 1));	
+   		}
+   	}
+   	return defaultValue;
+  }
    
    /**
     * Returns number of milliseconds since Jan. 1, 1970, midnight.
@@ -1002,35 +1093,28 @@ public class ExifInterfaceExtended {
 		return sb.toString();
 	}	
 
-	private static float convertRationalLatLonToFloat( String rationalString ) {
+	private static float convertRationalLatLonToFloat(
+			String rationalString, String ref ) {
 		try {
-			
-			String[] parts = rationalString.split( "( )+" );
-			if( parts.length < 4 ) {
-				throw new IllegalArgumentException("Expecting 4 parts, " + parts.length + " found");
-			}
+			String[] parts = rationalString.split( "," );
 
-			// first part is the reference ( N/S W/E )
-			String ref = parts[0].trim();
-			
-			String value = parts[1].trim();
-			value = value.substring( 0, value.length() - 1 );
-			double degrees = Double.parseDouble( value );
+			String[] pair;
+			pair = parts[0].split( "/" );
+			double degrees = Double.parseDouble( pair[0].trim() )
+					/ Double.parseDouble( pair[1].trim() );
 
-			value = parts[2].trim();
-			value = value.substring( 0, value.length() - 1 );
-			double minutes = Double.parseDouble( value );
+			pair = parts[1].split( "/" );
+			double minutes = Double.parseDouble( pair[0].trim() )
+					/ Double.parseDouble( pair[1].trim() );
 
-			value = parts[3].trim();
-			value = value.substring( 0, value.length() - 1 );
-			double seconds = Double.parseDouble( value );
-			
+			pair = parts[2].split( "/" );
+			double seconds = Double.parseDouble( pair[0].trim() )
+					/ Double.parseDouble( pair[1].trim() );
+
 			double result = degrees + ( minutes / 60.0 ) + ( seconds / 3600.0 );
-			
-         if ((ref.equals("S") || ref.equals("W"))) {
-            return (float) -result;			
-         }
-         
+			if ( ( ref.equals( "S" ) || ref.equals( "W" ) ) ) {
+				return (float) -result;
+			}
 			return (float) result;
 		} catch ( NumberFormatException e ) {
 			// Some of the nubmers are not valid
@@ -1038,11 +1122,47 @@ public class ExifInterfaceExtended {
 		} catch ( ArrayIndexOutOfBoundsException e ) {
 			// Some of the rational does not follow the correct format
 			throw new IllegalArgumentException();
-		} catch( IndexOutOfBoundsException e ) {
-			// String not valid
-			throw new IllegalArgumentException();
 		}
-	} 
+	}
+	
+	private static String convertRationalLatLonToString( String lat, String ref ) {
+		try {
+			String[] parts = lat.split( "," );
+
+			String[] pair;
+			pair = parts[0].split( "/" );
+			double degrees = Double.parseDouble( pair[0].trim() ) / Double.parseDouble( pair[1].trim() );
+
+			pair = parts[1].split( "/" );
+			double minutes = Double.parseDouble( pair[0].trim() ) / Double.parseDouble( pair[1].trim() );
+
+			pair = parts[2].split( "/" );
+			double seconds = Double.parseDouble( pair[0].trim() ) / Double.parseDouble( pair[1].trim() );
+
+			return String.format( "%1$.0f¡ %2$.0f' %3$.0f\" %4$s", degrees, minutes, seconds, ref.toUpperCase( Locale.getDefault() ) );
+		} catch ( NumberFormatException e ) {
+			e.printStackTrace();
+		} catch ( ArrayIndexOutOfBoundsException e ) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+	
+	private static double convertURationalToDouble( String value, double defaultValue ) {
+		String[] pair;
+		pair = value.split( "/" );
+		
+		try {
+			double result = Double.parseDouble( pair[0].trim() ) / Double.parseDouble( pair[1].trim() );
+			return result;
+		} catch( NumberFormatException e ) {
+			e.printStackTrace();
+		} catch( ArrayIndexOutOfBoundsException e ) {
+			e.printStackTrace();
+		}
+		
+		return defaultValue;
+	}
 	
 	// -------------------
 	// NATIVE METHODS

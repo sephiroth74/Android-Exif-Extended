@@ -6,7 +6,7 @@
 #include "jhead.h"
 #include "utils/log.h"
 
-#define MAX_GPS_TAG 0x1e
+#define MAX_GPS_TAG 0x20
 
 #define TAG_GPS_LAT_REF    1
 #define TAG_GPS_LAT        2
@@ -16,6 +16,8 @@
 #define TAG_GPS_ALT        6
 #define TAG_GPS_SATELLITES 8
 #define TAG_GPS_STATUS     9
+#define TAG_GPS_SPEED_REF	12
+#define TAG_GPS_SPEED		13
 #define TAG_GPS_PROCESSING_METHOD	27
 
 static TagTable_t GpsTags[MAX_GPS_TAG + 1] = {
@@ -50,6 +52,8 @@ static TagTable_t GpsTags[MAX_GPS_TAG + 1] = {
    { 0x1C, "GpsAreaInformation", FMT_STRING, -1 },
    { 0x1D, "GpsDateStamp", FMT_STRING, 11 },
    { 0x1E, "GpsDifferential", FMT_SSHORT, 1 },
+   { 0x1F, "GpsSpeedRef", FMT_STRING, 2 },
+   { 0x20, "GpsSpeed", FMT_URATIONAL, 1 },
 };
 
 
@@ -63,7 +67,7 @@ int GpsTagNameToValue(const char* tagName)
 	unsigned int i;
 	for (i = 0; i < MAX_GPS_TAG; i++)
 	{
-		if (strcmp(GpsTags[i].Desc, tagName) == 0)
+		if (strcmp(GpsTags[i].Desc, tagName) == 0 && GpsTags[i].Format > 0)
 		{
 			return GpsTags[i].Tag;
 		}
@@ -108,9 +112,10 @@ void ProcessGpsInfo(unsigned char * DirStart, unsigned char * OffsetBase, unsign
 	}
 
 	ImageInfo.GpsInfoPresent = TRUE;
-	strcpy(ImageInfo.GpsLatitude, "? ?");
-	strcpy(ImageInfo.GpsLongitude, "? ?");
-	ImageInfo.GpsAltitude[0] = 0;
+	ImageInfo.GpsAltitudeRef = 0;
+	//strcpy(ImageInfo.GpsLatitude, "? ?");
+	//strcpy(ImageInfo.GpsLongitude, "? ?");
+	// ImageInfo.GpsAltitude[0] = 0;
 
 	LOGI("NumDirEntries: %i", NumDirEntries);
 
@@ -170,80 +175,107 @@ void ProcessGpsInfo(unsigned char * DirStart, unsigned char * OffsetBase, unsign
 			double Values[3];
 
 		case TAG_GPS_LAT_REF:
-			ImageInfo.GpsLatitude[0] = ValuePtr[0];
+			// ImageInfo.GpsLatitude[0] = ValuePtr[0];
+         ImageInfo.GpsLatitudeRef[0] = ValuePtr[0];
+         ImageInfo.GpsLatitudeRef[1] = '\0';
+			LOGD("GpsLatitudeRef: %s", ImageInfo.GpsLatitudeRef);
 			break;
 
 		case TAG_GPS_LONG_REF:
-			ImageInfo.GpsLongitude[0] = ValuePtr[0];
+			// ImageInfo.GpsLongitude[0] = ValuePtr[0];
+         ImageInfo.GpsLongitudeRef[0] = ValuePtr[0];
+         ImageInfo.GpsLongitudeRef[1] = '\0';
+         LOGD("GpsLongitudeRef: %s", ImageInfo.GpsLongitudeRef);
 			break;
 
 		case TAG_GPS_LAT:
-			case TAG_GPS_LONG:
+		case TAG_GPS_LONG:
+
 			if (Format != FMT_URATIONAL)
 			{
 				ErrNonfatal("Inappropriate format (%d) for Exif GPS coordinates!", Format, 0);
 			}
-			strcpy(FmtString, "%0.0fd %0.0fm %0.0fs");
-			for (a = 0; a < 3; a++)
-			{
-				int den, digits;
 
-				den = Get32s(ValuePtr + 4 + a * ComponentSize);
-				digits = 0;
-				while (den > 1 && digits <= 6)
-				{
-					den = den / 10;
-					digits += 1;
-				}
-				if (digits > 6)
-					digits = 6;
-				FmtString[1 + a * 7] = (char) ('2' + digits + (digits ? 1 : 0));
-				FmtString[3 + a * 7] = (char) ('0' + digits);
+//			strcpy(FmtString, "%0.0fd %0.0fm %0.0fs");
+//			for (a = 0; a < 3; a++)
+//			{
+//				int den, digits;
+//
+//				den = Get32s(ValuePtr + 4 + a * ComponentSize);
+//				digits = 0;
+//				while (den > 1 && digits <= 6)
+//				{
+//					den = den / 10;
+//					digits += 1;
+//				}
+//				if (digits > 6)
+//					digits = 6;
+//				FmtString[1 + a * 7] = (char) ('2' + digits + (digits ? 1 : 0));
+//				FmtString[3 + a * 7] = (char) ('0' + digits);
+//
+//				Values[a] = ConvertAnyFormat(ValuePtr + a * ComponentSize, Format);
+//			}
+//
+//			sprintf(TempString, FmtString, Values[0], Values[1], Values[2]);
+//
+//			if (Tag == TAG_GPS_LAT)
+//			{
+//				strncpy(ImageInfo.GpsLatitude + 2, TempString, 29);
+//			} else
+//			{
+//				strncpy(ImageInfo.GpsLongitude + 2, TempString, 29);
+//			}
 
-				Values[a] = ConvertAnyFormat(ValuePtr + a * ComponentSize, Format);
-			}
+			sprintf(TempString, "%d/%d,%d/%d,%d/%d",
+					Get32s(ValuePtr), Get32s(4 + (char*) ValuePtr), Get32s(8 + (char*) ValuePtr),
+			      Get32s(12 + (char*) ValuePtr), Get32s(16 + (char*) ValuePtr), Get32s(20 + (char*) ValuePtr));
 
-			sprintf(TempString, FmtString, Values[0], Values[1], Values[2]);
 
 			if (Tag == TAG_GPS_LAT)
 			{
-				strncpy(ImageInfo.GpsLatitude + 2, TempString, 29);
+				strncpy(ImageInfo.GpsLatitude, TempString, MAX_GPS_BUF_SIZE);
+				LOGD("GpsLatitude: %s", ImageInfo.GpsLatitude);
 			} else
 			{
-				strncpy(ImageInfo.GpsLongitude + 2, TempString, 29);
+				strncpy(ImageInfo.GpsLongitude, TempString, MAX_GPS_BUF_SIZE);
+				LOGD("GpsLongitude: %s", ImageInfo.GpsLongitude);
 			}
-
-//                sprintf(TempString, "%d/%d,%d/%d,%d/%d",
-//                    Get32s(ValuePtr), Get32s(4+(char*)ValuePtr),
-//                    Get32s(8+(char*)ValuePtr), Get32s(12+(char*)ValuePtr),
-//                    Get32s(16+(char*)ValuePtr), Get32s(20+(char*)ValuePtr));
-//
-//                LOGD("Raw value: %s", TempString);
-//
-//                if( Tag == TAG_GPS_LAT )
-//                {
-//                    strncpy(ImageInfo.GpsLatRaw, TempString, MAX_GPS_BUF_SIZE);
-//                } else {
-//                    strncpy(ImageInfo.GpsLongRaw, TempString, MAX_GPS_BUF_SIZE);
-//                }
 
 			break;
 
 		case TAG_GPS_ALT_REF:
-			ImageInfo.GpsAltitude[0] = (char) (ValuePtr[0] ? '-' : ' ');
+			ImageInfo.GpsAltitudeRef = (char)ValuePtr[0];
+			LOGD("GpsAltitudeRef: '%c'", ImageInfo.GpsAltitudeRef);
 			break;
 
 		case TAG_GPS_ALT:
-			sprintf(ImageInfo.GpsAltitude + 1, "%.2fm", ConvertAnyFormat(ValuePtr, Format));
+			sprintf(TempString, "%d/%d", Get32s(ValuePtr), Get32s(4 + (char*) ValuePtr));
+			strncpy(ImageInfo.GpsAltitude, TempString, MAX_GPS_BUF_SIZE);
+			LOGD("GpsAltitude: %s", ImageInfo.GpsAltitude);
 			break;
 
 		case TAG_GPS_SATELLITES:
+			LOGD("TAG_GPS_SATELLITES");
 			break;
 
 		case TAG_GPS_STATUS:
+			LOGD("TAG_GPS_STATUS");
 			break;
 
 		case TAG_GPS_PROCESSING_METHOD:
+			LOGD("TAG_GPS_PROCESSING_METHOD");
+			break;
+
+		case TAG_GPS_SPEED_REF:
+         ImageInfo.GpsSpeedRef[0] = ValuePtr[0];
+         ImageInfo.GpsSpeedRef[1] = '\0';
+         LOGD("GpsSpeedRef: %s", ImageInfo.GpsSpeedRef);
+			break;
+
+		case TAG_GPS_SPEED:
+			sprintf(TempString, "%d/%d", Get32s(ValuePtr), Get32s(4 + (char*) ValuePtr));
+			strncpy(ImageInfo.GpsSpeed, TempString, MAX_GPS_BUF_SIZE);
+			LOGD("TAG_GPS_SPEED: %s", ImageInfo.GpsSpeed);
 			break;
 		}
 
@@ -301,6 +333,7 @@ void ProcessGpsInfo(unsigned char * DirStart, unsigned char * OffsetBase, unsign
 						printf(", ");
 					}
 					printf("\n");
+					break;
 			}
 		}
 	}

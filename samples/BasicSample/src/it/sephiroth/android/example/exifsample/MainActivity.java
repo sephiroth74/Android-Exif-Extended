@@ -181,8 +181,9 @@ public class MainActivity extends Activity implements OnClickListener {
 				exifText.append( "Process: " + parseProcess( process ) + "\n" );
 			}
 			
-			if( mExif.hasAttribute( ExifInterfaceExtended.TAG_JPEG_QUALITY )) {
-				exifText.append( "JPEG Quality: " + mExif.getAttributeInt( ExifInterfaceExtended.TAG_JPEG_QUALITY, 0 ) + "\n" );
+			int quality = mExif.getJpegQuality();
+			if( quality > 0 ) {
+				exifText.append( "JPEG Quality: " + quality + "\n" );
 			}
 			
 			exifText.append( "\nEXIF Tags:\n" );
@@ -333,13 +334,29 @@ public class MainActivity extends Activity implements OnClickListener {
 			if( mExif.getLatLong( output ) ) {
 				
 				exifText.append( "\nGPS Info:\n" );
-				exifText.append( "Latitude: " + mExif.getAttribute( ExifInterfaceExtended.TAG_EXIF_GPS_LATITUDE ) + "\n" );
-				exifText.append( "Longitude: " + mExif.getAttribute( ExifInterfaceExtended.TAG_EXIF_GPS_LATITUDE ) + "\n" );
-				exifText.append( "Altitude: " + mExif.getAttribute( ExifInterfaceExtended.TAG_EXIF_GPS_ALTITUDE ) + "\n" );
+				
+				double altitude = mExif.getAltitude( 0 );
+				if( altitude != 0 ) {
+					exifText.append( "Altitude: " + altitude + "m\n" );
+				}
+				
+				String latitude = mExif.getLatitude();
+				String longitude = mExif.getLongitude();
+				if( null != latitude && null != longitude ) {
+					exifText.append( "Latitude: " + latitude + "\n" );
+					exifText.append( "Longitude: " + longitude + "\n" );
+				}
+				
+				String speed = mExif.getGpsSpeed();
+				if( null != speed ) {
+					exifText.append( "Speed: " + speed + "\n" );
+				}
 				
 				GetGeoLocationTask task = new GetGeoLocationTask();
 				task.execute( output[0], output[1] );
 			}
+			
+			
 			
 		}
 		new LoadThumbnailTask().execute( filename );

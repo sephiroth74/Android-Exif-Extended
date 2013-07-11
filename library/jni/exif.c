@@ -2481,9 +2481,13 @@ void ShowImageInfo(int ShowFileInfo)
 	if (ImageInfo.GpsInfoPresent)
 	{
 		LOGD("GpsLatitude : %s\n", ImageInfo.GpsLatitude);
+		LOGD("GpsLatitudeRef : %s\n", ImageInfo.GpsLatitudeRef);
 		LOGD("GpsLongitude: %s\n", ImageInfo.GpsLongitude);
-		if (ImageInfo.GpsAltitude[0])
-			LOGD("GpsAltitude : %s\n", ImageInfo.GpsAltitude);
+		LOGD("GpsLongitudeRef: %s\n", ImageInfo.GpsLongitudeRef);
+		LOGD("GpsAltitude : %s\n", ImageInfo.GpsAltitude);
+		LOGD("GpsAltitudeRef : %c\n", ImageInfo.GpsAltitudeRef);
+		LOGD("GpsSpeed: %s\n", ImageInfo.GpsSpeed);
+		LOGD("GpsSpeedRef: %s\n", ImageInfo.GpsSpeedRef);
 	}
 
 	if (ImageInfo.QualityGuess)
