@@ -211,6 +211,7 @@ static char KnownTags[][10] = {"date", "desc","scan_date","author",
                                "keyword","videograb",
                                "show_raw","panorama","titlepix",""};
 
+#if 0
 static int ModifyDescriptComment(char * OutComment, char * SrcComment)
 {
     char Line[500];
@@ -290,6 +291,9 @@ static int ModifyDescriptComment(char * OutComment, char * SrcComment)
     }
     return Modified;
 }
+#endif
+
+#if 0
 //--------------------------------------------------------------------------
 // Automatic make smaller command stuff
 //--------------------------------------------------------------------------
@@ -314,11 +318,12 @@ static int AutoResizeCmdStuff(void)
     sprintf(CommandString, "mogrify -geometry %dx%d -quality 80 &i",(int)(ImageInfo.Width*scale), (int)(ImageInfo.Height*scale));
     return TRUE;
 }
+#endif
 
 
 #endif // MATTHIAS
 
-
+#if 0
 //--------------------------------------------------------------------------
 // Escape an argument such that it is interpreted literally by the shell
 // (returns the number of written characters)
@@ -355,8 +360,9 @@ static int shellescape(char* to, const char* from)
     to[j++] = '"';
     return j;
 }
+#endif
 
-
+#if 0
 //--------------------------------------------------------------------------
 // Apply the specified command to the JPEG file.
 //--------------------------------------------------------------------------
@@ -433,7 +439,9 @@ static void DoCommand(const char * FileName, int ShowIt)
         }
     }
 }
+#endif
 
+#if 0
 //--------------------------------------------------------------------------
 // check if this file should be skipped based on contents.
 //--------------------------------------------------------------------------
@@ -469,7 +477,9 @@ static int CheckFileSkip(void)
 
     return FALSE;
 }
+#endif
 
+#if 0
 //--------------------------------------------------------------------------
 // Subsititute original name for '&i' if present in specified name.
 // This to allow specifying relative names when manipulating multiple files.
@@ -490,9 +500,11 @@ static void RelativeName(char * OutFileName, const char * NamePattern, const cha
         strncpy(OutFileName, NamePattern, PATH_MAX); 
     }
 }
+#endif
 
 
 #ifdef _WIN32
+#if 0
 //--------------------------------------------------------------------------
 // Rename associated files
 //--------------------------------------------------------------------------
@@ -548,7 +560,9 @@ void RenameAssociated(const char * FileName, char * NewBaseName)
     _findclose(find_handle);
 }
 #endif
+#endif
 
+#if 0
 //--------------------------------------------------------------------------
 // Handle renaming of files by date.
 //--------------------------------------------------------------------------
@@ -703,7 +717,9 @@ static void DoFileRenaming(const char * FileName)
         }
     }
 }
+#endif
 
+#if 0
 //--------------------------------------------------------------------------
 // Rotate the image and its thumbnail
 //--------------------------------------------------------------------------
@@ -754,6 +770,7 @@ static int DoAutoRotate(const char * FileName)
     }
     return FALSE;
 }
+#endif
 
 //--------------------------------------------------------------------------
 // Regenerate the thumbnail using mogrify
@@ -779,6 +796,7 @@ static int RegenerateThumbnail(const char * FileName)
 }
 
 
+#if 0
 //--------------------------------------------------------------------------
 // Do selected operations to one file at a time.
 //--------------------------------------------------------------------------
@@ -1206,7 +1224,9 @@ badtime:
     printf("Error: Time '%s': cannot convert to Unix time\n",ImageInfo.DateTime);
     DiscardData();
 }
+#endif
 
+#if 0
 //--------------------------------------------------------------------------
 // complain about bad state of the command line.
 //--------------------------------------------------------------------------
@@ -1363,8 +1383,10 @@ static void Usage (void)
 
     exit(EXIT_FAILURE);
 }
+#endif
 
 
+#if 0
 //--------------------------------------------------------------------------
 // Parse specified date or date+time from command line.
 //--------------------------------------------------------------------------
@@ -1397,7 +1419,9 @@ static time_t ParseCmdDate(char * DateSpecified)
     
     return UnixTime;    
 }
+#endif
 
+#if 0
 //--------------------------------------------------------------------------
 // The main program.
 //--------------------------------------------------------------------------
@@ -1701,6 +1725,6 @@ int main (int argc, char **argv)
         return EXIT_SUCCESS;
     }
 }
-
+#endif
 
 #endif

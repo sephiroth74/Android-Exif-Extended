@@ -32,14 +32,13 @@ LOCAL_SRC_FILES:= \
 
 LOCAL_MODULE    := libexif_extended
 
-LOCAL_CFLAGS += -DLOG_ENABLED -g -O0
+LOCAL_CFLAGS += -O2
 
 LOCAL_SHARED_LIBRARIES := \
 	libcutils \
 	libutils
 	
 LOCAL_STATIC_LIBRARIES += \
-		libstlport_static \
 
 LOCAL_LDLIBS += -llog -ldl -L$(SYSROOT)/usr/lib
 

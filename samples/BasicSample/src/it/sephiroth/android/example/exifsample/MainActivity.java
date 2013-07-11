@@ -255,7 +255,7 @@ public class MainActivity extends Activity implements OnClickListener {
 			}
 			
 			if( mExif.hasAttribute( ExifInterfaceExtended.TAG_EXIF_EXPOSURE_TIME )) {
-				exifText.append( "Exposure Time: " + mExif.getAttributeDouble( ExifInterfaceExtended.TAG_EXIF_EXPOSURE_TIME, 0 ) + "s\n" );
+				exifText.append( "Exposure Time: " + mExif.getAttribute( ExifInterfaceExtended.TAG_EXIF_EXPOSURE_TIME ) + "s\n" );
 			}
 			
 			double fNumber = mExif.getApertureSize();

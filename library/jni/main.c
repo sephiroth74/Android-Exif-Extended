@@ -163,12 +163,6 @@ extern "C"
 
 // JNI Methods
 
-	static jboolean appendThumbnail(JNIEnv *env, jobject jobj, jstring jfilename, jstring jthumbnailfilename)
-	{
-		LOGI("******************************** appendThumbnail");
-		return JNI_FALSE;
-	}
-
 	void copyThumbnailData(uchar* thumbnailData, int thumbnailLen)
 	{
 		LOGI("******************************** copyThumbnailData");
@@ -852,7 +846,6 @@ extern "C"
 	{
 		{ "saveAttributesNative", "(Ljava/lang/String;Ljava/lang/String;)V", (void*) saveAttributes},
 		{ "getAttributesNative", "(Ljava/lang/String;)Ljava/lang/String;", (void*) getAttributes},
-		{ "appendThumbnailNative", "(Ljava/lang/String;Ljava/lang/String;)Z", (void*) appendThumbnail},
 		{ "commitChangesNative", "(Ljava/lang/String;)V", (void*) commitChanges},
 		{ "getThumbnailNative", "(Ljava/lang/String;)[B", (void*) getThumbnail},
 	};

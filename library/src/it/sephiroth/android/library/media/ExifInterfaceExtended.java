@@ -1169,8 +1169,6 @@ public class ExifInterfaceExtended {
 	// -------------------
 	
 	
-	private native boolean appendThumbnailNative( String fileName, String thumbnailFileName );
-
 	private native void saveAttributesNative( String fileName, String compressedAttributes );
 
 	private native String getAttributesNative( String fileName );
