@@ -32,7 +32,11 @@ LOCAL_SRC_FILES:= \
 
 LOCAL_MODULE    := libexif_extended
 
-LOCAL_CFLAGS += -O2
+LOCAL_CFLAGS += -w -O2
+
+ifeq ($(strip $(ENABLE_LOGGING)),true)
+	LOCAL_CFLAGS += -DLOG_ENABLED
+endif
 
 LOCAL_SHARED_LIBRARIES := \
 	libcutils \
@@ -40,7 +44,7 @@ LOCAL_SHARED_LIBRARIES := \
 	
 LOCAL_STATIC_LIBRARIES += \
 
+
 LOCAL_LDLIBS += -llog -ldl -L$(SYSROOT)/usr/lib
 
 include $(BUILD_SHARED_LIBRARY)
-
