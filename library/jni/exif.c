@@ -1228,7 +1228,7 @@ static void ProcessExifDir(unsigned char * DirStart, unsigned char * OffsetBase,
 				if (ByteCount == 4)
 				{
 					strncpy(ImageInfo.ExifVersion, (char *) ValuePtr, ByteCount);
-					LOGD("ExifVersion: %s", ImageInfo.ExifVersion);
+					LOGD("ExifVersion: '%4c', bytecount: %i", ImageInfo.ExifVersion, ByteCount);
 				} else
 				{
 					ErrNonfatal("ExifVersion invalid byte count: %i ( it should be %i )", ByteCount, 4);
