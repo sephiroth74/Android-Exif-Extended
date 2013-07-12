@@ -304,6 +304,19 @@ int TagNameToValue(const char* tagName)
 	return -1;
 }
 
+const char* TagValueToName( int tag )
+{
+	unsigned int i;
+	for( i = 0; i < TAG_TABLE_SIZE; i++ )
+	{
+		if( TagTable[i].Tag == tag )
+		{
+			return TagTable[i].Desc;
+		}
+	}
+	return NULL;
+}
+
 // Returns true if the passed tag is a DateTime tag
 int IsDateTimeTag(unsigned short tag)
 {
@@ -664,6 +677,7 @@ static void ProcessExifDir(unsigned char * DirStart, unsigned char * OffsetBase,
 		int ByteCount;
 		unsigned char * DirEntry;
 		DirEntry = DIR_ENTRY_ADDR(DirStart, de);
+		const char* TagName;
 
 		Tag = Get16u(DirEntry);
 		Format = Get16u(DirEntry + 2);
@@ -1227,8 +1241,12 @@ static void ProcessExifDir(unsigned char * DirStart, unsigned char * OffsetBase,
 			case TAG_EXIF_VERSION:
 				if (ByteCount == 4)
 				{
-					strncpy(ImageInfo.ExifVersion, (char *) ValuePtr, ByteCount);
-					LOGD("ExifVersion: '%4c', bytecount: %i", ImageInfo.ExifVersion, ByteCount);
+					ImageInfo.ExifVersion[0] = ValuePtr[0];
+					ImageInfo.ExifVersion[1] = ValuePtr[1];
+					ImageInfo.ExifVersion[2] = ValuePtr[2];
+					ImageInfo.ExifVersion[3] = ValuePtr[3];
+					// strncpy(ImageInfo.ExifVersion, (char *) ValuePtr, ByteCount);
+					LOGD("ExifVersion: %c %c %c %c, size: %i", ImageInfo.ExifVersion[0], ImageInfo.ExifVersion[1], ImageInfo.ExifVersion[2], ImageInfo.ExifVersion[3], strlen(ImageInfo.ExifVersion));
 				} else
 				{
 					ErrNonfatal("ExifVersion invalid byte count: %i ( it should be %i )", ByteCount, 4);
@@ -1254,8 +1272,41 @@ static void ProcessExifDir(unsigned char * DirStart, unsigned char * OffsetBase,
 				LOGD("Compression: %i", ImageInfo.Compression);
 				break;
 
+			case TAG_SHARPNESS:
+				ImageInfo.Sharpness = (int) ConvertAnyFormat(ValuePtr, Format);
+				LOGD("Sharpness: %i", ImageInfo.Sharpness);
+				break;
+
+			case TAG_CONTRAST:
+				ImageInfo.Contrast = (int) ConvertAnyFormat(ValuePtr, Format);
+				LOGD("Contrast: %i", ImageInfo.Contrast);
+				break;
+
+			case TAG_SATURATION:
+				ImageInfo.Saturation = (int) ConvertAnyFormat(ValuePtr, Format);
+				LOGD("Saturation: %i", ImageInfo.Saturation);
+				break;
+
+			case TAG_GAIN_CONTROL:
+				ImageInfo.GainControl = (int) ConvertAnyFormat(ValuePtr, Format);
+				LOGD("GainControl: %i", ImageInfo.GainControl);
+				break;
+
 			default:
+
+#ifdef LOG_ENABLED
+				TagName = TagValueToName( Tag );
+
+				if( TagName )
+				{
+					LOGV("Unprocessed tag: x%x, name: %s, count: %i", Tag, TagName, ByteCount);
+				} else
+				{
+					LOGV("Unprocessed tag: x%x, count: %i", Tag, ByteCount);
+				}
+#else
 				LOGV("Unprocessed tag: x%x, count: %i", Tag, ByteCount);
+#endif
 				break;
 
 		}

@@ -547,6 +547,57 @@ public class ExifInterfaceExtended {
 	 * <li>Other = reserved</li>
 	 */
 	public static final String TAG_EXIF_COMPRESSION = "Compression";
+	
+   /**
+    * Value is int.<br />
+    * This tag indicates the direction of sharpness processing applied by the camera when the image was shot
+    * <ul>
+    * <li>0 = Normal</li>
+    * <li>1 = Soft</li>
+    * <li>2 = Hard</li>
+    * <li>Other = reserved</li>
+    * </ul>
+    */
+	public static final String TAG_EXIF_SHARPNESS = "Sharpness";
+	
+   /**
+    * Value is int.<br />
+    * This tag indicates the direction of contrast processing applied by the camera when the image was shot.
+    * <ul>
+    * <li>0 = Normal</li>
+    * <li>1 = Soft</li>
+    * <li>2 = Hard</li>
+    * <li>Other = reserved</li>
+    * </ul>
+    */
+	public static final String TAG_EXIF_CONTRAST = "Contrast";
+	
+   /**
+    * Value is int.<br />
+    * This tag indicates the direction of saturation processing applied by the camera when the image was shot.
+    * <ul>
+    * <li>0 = Normal</li>
+    * <li>1 = Low saturation</li>
+    * <li>2 = High saturation</li>
+    * <li>Other = reserved</li>
+    * </ul>
+    */	
+	public static final String TAG_EXIF_SATURATION = "Saturation";
+	
+   /**
+    * Value is int.<br />
+    * This tag indicates the degree of overall image gain adjustment.
+    * <ul>
+    * <li>0 = None</li>
+    * <li>1 = Low gain up</li>
+    * <li>2 = High gain up</li>
+    * <li>3 = Low gain down</li>
+    * <li>4 = High gain down</li>
+    * <li>Other = reserved</li>
+    * </ul>
+    */	
+	public static final String TAG_EXIF_GAIN_CONTROL = "GainControl";
+	
 
 	/**
 	 * Value is string.<br />

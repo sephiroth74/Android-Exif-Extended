@@ -267,7 +267,7 @@ typedef struct {
      * Indicates the image sensor type on the camera or input device. The values are as follows
      * 1 = Not defined
      * 2 = One-chip color area sensor
-     * 3 = Two-chip color area sensor JEITA CP-3451 - 41 -
+     * 3 = Two-chip color area sensor
      * 4 = Three-chip color area sensor
      * 5 = Color sequential area sensor
      * 7 = Trilinear sensor
@@ -507,6 +507,46 @@ typedef struct {
      */
     int Compression;
 
+    /*
+     * unsigned short
+     * This tag indicates the direction of sharpness processing applied by the camera when the image was shot
+     * 0 = Normal
+     * 1 = Soft
+     * 2 = Hard
+     * Other = reserved
+     */
+    int Sharpness;
+
+    /* unsigned short
+     * This tag indicates the direction of contrast processing applied by the camera when the image was shot.
+     * 0 = Normal
+     * 1 = Soft
+     * 2 = Hard
+     * Other = reserved
+     */
+    int Contrast;
+
+    /* unsigned short
+     * This tag indicates the direction of saturation processing applied by the camera when the image was shot
+     * 0 = Normal
+     * 1 = Low saturation
+     * 2 = High saturation
+     * Other = reserved
+     */
+    int Saturation;
+
+    /* unsigned short
+     * This tag indicates the degree of overall image gain adjustment.
+     * 0 = None
+     * 1 = Low gain up
+     * 2 = High gain up
+     * 3 = Low gain down
+     * 4 = High gain down
+     * Other = reserved
+     *
+     */
+    int GainControl;
+
 }ImageInfo_t;
 
 
@@ -563,6 +603,7 @@ int IsGpsTag(const char* tag);
 int GpsTagNameToValue(const char* tagName);
 TagTable_t* GpsTagToTagTableEntry(unsigned short tag);
 int TagNameToValue(const char* tagName);
+const char* TagValueToName( int tag );
 int IsDateTimeTag(unsigned short tag);
 
 static const char ExifAsciiPrefix[] = { 0x41, 0x53, 0x43, 0x49, 0x49, 0x0, 0x0, 0x0 };

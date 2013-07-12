@@ -54,6 +54,13 @@ extern "C"
 		return bufLen;
 	}
 
+	static int addKeyValueBytes(char** buf, int bufLen, const char* key, char* value, int size)
+	{
+		char valueStr[30];
+		snprintf(valueStr, size + 1, "%s", value);
+		return addKeyValueString(buf, bufLen, key, valueStr);
+	}
+
 	// returns new buffer length
 	static int addKeyValueInt(char** buf, int bufLen, const char* key, int value)
 	{
@@ -90,6 +97,10 @@ extern "C"
 		ImageInfo.Flash = -1;
 		ImageInfo.MeteringMode = -1;
 		ImageInfo.Whitebalance = -1;
+		ImageInfo.Sharpness = -1;
+		ImageInfo.Contrast = -1;
+		ImageInfo.GainControl = -1;
+
 
 		// Store file date/time.
 		{
@@ -677,7 +688,7 @@ extern "C"
 
 		if(ImageInfo.ExifVersion[0])
 		{
-			bufLen = addKeyValueString(&buf, bufLen, "ExifVersion", ImageInfo.ExifVersion);
+			bufLen = addKeyValueBytes(&buf, bufLen, "ExifVersion", ImageInfo.ExifVersion, 4);
 			if (bufLen == 0) return NULL;
 		}
 
@@ -712,6 +723,31 @@ extern "C"
 			bufLen = addKeyValueInt(&buf, bufLen, "FileSize", ImageInfo.FileSize);
 			if (bufLen == 0) return NULL;
 		}
+
+		if( ImageInfo.Sharpness >= 0)
+		{
+			bufLen = addKeyValueInt(&buf, bufLen, "Sharpness", ImageInfo.Sharpness);
+			if (bufLen == 0) return NULL;
+		}
+
+		if( ImageInfo.Contrast >= 0)
+		{
+			bufLen = addKeyValueInt(&buf, bufLen, "Contrast", ImageInfo.Contrast);
+			if (bufLen == 0) return NULL;
+		}
+
+		if(ImageInfo.Saturation >= 0)
+		{
+			bufLen = addKeyValueInt(&buf, bufLen, "Saturation", ImageInfo.Saturation);
+			if (bufLen == 0) return NULL;
+		}
+
+		if(ImageInfo.GainControl >= 0)
+		{
+			bufLen = addKeyValueInt(&buf, bufLen, "GainControl", ImageInfo.GainControl);
+			if (bufLen == 0) return NULL;
+		}
+
 
 		// GPS
 		if (ImageInfo.GpsInfoPresent)

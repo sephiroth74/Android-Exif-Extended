@@ -50,6 +50,7 @@ public class MainActivity extends Activity implements OnClickListener {
 		button2.setOnClickListener( this );
 		
 		String uriString = "content://media/external/images/media/32706";
+		uriString = "content://media/external/images/media/41402";
 		// uriString = "content://media/external/images/media/25470";
 		// String uriString = "content://media/external/images/media/32705";
 		// String uriString = ( "content://media/external/images/media/18937";
@@ -138,6 +139,9 @@ public class MainActivity extends Activity implements OnClickListener {
 	}
 	
 	private void processFile( Uri uri ) {
+		
+		Log.i( LOG_TAG, "processFile: " + uri );
+		
 		String filename = IOUtils.getRealFilePath( this, uri );
 		
 		if( null == filename ) {
@@ -316,7 +320,7 @@ public class MainActivity extends Activity implements OnClickListener {
 			if( mExif.getAttributeDouble( ExifInterfaceExtended.TAG_EXIF_SHUTTER_SPEED_VALUE, 0 ) > 0 ) {
 				double value = mExif.getAttributeDouble( ExifInterfaceExtended.TAG_EXIF_SHUTTER_SPEED_VALUE, 0 );
 				
-				numberFormatter.setMaximumFractionDigits( 1 );
+				numberFormatter.setMaximumFractionDigits( 0 );
 				String string = "1/" + numberFormatter.format( Math.pow( 2, value )) + "s";
 				exifText.append( "Shutter Speed: " + string + "\n" );
 			}
@@ -327,6 +331,22 @@ public class MainActivity extends Activity implements OnClickListener {
 			
 			if( mExif.hasAttribute( ExifInterfaceExtended.TAG_EXIF_SCENE_CAPTURE_TYPE )) {
 				exifText.append( "Scene Capture Type: " + processSceneCaptureType( mExif.getAttributeInt( ExifInterfaceExtended.TAG_EXIF_SCENE_CAPTURE_TYPE, 0 )) + "\n" );
+			}
+			
+			if( mExif.hasAttribute( ExifInterfaceExtended.TAG_EXIF_SHARPNESS )) {
+				exifText.append( "Sharpness: " + processSharpness( mExif.getAttributeInt( ExifInterfaceExtended.TAG_EXIF_SHARPNESS, 0 )) + "\n" );
+			}
+			
+			if( mExif.hasAttribute( ExifInterfaceExtended.TAG_EXIF_CONTRAST )) {
+				exifText.append( "Contrast: " + processContrast( mExif.getAttributeInt( ExifInterfaceExtended.TAG_EXIF_CONTRAST, 0 )) + "\n" );
+			}
+			
+			if( mExif.hasAttribute( ExifInterfaceExtended.TAG_EXIF_SATURATION )) {
+				exifText.append( "Saturation: " + processSaturation( mExif.getAttributeInt( ExifInterfaceExtended.TAG_EXIF_SATURATION, 0 )) + "\n" );
+			}
+			
+			if( mExif.hasAttribute( ExifInterfaceExtended.TAG_EXIF_GAIN_CONTROL )) {
+				exifText.append( "Gain Control: " + processGainControl( mExif.getAttributeInt( ExifInterfaceExtended.TAG_EXIF_GAIN_CONTROL, 0 )) + "\n" );
 			}
 			
 			// GPS
@@ -361,6 +381,45 @@ public class MainActivity extends Activity implements OnClickListener {
 		}
 		new LoadThumbnailTask().execute( filename );
 	}
+	
+	private String processSharpness( int value ){
+		switch ( value ) {
+			case 0: return "Normal";
+			case 1: return "Soft";
+			case 2: return "Hard";
+			default: return "Unknown";
+		}
+	}
+	
+	private String processContrast( int value ){
+		switch ( value ) {
+			case 0: return "Normal";
+			case 1: return "Soft";
+			case 2: return "Hard";
+			default: return "Unknown";
+		}
+	}
+	
+	private String processSaturation( int value ){
+		switch ( value ) {
+			case 0: return "Normal";
+			case 1: return "Low Saturation";
+			case 2: return "High Saturation";
+			default: return "Unknown";
+		}
+	}
+	
+	private String processGainControl( int value ){
+		switch ( value ) {
+			case 0: return "None";
+			case 1: return "Low Gain Up";
+			case 2: return "High Gain Up";
+			case 3: return "Low Gain Down";
+			case 4: return "High Gain Down";
+			default: return "Unknown";
+		}
+	}	
+	
 	
 	private String processSceneCaptureType( int value ){
 		switch( value ) {
@@ -600,11 +659,13 @@ public class MainActivity extends Activity implements OnClickListener {
 			
 			Log.d( LOG_TAG, "lat: " + lat + ", lon: " + lon );
 
-			List<Address> result;
+			List<Address> result = null;
 
 			try {
-				Geocoder geo = new Geocoder( MainActivity.this );
-				result = geo.getFromLocation( lat, lon, 1 );
+				if( Geocoder.isPresent() ){
+					Geocoder geo = new Geocoder( MainActivity.this );
+					result = geo.getFromLocation( lat, lon, 1 );
+				}
 			} catch ( Exception e ) {
 				e.printStackTrace();
 				return null;
