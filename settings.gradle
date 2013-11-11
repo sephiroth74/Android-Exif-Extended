@@ -1,0 +1,5 @@
+rootProject.name = 'android-exif-extended'
+
+include ':library-native'
+include ':library'
+include ':samples'

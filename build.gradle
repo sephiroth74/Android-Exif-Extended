@@ -1,0 +1,26 @@
+buildscript {
+    repositories {
+        mavenCentral()
+        mavenLocal()
+    }
+
+    dependencies {
+        classpath 'com.android.tools.build:gradle:0.6.3+'
+    }
+}
+
+allprojects {
+    group = 'it.sephiroth.android'
+    version = '2.97'
+
+    apply plugin: 'maven'
+    apply plugin: 'maven-publish'
+
+    repositories {
+        mavenCentral()
+        mavenLocal()
+        maven {
+            url "file://$System.env.HOME/.m2/repository/"
+        }
+    }
+}

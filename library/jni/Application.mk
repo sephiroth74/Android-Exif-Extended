@@ -1,3 +1,0 @@
-
-APP_PLATFORM	:= android-9
-ENABLE_LOGGING := true

@@ -1,0 +1,94 @@
+
+apply plugin: 'java'
+
+group = 'it.sephiroth.android'
+version = '2.97'
+
+project.ext {
+    outJar = rootProject.name + '-' + version + '.jar'
+    baseName = rootProject.name + '-native'
+    nativeJar = rootProject.name + '-native-' + version + '.jar'
+}
+
+task createPom << {
+    pom {
+        project {
+            groupId 'it.sephiroth.android'
+            artifactId project.ext.baseName
+            version version
+            inceptionYear '2012'
+            licenses {
+                license {
+                    name 'Public Domain Software'
+                    distribution 'repo'
+                }
+            }            
+        }
+    }.writeTo("pom.xml")
+}
+
+task nativeLibsToJar(type: Zip, description: 'create a jar archive of the native libs') {
+    destinationDir file("$buildDir/native-libs")
+    baseName project.ext.baseName
+    extension 'jar'
+    from fileTree(dir: 'libs', include: '**/*.so')
+    into 'lib/'
+}
+
+task moveNativeJarLib(type: Copy) {
+    from("$buildDir/native-libs")
+    into("$buildDir/libs")
+    include('*.jar')
+}
+
+task ndkBuild(type:Exec) {
+    commandLine 'ndk-build', '-j8'
+}
+
+task copyNativeLibs(type: Copy) {
+    from fileTree(dir: 'libs', include: '**/*.so' )
+    into "$buildDir/native-libs"
+}
+
+task cleanNativeLibs(type: Delete) {
+    delete "$buildDir/native-libs"
+    delete "libs"
+    delete "obj"
+}
+
+moveNativeJarLib.dependsOn(nativeLibsToJar)
+nativeLibsToJar.dependsOn(copyNativeLibs)
+copyNativeLibs.dependsOn(ndkBuild)
+clean.dependsOn(cleanNativeLibs)
+
+tasks.withType(Compile) {
+    options.encoding = 'UTF-8'
+}
+
+
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            repository(url: "file://$System.env.HOME/.m2/repository/")
+        }
+    }
+}
+
+configurations {
+    allJars
+}
+
+artifacts {
+    allJars file("$buildDir/libs/" + project.ext.nativeJar)
+}
+
+uploadAllJars {
+    repositories {
+        mavenDeployer {
+            repository(url: "file://$System.env.HOME/.m2/repository/")
+        }
+    }
+}
+
+build.dependsOn(moveNativeJarLib)
+build.dependsOn(uploadAllJars)

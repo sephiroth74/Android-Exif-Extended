@@ -218,7 +218,7 @@ public class MainActivity extends Activity implements OnClickListener {
 			}
 			
 			if( mExif.hasAttribute( ExifInterfaceExtended.TAG_EXIF_ORIENTATION )) {
-				exifText.append( "Orientation: " + mExif.getOrientation() + "¡\n" );
+				exifText.append( "Orientation: " + mExif.getOrientation() + "Â°\n" );
 			}
 			
 			if( mExif.hasAttribute( ExifInterfaceExtended.TAG_EXIF_DATETIME )) {
@@ -498,10 +498,10 @@ public class MainActivity extends Activity implements OnClickListener {
 			case 9: return "Fine weather";
 			case 10: return "Cloudy weather";
 			case 11: return "Shade";
-			case 12: return "Daylight fluorescent (D 5700 Ð 7100K)";
-			case 13: return "Day white fluorescent (N 4600 Ð 5400K)";
-			case 14: return "Cool white fluorescent (W 3900 Ð 4500K)";
-			case 15: return "White fluorescent (WW 3200 Ð 3700K)";
+			case 12: return "Daylight fluorescent (D 5700 - 7100K)";
+			case 13: return "Day white fluorescent (N 4600 - 5400K)";
+			case 14: return "Cool white fluorescent (W 3900 - 4500K)";
+			case 15: return "White fluorescent (WW 3200 - 3700K)";
 			case 17: return "Standard light A";
 			case 18: return "Standard light B";
 			case 19: return "Standard light C";

@@ -390,10 +390,10 @@ public class ExifInterfaceExtended {
 	 * <li>9 = Fine weather</li>
 	 * <li>10 = Cloudy weather</li>
 	 * <li>11 = Shade</li>
-	 * <li>12 = Daylight fluorescent (D 5700 Ð 7100K)</li>
-	 * <li>13 = Day white fluorescent (N 4600 Ð 5400K)</li>
-	 * <li>14 = Cool white fluorescent (W 3900 Ð 4500K)</li>
-	 * <li>15 = White fluorescent (WW 3200 Ð 3700K)</li>
+	 * <li>12 = Daylight fluorescent (D 5700 - 7100K)</li>
+	 * <li>13 = Day white fluorescent (N 4600 - 5400K)</li>
+	 * <li>14 = Cool white fluorescent (W 3900 - 4500K)</li>
+	 * <li>15 = White fluorescent (WW 3200 - 3700K)</li>
 	 * <li>17 = Standard light A</li>
 	 * <li>18 = Standard light B</li>
 	 * <li>19 = Standard light C</li>
@@ -979,7 +979,7 @@ public class ExifInterfaceExtended {
 	
 	/**
 	 * Returns a formatted String with the latitude representation:<br />
-	 * 39¡ 8' 16.8" N
+	 * 39Â° 8' 16.8" N
 	 * @return
 	 */
 	public String getLatitude() {
@@ -991,7 +991,7 @@ public class ExifInterfaceExtended {
 
 	/**
 	 * Returns a formatted String with the longitude representation:<br />
-	 * 77¡ 37' 51.6" W
+	 * 77Â° 37' 51.6" W
 	 * @return
 	 */
 	public String getLongitude() {
@@ -1190,7 +1190,7 @@ public class ExifInterfaceExtended {
 			pair = parts[2].split( "/" );
 			double seconds = Double.parseDouble( pair[0].trim() ) / Double.parseDouble( pair[1].trim() );
 
-			return String.format( "%1$.0f¡ %2$.0f' %3$.0f\" %4$s", degrees, minutes, seconds, ref.toUpperCase( Locale.getDefault() ) );
+			return String.format( "%1$.0fÂ° %2$.0f' %3$.0f\" %4$s", degrees, minutes, seconds, ref.toUpperCase( Locale.getDefault() ) );
 		} catch ( NumberFormatException e ) {
 			e.printStackTrace();
 		} catch ( ArrayIndexOutOfBoundsException e ) {
