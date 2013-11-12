@@ -65,7 +65,6 @@ tasks.withType(Compile) {
     options.encoding = 'UTF-8'
 }
 
-
 uploadArchives {
     repositories {
         mavenDeployer {
