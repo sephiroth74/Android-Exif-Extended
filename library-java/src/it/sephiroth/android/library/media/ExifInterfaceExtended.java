@@ -45,8 +45,12 @@ import android.util.Log;
 @SuppressLint("DefaultLocale")
 public class ExifInterfaceExtended {
 
+	public static final String VERSION = "2.97";
+
 	private static final String LOG_TAG = "ExifInterfaceExtended";
+
 	private static final Object sLock = new Object();
+
 	private static SimpleDateFormat sFormatter;
 
 	// ----------------------

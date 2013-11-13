@@ -1,11 +1,21 @@
 
 apply plugin: 'java'
 
-println "Project Name: ${project.name}"
 
 project.ext {
     baseName = name
     nativeJar = name + "-" + version + ".jar"
+}
+
+// Remove the default jar artifact
+configurations.archives.artifacts.each { 
+  if (it.archiveTask == jar) { 
+    configurations.archives.artifacts.remove(it) 
+  } 
+}
+
+artifacts {
+    archives file("$buildDir/native-libs/" + project.ext.nativeJar)
 }
 
 def generatePom() {
@@ -15,7 +25,7 @@ def generatePom() {
             artifactId project.name
             version version
             packaging 'jar'
-            description 'Exif extended library for Android, based on jhead c library (http://www.sentex.net/~mwandel/jhead/) '
+            description 'Exif extended library (native) for Android, based on jhead c library (http://www.sentex.net/~mwandel/jhead/) '
             inceptionYear '2013'
             url 'git@github.com:sephiroth74/Android-Exif-Extended.git'
 
@@ -27,11 +37,10 @@ def generatePom() {
             }
 
             scm {
-                url                 "scm:git@github.com:sephiroth74/Android-Exif-Extended.git"
-                connection          "scm:git@github.com:sephiroth74/Android-Exif-Extended.git"
-                developerConnection "scm:git@github.com:sephiroth74/Android-Exif-Extended.git"
+                url                 "scm:git:git@github.com:sephiroth74/Android-Exif-Extended.git"
+                connection          "scm:git:git@github.com:sephiroth74/Android-Exif-Extended.git"
+                developerConnection "scm:git:git@github.com:sephiroth74/Android-Exif-Extended.git"
             }
-
 
             developers {
                 developer {
@@ -85,17 +94,6 @@ tasks.withType(Compile) {
     options.encoding = 'UTF-8'
 }
 
-// Remove the default jar artifact
-configurations.archives.artifacts.each { 
-  if (it.archiveTask == jar) { 
-    configurations.archives.artifacts.remove(it) 
-  } 
-}
-
-artifacts {
-    archives file("$buildDir/native-libs/" + project.ext.nativeJar)
-}
-
 uploadArchives {
     doFirst {
         repositories.mavenDeployer.pom = generatePom()
@@ -106,8 +104,8 @@ uploadArchives {
     }
 }
 
-clean.dependsOn 'cleanNativeLibs'
-nativeLibsToJar.dependsOn 'copyNativeLibs'
-copyNativeLibs.dependsOn 'ndkBuild'
-build.dependsOn = ['writePom', 'nativeLibsToJar']
+clean.dependsOn(cleanNativeLibs)
+nativeLibsToJar.dependsOn(copyNativeLibs)
+copyNativeLibs.dependsOn(ndkBuild)
+build.dependsOn(writePom, nativeLibsToJar)
 
