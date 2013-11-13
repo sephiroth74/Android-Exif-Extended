@@ -41,6 +41,7 @@ def generatePom() {
             groupId groupId
             artifactId project.name
             version version
+            packaging 'aar'
             description 'Exif extended library for Android, based on jhead c library (http://www.sentex.net/~mwandel/jhead/) '
             inceptionYear '2013'
             url 'git@github.com:sephiroth74/Android-Exif-Extended.git'
