@@ -31,10 +31,12 @@ library/libs/armeabi/gdb.setup
 library/libs/armeabi/gdbserver
 
 .gradle
-library/build
 samples/build
+library-java/build
 library-native/build
 library-native/obj
 library-native/gen
 
-*.so
+**/*.so
+
+build/

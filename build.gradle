@@ -10,7 +10,7 @@ buildscript {
 }
 
 allprojects {
-    group = 'it.sephiroth.android'
+    group = 'it.sephiroth.android.library.media'
     version = '2.97'
 
     apply plugin: 'maven'
@@ -23,4 +23,8 @@ allprojects {
             url "file://$System.env.HOME/.m2/repository/"
         }
     }
+}
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '1.8'
 }

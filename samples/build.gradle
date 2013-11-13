@@ -1,7 +1,7 @@
 apply plugin: 'android'
 
 dependencies {
-    compile project(':library')
+    compile project(':android-exif-extended-java')
 }
 
 android {

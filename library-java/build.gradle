@@ -1,12 +1,39 @@
 
-apply plugin: 'java'
+apply plugin: 'android-library'
 
-println "Project Name: ${project.name}"
+dependencies {
+    compile 'com.android.support:support-v4:19.0.+'
+    compile 'it.sephiroth.android.library.media:android-exif-extended-native:2.97'
+}
+
+android {
+    compileSdkVersion 19
+    buildToolsVersion "18.1.1"
+
+    defaultConfig {
+        versionCode 1
+        versionName version
+        minSdkVersion 9
+        targetSdkVersion 19
+    }
+
+    sourceSets {
+        main {
+            manifest.srcFile 'AndroidManifest.xml'
+            java.srcDirs = ['src']
+            resources.srcDirs = ['src']
+            aidl.srcDirs = ['src']
+            renderscript.srcDirs = ['src']
+            res.srcDirs = ['res']
+            assets.srcDirs = ['assets']
+        }
+    }
+}
 
 project.ext {
-    baseName = name
-    nativeJar = name + "-" + version + ".jar"
+    outJar = rootProject.name + '-' + version + '.jar'
 }
+
 
 def generatePom() {
     def pom = pom{
@@ -48,6 +75,17 @@ def generatePom() {
     }
 }
 
+task clearJar(type: Delete) {
+    delete "build/libs/" + project.ext.outJar
+}
+
+task makeJar(type: Copy) {
+    from('build/bundles/release/')
+    into('build/libs/')
+    include('classes.jar')
+    rename ('classes.jar', project.ext.outJar)
+}
+
 task writePom {
     ext.pomXml = file("pom.xml")
     inputs.file(project.buildFile)
@@ -55,44 +93,6 @@ task writePom {
     doLast {
         generatePom().writeTo(pomXml)
     }
-}
-
-task nativeLibsToJar(type: Zip, description: 'create a jar archive of the native libs') {
-    destinationDir file("$buildDir/native-libs")
-    baseName project.ext.baseName
-    extension 'jar'
-    from fileTree(dir: 'libs', include: '**/*.so')
-    into 'lib/'
-}
-
-task ndkBuild(type:Exec) {
-    commandLine 'ndk-build', '-j8'
-}
-
-task copyNativeLibs(type: Copy) {
-    from fileTree(dir: 'libs', include: '**/*.so' )
-    into "$buildDir/native-libs"
-}
-
-task cleanNativeLibs(type: Delete) {
-    delete "$buildDir/native-libs"
-    delete "libs"
-    delete "obj"
-}
-
-tasks.withType(Compile) {
-    options.encoding = 'UTF-8'
-}
-
-// Remove the default jar artifact
-configurations.archives.artifacts.each { 
-  if (it.archiveTask == jar) { 
-    configurations.archives.artifacts.remove(it) 
-  } 
-}
-
-artifacts {
-    archives file("$buildDir/native-libs/" + project.ext.nativeJar)
 }
 
 uploadArchives {
@@ -105,8 +105,6 @@ uploadArchives {
     }
 }
 
-clean.dependsOn 'cleanNativeLibs'
-nativeLibsToJar.dependsOn 'copyNativeLibs'
-copyNativeLibs.dependsOn 'ndkBuild'
-build.dependsOn = ['writePom', 'nativeLibsToJar']
+clean.dependsOn 'clearJar'
+build.dependsOn = ['writePom','makeJar']
 
