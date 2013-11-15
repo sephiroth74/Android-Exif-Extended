@@ -32,11 +32,14 @@ library/libs/armeabi/gdbserver
 
 .gradle
 samples/build
-library-java/build
-library-native/build
-library-native/obj
-library-native/gen
+android-exif-extended-java/build
+android-exif-extended-native/build
+android-exif-extended-native/obj
+android-exif-extended-native/gen
 
 **/*.so
 
 build/
+
+.idea/
+.gradle/

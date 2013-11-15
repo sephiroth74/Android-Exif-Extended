@@ -1,14 +1,4 @@
 
-include ':library-native'
-include ':library-java'
+include ':android-exif-extended-native'
+include ':android-exif-extended-java'
 include ':samples'
-
-rootProject.name = 'android-exif-extended'
-
-rootProject.children.each { 
-	if( it.name.startsWith('library') ) {
-		it.name = rootProject.name + it.name.replace('library','')
-	} else {
-		it.name = rootProject.name + "-" + it.name
-	}
-}

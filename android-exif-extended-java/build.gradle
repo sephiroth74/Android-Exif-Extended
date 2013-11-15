@@ -3,7 +3,12 @@ apply plugin: 'android-library'
 
 dependencies {
     compile 'com.android.support:support-v4:19.0.+'
-    compile project(':android-exif-extended-native')
+
+    if( rootProject.name.equals('Android-Exif-Extended') ) {
+        compile project(':android-exif-extended-native')
+    } else {
+        compile project(':Android-Exif-Extended:android-exif-extended-native')
+    }
 }
 
 android {
@@ -30,18 +35,24 @@ android {
     }
 }
 
+task displayInfo << {
+    logger.lifecycle "  project name: ${project.name} (root: ${rootProject.name})"
+    logger.lifecycle "  project version: ${project.version}"
+    logger.lifecycle "  project group: ${project.group}"
+}
+
+
 project.ext {
-    outJar = rootProject.name + '-' + version + '.jar'
+    outJar = project.name + '-' + project.version + '.jar'
 }
 
 
 def generatePom() {
-    def pom = pom{
+    def pom = pom {
         project {
-            groupId groupId
+            groupId project.group
             artifactId project.name
-            version version
-            packaging 'aar'
+            version project.version
             description 'Exif extended library (java) for Android, based on jhead c library (http://www.sentex.net/~mwandel/jhead/) '
             inceptionYear '2013'
             url 'git@github.com:sephiroth74/Android-Exif-Extended.git'

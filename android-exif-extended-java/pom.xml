@@ -5,7 +5,6 @@
   <groupId>it.sephiroth.android.library.media</groupId>
   <artifactId>android-exif-extended-java</artifactId>
   <version>2.97</version>
-  <packaging>aar</packaging>
   <description>Exif extended library (java) for Android, based on jhead c library (http://www.sentex.net/~mwandel/jhead/) </description>
   <url>git@github.com:sephiroth74/Android-Exif-Extended.git</url>
   <inceptionYear>2013</inceptionYear>

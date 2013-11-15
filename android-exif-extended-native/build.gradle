@@ -1,10 +1,16 @@
 
 apply plugin: 'java'
 
+task displayInfo << {
+    logger.lifecycle "  project name: ${project.name} (root: ${rootProject.name})"
+    logger.lifecycle "  project version: ${project.version}"
+    logger.lifecycle "  project group: ${project.group}"
+}
+
 
 project.ext {
-    baseName = name
-    nativeJar = name + "-" + version + ".jar"
+    baseName = project.name
+    nativeJar = project.name + "-" + project.version + ".jar"
 }
 
 // Remove the default jar artifact
@@ -21,9 +27,9 @@ artifacts {
 def generatePom() {
     def pom = pom{
         project {
-            groupId groupId
+            groupId project.group
             artifactId project.name
-            version version
+            version project.version
             packaging 'jar'
             description 'Exif extended library (native) for Android, based on jhead c library (http://www.sentex.net/~mwandel/jhead/) '
             inceptionYear '2013'
