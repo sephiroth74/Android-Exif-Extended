@@ -33,15 +33,15 @@
   </scm>
   <dependencies>
     <dependency>
-      <groupId>com.android.support</groupId>
-      <artifactId>support-v4</artifactId>
-      <version>19.0.+</version>
-      <scope>compile</scope>
-    </dependency>
-    <dependency>
       <groupId>it.sephiroth.android.library.media</groupId>
       <artifactId>android-exif-extended-native</artifactId>
       <version>2.97</version>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.android.support</groupId>
+      <artifactId>support-v4</artifactId>
+      <version>19.0.+</version>
       <scope>compile</scope>
     </dependency>
   </dependencies>

@@ -7,7 +7,6 @@ task displayInfo << {
     logger.lifecycle "  project group: ${project.group}"
 }
 
-
 project.ext {
     baseName = project.name
     nativeJar = project.name + "-" + project.version + ".jar"
