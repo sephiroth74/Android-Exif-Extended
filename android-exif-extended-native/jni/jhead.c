@@ -131,7 +131,14 @@ void ErrNonfatal(const char * msg, int a1, int a2)
     //fprintf(stdout, "\n");
     LOGW("[NonFatal Error]");
     LOGW( msg, a1, a2 );
-} 
+}
+
+void printVersion()
+{
+    LOGI("-------------------");
+    LOGI("JHEAD_VERSION: %s", JHEAD_VERSION);
+    LOGI("-------------------");
+}
 
 
 //--------------------------------------------------------------------------

@@ -30,7 +30,7 @@ extern "C"
 
 	static int addKeyValueString(char** buf, int bufLen, const char* key, const char* value)
 	{
-		LOGI("addKeyValueString: %s = '%s' (%i)", key, value, strlen(value));
+		// LOGI("addKeyValueString: %s = '%s' (%i)", key, value, strlen(value));
 
 		// Appends to buf like this: "ImageLength=4 1024"
 		char valueLen[15];
@@ -904,6 +904,10 @@ extern "C"
 			LOGE("RegisterNatives failed for '%s'", className);
 			return JNI_FALSE;
 		}
+
+        // print the JHEAD_VERSION
+        printVersion();
+
 		return JNI_TRUE;
 	}
 

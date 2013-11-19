@@ -809,12 +809,12 @@ static void ProcessExifDir(unsigned char * DirStart, unsigned char * OffsetBase,
 		{
 			case TAG_SENSING_METHOD:
 				ImageInfo.SensingMethod = (int) ConvertAnyFormat(ValuePtr, Format);
-				LOGD("SensingMethod: %i", ImageInfo.SensingMethod);
+				//LOGD("SensingMethod: %i", ImageInfo.SensingMethod);
 				break;
 
 			case TAG_BRIGHTNESS_VALUE:
 				ImageInfo.BrightnessValue = (float) ConvertAnyFormat(ValuePtr, Format);
-				LOGD("BrightnessValue: %.4f", ImageInfo.BrightnessValue);
+				//LOGD("BrightnessValue: %.4f", ImageInfo.BrightnessValue);
 				break;
 
 //			case TAG_CPRS_BITS_PER_PIXEL:
@@ -824,32 +824,32 @@ static void ProcessExifDir(unsigned char * DirStart, unsigned char * OffsetBase,
 
 			case TAG_SCENE_CAPTURE_TYPE:
 				ImageInfo.SceneCaptureType = (unsigned) ConvertAnyFormat(ValuePtr, Format);
-				LOGD("SceneCaptureType: %i", ImageInfo.SceneCaptureType);
+				//LOGD("SceneCaptureType: %i", ImageInfo.SceneCaptureType);
 				break;
 
 			case TAG_COPYRIGHT:
 				strncpy(ImageInfo.Copyright, (char *) ValuePtr, ByteCount < 254 ? ByteCount : 254);
-				LOGD("Copyright: %s, size: %i", ValuePtr, strlen(ValuePtr));
+				//LOGD("Copyright: %s, size: %i", ValuePtr, strlen(ValuePtr));
 				break;
 
 			case TAG_ARTIST:
 				strncpy(ImageInfo.Artist, (char*) ValuePtr, ByteCount < 254 ? ByteCount : 254);
-				LOGD("Artist: %s", ImageInfo.Artist);
+				//LOGD("Artist: %s", ImageInfo.Artist);
 				break;
 
 			case TAG_SOFTWARE:
 				strncpy(ImageInfo.Software, (char*) ValuePtr, ByteCount < 254 ? ByteCount : 254);
-				LOGD("Software: %s", ImageInfo.Software);
+				//LOGD("Software: %s", ImageInfo.Software);
 				break;
 
 			case TAG_MAKE:
 				strncpy(ImageInfo.Make, (char *) ValuePtr, ByteCount < 31 ? ByteCount : 31);
-				LOGD("Make: %s", ImageInfo.Make);
+				//LOGD("Make: %s", ImageInfo.Make);
 				break;
 
 			case TAG_MODEL:
 				strncpy(ImageInfo.Model, (char *) ValuePtr, ByteCount < 39 ? ByteCount : 39);
-				LOGD("Model: %s", ImageInfo.Model);
+				//LOGD("Model: %s", ImageInfo.Model);
 				break;
 
 			case TAG_DATETIME_ORIGINAL:
@@ -964,19 +964,19 @@ static void ProcessExifDir(unsigned char * DirStart, unsigned char * OffsetBase,
 				// Simplest way of expressing aperture, so I trust it the most.
 				// (overwrite previously computd value if there is one)
 				ImageInfo.FNumber = (float) ConvertAnyFormat(ValuePtr, Format);
-				LOGD("FNumber: %.4f", ImageInfo.FNumber);
+				//LOGD("FNumber: %.4f", ImageInfo.FNumber);
 				break;
 
 			case TAG_APERTURE:
 				ImageInfo.ApertureValue = (float) ConvertAnyFormat(ValuePtr, Format);
-				LOGD("ApertureValue: %.4f", ImageInfo.ApertureValue);
+				//LOGD("ApertureValue: %.4f", ImageInfo.ApertureValue);
 				break;
 
 			case TAG_MAXAPERTURE:
 				// More relevant info always comes earlier, so only use this field if we don't
 				// have appropriate aperture information yet.
 				ImageInfo.MaxApertureValue = (float) ConvertAnyFormat(ValuePtr, Format);
-				LOGD("MaxApertureValue: %.4f", ImageInfo.MaxApertureValue);
+				//LOGD("MaxApertureValue: %.4f", ImageInfo.MaxApertureValue);
 				//if (ImageInfo.FNumber == 0)
 				//{
 				//	ImageInfo.FNumber = (float) exp(ConvertAnyFormat(ValuePtr, Format) * log(2) * 0.5);
@@ -987,21 +987,21 @@ static void ProcessExifDir(unsigned char * DirStart, unsigned char * OffsetBase,
 				// Nice digital cameras actually save the focal length as a function
 				// of how farthey are zoomed in.
 				ImageInfo.FocalLength = (float) ConvertAnyFormat(ValuePtr, Format);
-				LOGD("FocalLength: %.2f mm", ImageInfo.FocalLength);
+				//LOGD("FocalLength: %.2f mm", ImageInfo.FocalLength);
 				break;
 
 			case TAG_SUBJECT_DISTANCE:
 				// Inidcates the distacne the autofocus camera is focused to.
 				// Tends to be less accurate as distance increases.
 				ImageInfo.SubjectDistance = (float) ConvertAnyFormat(ValuePtr, Format);
-				LOGD("SubjectDistance: %.4f", ImageInfo.SubjectDistance);
+				//LOGD("SubjectDistance: %.4f", ImageInfo.SubjectDistance);
 				break;
 
 			case TAG_EXPOSURETIME:
 				// Simplest way of expressing exposure time, so I trust it most.
 				// (overwrite previously computd value if there is one)
 				ImageInfo.ExposureTime = (float) ConvertAnyFormat(ValuePtr, Format);
-				LOGD("ExposureTime: %.4f", ImageInfo.ExposureTime);
+				//LOGD("ExposureTime: %.4f", ImageInfo.ExposureTime);
 				break;
 
 			case TAG_SHUTTERSPEED:
@@ -1012,12 +1012,12 @@ static void ProcessExifDir(unsigned char * DirStart, unsigned char * OffsetBase,
 				//ImageInfo.ExposureTime = (float) (1 / exp(ConvertAnyFormat(ValuePtr, Format) * log(2)));
 				//}
 				ImageInfo.ShutterSpeedValue = (float) ConvertAnyFormat(ValuePtr, Format);
-				LOGD("ShutterSpeedValue: %.4f", ImageInfo.ShutterSpeedValue);
+				//LOGD("ShutterSpeedValue: %.4f", ImageInfo.ShutterSpeedValue);
 				break;
 
 			case TAG_FLASH:
 				ImageInfo.Flash = (int) ConvertAnyFormat(ValuePtr, Format);
-				LOGD("Flash: %i", ImageInfo.Flash);
+				//LOGD("Flash: %i", ImageInfo.Flash);
 				break;
 
 			case TAG_ORIENTATION:
@@ -1039,36 +1039,36 @@ static void ProcessExifDir(unsigned char * DirStart, unsigned char * OffsetBase,
 					ErrNonfatal("Undefined rotation value %d in Exif", ImageInfo.Orientation, 0);
 					ImageInfo.Orientation = 0;
 				}
-				LOGD("Orientation: %i", ImageInfo.Orientation);
+				//LOGD("Orientation: %i", ImageInfo.Orientation);
 				NumOrientations += 1;
 				break;
 
 			case TAG_PIXEL_X_DIMENSION:
 				ImageInfo.PixelXDimension = (int) ConvertAnyFormat(ValuePtr, Format);
-				LOGD("PixelXDimension: %i", ImageInfo.PixelXDimension);
+				//LOGD("PixelXDimension: %i", ImageInfo.PixelXDimension);
 				break;
 
 			case TAG_PIXEL_Y_DIMENSION:
 				// Use largest of height and width to deal with images that have been
 				// rotated to portrait format.
 				ImageInfo.PixelYDimension = (int) ConvertAnyFormat(ValuePtr, Format);
-				LOGD("PixelYDimension: %i", ImageInfo.PixelYDimension);
+				//LOGD("PixelYDimension: %i", ImageInfo.PixelYDimension);
 				break;
 
 			case TAG_FOCAL_PLANE_XRES:
 				ImageInfo.FocalPlaneXResolution = (float) ConvertAnyFormat(ValuePtr, Format);
-				LOGD("FocalPlaneXResolution: %.4f", ImageInfo.FocalPlaneXResolution);
+				//LOGD("FocalPlaneXResolution: %.4f", ImageInfo.FocalPlaneXResolution);
 				break;
 
 			case TAG_FOCAL_PLANE_YRES:
 				ImageInfo.FocalPlaneXResolution = (float) ConvertAnyFormat(ValuePtr, Format);
-				LOGD("FocalPlaneYResolution: %.4f", ImageInfo.FocalPlaneYResolution);
+				//LOGD("FocalPlaneYResolution: %.4f", ImageInfo.FocalPlaneYResolution);
 				break;
 
 			case TAG_FOCAL_PLANE_UNITS:
 				a = (int) ConvertAnyFormat(ValuePtr, Format);
 				ImageInfo.FocalPlaneResolutionUnit = a;
-				LOGD("FocalPlaneResolutionUnit: %i", ImageInfo.FocalPlaneResolutionUnit);
+				//LOGD("FocalPlaneResolutionUnit: %i", ImageInfo.FocalPlaneResolutionUnit);
 
 //				switch (a)
 //				{
@@ -1096,27 +1096,27 @@ static void ProcessExifDir(unsigned char * DirStart, unsigned char * OffsetBase,
 
 			case TAG_EXPOSURE_BIAS:
 				ImageInfo.ExposureBiasValue = (float) ConvertAnyFormat(ValuePtr, Format);
-				LOGD("ExposureBiasValue: %.4f", ImageInfo.ExposureBiasValue);
+				//LOGD("ExposureBiasValue: %.4f", ImageInfo.ExposureBiasValue);
 				break;
 
 			case TAG_WHITEBALANCE:
 				ImageInfo.Whitebalance = (int) ConvertAnyFormat(ValuePtr, Format);
-				LOGD("Whitebalance: %i", ImageInfo.Whitebalance);
+				//LOGD("Whitebalance: %i", ImageInfo.Whitebalance);
 				break;
 
 			case TAG_LIGHT_SOURCE:
 				ImageInfo.LightSource = (int) ConvertAnyFormat(ValuePtr, Format);
-				LOGD("LightSource: %i", ImageInfo.LightSource);
+				//LOGD("LightSource: %i", ImageInfo.LightSource);
 				break;
 
 			case TAG_METERING_MODE:
 				ImageInfo.MeteringMode = (int) ConvertAnyFormat(ValuePtr, Format);
-				LOGD("MeteringMode: %i", ImageInfo.MeteringMode);
+				//LOGD("MeteringMode: %i", ImageInfo.MeteringMode);
 				break;
 
 			case TAG_EXPOSURE_PROGRAM:
 				ImageInfo.ExposureProgram = (int) ConvertAnyFormat(ValuePtr, Format);
-				LOGD("ExposureProgram: %i", ImageInfo.ExposureProgram);
+				//LOGD("ExposureProgram: %i", ImageInfo.ExposureProgram);
 				break;
 
 			case TAG_EXPOSURE_INDEX:
@@ -1132,17 +1132,17 @@ static void ProcessExifDir(unsigned char * DirStart, unsigned char * OffsetBase,
 
 			case TAG_EXPOSURE_MODE:
 				ImageInfo.ExposureMode = (int) ConvertAnyFormat(ValuePtr, Format);
-				LOGD("ExposureMode: %i", ImageInfo.ExposureMode);
+				//LOGD("ExposureMode: %i", ImageInfo.ExposureMode);
 				break;
 
 			case TAG_ISO_EQUIVALENT:
 				ImageInfo.ISOSpeedRatings = (int) ConvertAnyFormat(ValuePtr, Format);
-				LOGD("ISOSpeedRatings: %2d", ImageInfo.ISOSpeedRatings);
+				//LOGD("ISOSpeedRatings: %2d", ImageInfo.ISOSpeedRatings);
 				break;
 
 			case TAG_DIGITALZOOMRATIO:
 				ImageInfo.DigitalZoomRatio = (float) ConvertAnyFormat(ValuePtr, Format);
-				LOGD("DigitalZoomRatio: %.4f", ImageInfo.DigitalZoomRatio);
+				//LOGD("DigitalZoomRatio: %.4f", ImageInfo.DigitalZoomRatio);
 				break;
 
 			case TAG_THUMBNAIL_OFFSET:
@@ -1178,7 +1178,7 @@ static void ProcessExifDir(unsigned char * DirStart, unsigned char * OffsetBase,
 				break;
 
 			case TAG_GPSINFO:
-				LOGI("%s    GPS info dir:", IndentString);
+				//LOGI("%s    GPS info dir:", IndentString);
 				{
 					unsigned char * SubdirStart;
 					SubdirStart = OffsetBase + Get32u(ValuePtr);
@@ -1198,21 +1198,21 @@ static void ProcessExifDir(unsigned char * DirStart, unsigned char * OffsetBase,
 				// if its present, use it to compute equivalent focal length instead of
 				// computing it from sensor geometry and actual focal length.
 				ImageInfo.FocalLengthIn35mmFilm = (unsigned) ConvertAnyFormat(ValuePtr, Format);
-				LOGD("FocalLengthIn35mmFilm: %i", ImageInfo.FocalLengthIn35mmFilm);
+				//LOGD("FocalLengthIn35mmFilm: %i", ImageInfo.FocalLengthIn35mmFilm);
 				break;
 
 			case TAG_DISTANCE_RANGE:
 				// Three possible standard values:
 				//   1 = macro, 2 = close, 3 = distant
 				ImageInfo.SubjectDistanceRange = (int) ConvertAnyFormat(ValuePtr, Format);
-				LOGD("SubjectDistanceRange: %i", ImageInfo.SubjectDistanceRange);
+				//LOGD("SubjectDistanceRange: %i", ImageInfo.SubjectDistanceRange);
 				break;
 
 			case TAG_X_RESOLUTION:
 				if (NestingLevel == 0)
 				{ // Only use the values from the top level directory
 					ImageInfo.XResolution = (float) ConvertAnyFormat(ValuePtr, Format);
-					LOGD("XResolution: %.4f", ImageInfo.XResolution);
+					//LOGD("XResolution: %.4f", ImageInfo.XResolution);
 					// if yResolution has not been set, use the value of xResolution
 					if (ImageInfo.YResolution == 0.0)
 						ImageInfo.YResolution = ImageInfo.XResolution;
@@ -1223,7 +1223,7 @@ static void ProcessExifDir(unsigned char * DirStart, unsigned char * OffsetBase,
 				if (NestingLevel == 0)
 				{ // Only use the values from the top level directory
 					ImageInfo.YResolution = (float) ConvertAnyFormat(ValuePtr, Format);
-					LOGD("YResolution: %.4f", ImageInfo.YResolution);
+					//LOGD("YResolution: %.4f", ImageInfo.YResolution);
 					// if xResolution has not been set, use the value of yResolution
 					if (ImageInfo.XResolution == 0.0)
 						ImageInfo.XResolution = ImageInfo.YResolution;
@@ -1234,7 +1234,7 @@ static void ProcessExifDir(unsigned char * DirStart, unsigned char * OffsetBase,
 				if (NestingLevel == 0)
 				{ // Only use the values from the top level directory
 					ImageInfo.ResolutionUnit = (int) ConvertAnyFormat(ValuePtr, Format);
-					LOGD("ResolutionUnit: %i", ImageInfo.ResolutionUnit);
+					//LOGD("ResolutionUnit: %i", ImageInfo.ResolutionUnit);
 				}
 				break;
 
@@ -1264,32 +1264,32 @@ static void ProcessExifDir(unsigned char * DirStart, unsigned char * OffsetBase,
 
 			case TAG_COLOR_SPACE:
 				ImageInfo.ColorSpace = (int) ConvertAnyFormat(ValuePtr, Format);
-				LOGD("ColorSpace: %i", ImageInfo.ColorSpace);
+				//LOGD("ColorSpace: %i", ImageInfo.ColorSpace);
 				break;
 
 			case TAG_COMPRESSION:
 				ImageInfo.Compression = (int) ConvertAnyFormat(ValuePtr, Format);
-				LOGD("Compression: %i", ImageInfo.Compression);
+				//LOGD("Compression: %i", ImageInfo.Compression);
 				break;
 
 			case TAG_SHARPNESS:
 				ImageInfo.Sharpness = (int) ConvertAnyFormat(ValuePtr, Format);
-				LOGD("Sharpness: %i", ImageInfo.Sharpness);
+				//LOGD("Sharpness: %i", ImageInfo.Sharpness);
 				break;
 
 			case TAG_CONTRAST:
 				ImageInfo.Contrast = (int) ConvertAnyFormat(ValuePtr, Format);
-				LOGD("Contrast: %i", ImageInfo.Contrast);
+				//LOGD("Contrast: %i", ImageInfo.Contrast);
 				break;
 
 			case TAG_SATURATION:
 				ImageInfo.Saturation = (int) ConvertAnyFormat(ValuePtr, Format);
-				LOGD("Saturation: %i", ImageInfo.Saturation);
+				//LOGD("Saturation: %i", ImageInfo.Saturation);
 				break;
 
 			case TAG_GAIN_CONTROL:
 				ImageInfo.GainControl = (int) ConvertAnyFormat(ValuePtr, Format);
-				LOGD("GainControl: %i", ImageInfo.GainControl);
+				//LOGD("GainControl: %i", ImageInfo.GainControl);
 				break;
 
 			default:
@@ -1476,7 +1476,7 @@ static void writeExifTagAndData(int tag, int format, long components, long value
 		} else
 		{
 			Put32u(Buffer + (*DirIndex) + 8, (*DataWriteIndex) - 8); // Pointer
-			LOGV("(1) copying value '%s' to %d", (char*) value, (*DataWriteIndex));
+			//LOGV("(1) copying value '%s' to %d", (char*) value, (*DataWriteIndex));
 			strncpy(Buffer + (*DataWriteIndex), (char*) value, components);
 			(*DataWriteIndex) += components;
 		}
@@ -1490,7 +1490,7 @@ static void writeExifTagAndData(int tag, int format, long components, long value
 		} else
 		{
 			Put32u(Buffer + (*DirIndex) + 8, (*DataWriteIndex) - 8); // Pointer
-			LOGV("(2) copying '%s' to %d", (char*) value + sizeof(ExifAsciiPrefix), (*DataWriteIndex));
+			//LOGV("(2) copying '%s' to %d", (char*) value + sizeof(ExifAsciiPrefix), (*DataWriteIndex));
 			memcpy(Buffer + (*DataWriteIndex), (char*) value, components);
 			(*DataWriteIndex) += components;
 		}
@@ -1640,7 +1640,7 @@ static void create_EXIF_internal(ExifElement_t* elements, int exifTagCount, int 
 			int i;
 			for (i = 0; i < elementTableSize; i++)
 			{
-				LOGD("index: %i (tag:x%x, format:%i), processed: %i of %i", i, elements[i].Tag, elements[i].Format, processed, exifTagCount);
+				//LOGD("index: %i (tag:x%x, format:%i), processed: %i of %i", i, elements[i].Tag, elements[i].Format, processed, exifTagCount);
 
 				if( processed >= exifTagCount ) {
 					LOGW("reached the maximum number of valid tags");
@@ -1657,7 +1657,7 @@ static void create_EXIF_internal(ExifElement_t* elements, int exifTagCount, int 
 
 				if( entry )
 				{
-					LOGV("saving tag x%x (%s) value \"%s\"", elements[i].Tag, entry->Desc, elements[i].Value);
+					//LOGV("saving tag x%x (%s) value \"%s\"", elements[i].Tag, entry->Desc, elements[i].Value);
 					writeExifTagAndData(elements[i].Tag, entry->Format, entry->DataLength, (long) elements[i].Value, TRUE, Buffer, &DirIndex, &DataWriteIndex);
 					processed++;
 				} else {
@@ -1669,7 +1669,7 @@ static void create_EXIF_internal(ExifElement_t* elements, int exifTagCount, int 
 			if (gpsTagCount)
 			{
 				// Link to gps dir entry
-				LOGE("Link to gps dir entry");
+				//LOGE("Link to gps dir entry");
 				writeExifTagAndData( TAG_GPSINFO, FMT_ULONG, 1, DataWriteIndex - 8, FALSE, Buffer, &DirIndex, &DataWriteIndex );
 			}
 
@@ -1681,7 +1681,7 @@ static void create_EXIF_internal(ExifElement_t* elements, int exifTagCount, int 
 			}
 			DirExifLink = DirIndex;
 
-			LOGE("writing exif data exif offset: %i", exifDirPtr);
+			//LOGE("writing exif data exif offset: %i", exifDirPtr);
 			writeExifTagAndData(TAG_EXIF_OFFSET, FMT_ULONG, 1, exifDirPtr, FALSE, Buffer, &DirIndex, &DataWriteIndex);
 		}
 
@@ -1691,7 +1691,7 @@ static void create_EXIF_internal(ExifElement_t* elements, int exifTagCount, int 
 	}
 
 	// GPS Section
-	LOGE("Writing GPS Tags: %i", gpsTagCount);
+	//LOGE("Writing GPS Tags: %i", gpsTagCount);
 
 	if (gpsTagCount)
 	{
@@ -1707,7 +1707,7 @@ static void create_EXIF_internal(ExifElement_t* elements, int exifTagCount, int 
 			int processed = 0;
 			for (i = 0; i < elementTableSize; i++)
 			{
-				LOGD("index: %i (tag:x%x, format:%i), processed: %i of %i", i, elements[i].Tag, elements[i].Format, processed, gpsTagCount);
+				//LOGD("index: %i (tag:x%x, format:%i), processed: %i of %i", i, elements[i].Tag, elements[i].Format, processed, gpsTagCount);
 
 				if( processed >= gpsTagCount ) {
 					LOGW("reached the maximum number of valid tags");
@@ -1724,7 +1724,7 @@ static void create_EXIF_internal(ExifElement_t* elements, int exifTagCount, int 
 
 				if( entry )
 				{
-					LOGV("create_EXIF saving GPS tag x%x (%s) value \"%s\"",elements[i].Tag, entry->Desc, elements[i].Value);
+					//LOGV("create_EXIF saving GPS tag x%x (%s) value \"%s\"",elements[i].Tag, entry->Desc, elements[i].Value);
 					writeExifTagAndData(elements[i].Tag, entry->Format, entry->DataLength, (long) elements[i].Value, TRUE, Buffer, &DirIndex, &DataWriteIndex);
 					processed++;
 				} else {

@@ -1,22 +1,22 @@
 
 apply plugin: 'java'
 
-task displayInfo << {
-    logger.lifecycle "  project name: ${project.name} (root: ${rootProject.name})"
-    logger.lifecycle "  project version: ${project.version}"
-    logger.lifecycle "  project group: ${project.group}"
+task displayInfo() {
+    doLast {
+        logger.lifecycle "  project name: ${project.name} (root: ${rootProject.name})"
+        logger.lifecycle "  project version: ${project.version}"
+        logger.lifecycle "  project group: ${project.group}"
+    }
 }
 
-project.ext {
-    baseName = project.name
-    nativeJar = project.name + "-" + project.version + ".jar"
-}
+project.ext.baseName = project.name
+project.ext.nativeJar = project.name + "-" + project.version + ".jar"
 
 // Remove the default jar artifact
-configurations.archives.artifacts.each { 
-  if (it.archiveTask == jar) { 
-    configurations.archives.artifacts.remove(it) 
-  } 
+configurations.archives.artifacts.each {
+    if (it.archiveTask == jar) {
+        configurations.archives.artifacts.remove(it)
+    }
 }
 
 artifacts {
@@ -42,7 +42,7 @@ def generatePom() {
             }
 
             scm {
-                url                 "scm:git:git@github.com:sephiroth74/Android-Exif-Extended.git"
+                url                 "https://github.com/sephiroth74/Android-Exif-Extended"
                 connection          "scm:git:git@github.com:sephiroth74/Android-Exif-Extended.git"
                 developerConnection "scm:git:git@github.com:sephiroth74/Android-Exif-Extended.git"
             }
@@ -59,6 +59,13 @@ def generatePom() {
                     }
                 }
             }
+
+            repositories {
+                repository {
+                    id 's3.release'
+                    url 'http://maven.aviary.com/repo/release'
+                }
+            }
         }
     }
 }
@@ -72,28 +79,98 @@ task writePom {
     }
 }
 
+// -----------------------------------
+// 1. delete libs/*.jar
+// -----------------------------------
+
+task deleteJarInLibs(description: 'delete the wrong .jar file in the libs folder') {
+    doLast {
+        logger.lifecycle "\t(1) Deleting libs/*.* and native-libs/*.*"
+        ant.delete (includeEmptyDirs: 'true') {
+            fileset(dir: file("$buildDir/libs"), includes: '*.*')
+        }
+        ant.delete (includeEmptyDirs: 'true') {
+            fileset(dir: file("$buildDir/native-libs"), includes: '*.*')
+        }
+    }
+}
+
+deleteJarInLibs.onlyIf { true }
+deleteJarInLibs.outputs.upToDateWhen{ false }
+
+// -----------------------------------
+// 2. ndk-build -j8
+// -----------------------------------
+
+task ndkBuild(type:Exec) {
+    commandLine 'ndk-build', '-j8'
+
+    doFirst {
+        logger.lifecycle "\t(2) ndk-build"
+    }
+}
+
+// -----------------------------------
+// 3. copy *.so into build/native-libs
+// -----------------------------------
+task copyNativeLibs(type:Copy) {
+    from fileTree(dir: 'libs', include: '**/*.so' )
+    into "$buildDir/native-libs"
+
+    doLast {
+        logger.lifecycle "\t(3) Copying libs/*.so into build/native-libs"
+    }
+}
+
+copyNativeLibs.outputs.upToDateWhen{ false }
+copyNativeLibs.onlyIf { true }
+
+// -----------------------------------
+// 4. build/native-libs into *.jar
+// -----------------------------------
+
 task nativeLibsToJar(type: Zip, description: 'create a jar archive of the native libs') {
     destinationDir file("$buildDir/native-libs")
     baseName project.ext.baseName
     extension 'jar'
     from fileTree(dir: 'libs', include: '**/*.so')
     into 'lib/'
+
+    doLast {
+        logger.lifecycle "\t(4) Creating jar from build/native-libs"
+    }
 }
 
-task ndkBuild(type:Exec) {
-    commandLine 'ndk-build', '-j8'
+nativeLibsToJar.outputs.upToDateWhen{ false }
+nativeLibsToJar.onlyIf{ true }
+
+
+// -----------------------------------
+// 5. copy build/native-libs/*.jar into builds/libs
+// -----------------------------------
+task copyGeneratedJarToLibs(type: Copy, description:'Copy the generated jar file in the libs folder') {
+    from file("$buildDir/native-libs/${project.ext.nativeJar}")
+    into "$buildDir/libs"
+
+    doLast {
+        logger.lifecycle "\t(5) Copying build/native-libs/*.jar into build/libs"
+    }
 }
 
-task copyNativeLibs(type: Copy) {
-    from fileTree(dir: 'libs', include: '**/*.so' )
-    into "$buildDir/native-libs"
-}
+copyGeneratedJarToLibs.outputs.upToDateWhen{ false }
+copyGeneratedJarToLibs.onlyIf{ true }
+
+
 
 task cleanNativeLibs(type: Delete) {
     delete "$buildDir/native-libs"
     delete "libs"
     delete "obj"
+    doLast {
+        logger.lifecycle "\tCleanNativeLibs build/native-libs/*"
+    }
 }
+
 
 tasks.withType(Compile) {
     options.encoding = 'UTF-8'
@@ -104,13 +181,42 @@ uploadArchives {
         repositories.mavenDeployer.pom = generatePom()
     }
 
-    repositories.mavenDeployer {
-        repository(url: "file://$System.env.HOME/.m2/repository/")
+    repositories {
+        mavenDeployer {
+            configuration = configurations.deployerJars
+
+            repository(url: mavenUploadServer + mavenRepo + mavenReleases){
+                authentication(userName: mavenUsername, password: mavenPassword)
+            }
+        }
     }
 }
 
 clean.dependsOn(cleanNativeLibs)
-nativeLibsToJar.dependsOn(copyNativeLibs)
+
+ndkBuild.dependsOn(deleteJarInLibs)
 copyNativeLibs.dependsOn(ndkBuild)
-build.dependsOn(writePom, nativeLibsToJar)
+nativeLibsToJar.dependsOn(copyNativeLibs)
+copyGeneratedJarToLibs.dependsOn(nativeLibsToJar)
+
+assemble.dependsOn(writePom, jar)
+
+jar {
+    doLast {
+        deleteJarInLibs.execute()
+
+        ndkBuild.execute()
+
+        copyNativeLibs.execute()
+
+        nativeLibsToJar.execute()
+
+        copyGeneratedJarToLibs.execute()
+    }
+}
+
+jar.outputs.upToDateWhen{ false }
+jar.onlyIf { true }
+
+
 

@@ -70,7 +70,7 @@ extern int DumpExifMap;
 
 // Buffer size must large enough to hold maximum location string
 // containing six signed integers plus delimeters and terminator,
-// i.e.: 11 * 6 + 3(Ô/Õ) + 2(Õ,Õ) + 1(\0) = 72
+// i.e.: 11 * 6 + 3(ï¿½/ï¿½) + 2(ï¿½,ï¿½) + 1(\0) = 72
 #define MAX_GPS_BUF_SIZE    72
 
 //--------------------------------------------------------------------------
@@ -345,10 +345,10 @@ typedef struct {
      * 9 = Fine weather
      * 10 = Cloudy weather
      * 11 = Shade
-     * 12 = Daylight fluorescent (D 5700 Ð 7100K)
-     * 13 = Day white fluorescent (N 4600 Ð 5400K)
-     * 14 = Cool white fluorescent (W 3900 Ð 4500K)
-     * 15 = White fluorescent (WW 3200 Ð 3700K)
+     * 12 = Daylight fluorescent (D 5700 ï¿½ 7100K)
+     * 13 = Day white fluorescent (N 4600 ï¿½ 5400K)
+     * 14 = Cool white fluorescent (W 3900 ï¿½ 4500K)
+     * 15 = White fluorescent (WW 3200 ï¿½ 3700K)
      * 17 = Standard light A
      * 18 = Standard light B
      * 19 = Standard light C
@@ -701,3 +701,5 @@ extern int ShowTags;
 #define M_DHT   0xC4          // Define Huffmann Table
 #define M_DRI   0xDD
 #define M_IPTC  0xED          // IPTC marker
+
+void printVersion();

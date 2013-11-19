@@ -1,5 +1,4 @@
 
-
 buildscript {
     repositories {
         mavenCentral()
@@ -12,18 +11,19 @@ buildscript {
 }
 
 allprojects {
+
+    apply plugin: 'maven-publish'
+    apply plugin: 'maven'
+
     group = 'it.sephiroth.android.library.media'
     version = '2.97'
 
-    apply plugin: 'maven'
-    apply plugin: 'maven-publish'
+    configurations {
+        deployerJars
+    }
 
-    repositories {
-        mavenCentral()
-        mavenLocal()
-        maven {
-            url "file://$System.env.HOME/.m2/repository/"
-        }
+    dependencies {
+        deployerJars "org.kuali.maven.wagons:maven-s3-wagon:1.1.20"
     }
 }
 

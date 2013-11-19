@@ -6,7 +6,7 @@
   <artifactId>android-exif-extended-java</artifactId>
   <version>2.97</version>
   <description>Exif extended library (java) for Android, based on jhead c library (http://www.sentex.net/~mwandel/jhead/) </description>
-  <url>git@github.com:sephiroth74/Android-Exif-Extended.git</url>
+  <url>http://blog.sephiroth.it</url>
   <inceptionYear>2013</inceptionYear>
   <licenses>
     <license>
@@ -29,19 +29,25 @@
   <scm>
     <connection>scm:git:git@github.com:sephiroth74/Android-Exif-Extended.git</connection>
     <developerConnection>scm:git:git@github.com:sephiroth74/Android-Exif-Extended.git</developerConnection>
-    <url>scm:git:git@github.com:sephiroth74/Android-Exif-Extended.git</url>
+    <url>https://github.com/sephiroth74/Android-Exif-Extended</url>
   </scm>
+  <repositories>
+    <repository>
+      <id>s3.release</id>
+      <url>http://maven.aviary.com/repo/release</url>
+    </repository>
+  </repositories>
   <dependencies>
-    <dependency>
-      <groupId>it.sephiroth.android.library.media</groupId>
-      <artifactId>android-exif-extended-native</artifactId>
-      <version>2.97</version>
-      <scope>compile</scope>
-    </dependency>
     <dependency>
       <groupId>com.android.support</groupId>
       <artifactId>support-v4</artifactId>
       <version>19.0.+</version>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>it.sephiroth.android.library.media</groupId>
+      <artifactId>android-exif-extended-native</artifactId>
+      <version>2.97</version>
       <scope>compile</scope>
     </dependency>
   </dependencies>

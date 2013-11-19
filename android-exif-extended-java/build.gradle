@@ -35,17 +35,15 @@ android {
     }
 }
 
-task displayInfo << {
-    logger.lifecycle "  project name: ${project.name} (root: ${rootProject.name})"
-    logger.lifecycle "  project version: ${project.version}"
-    logger.lifecycle "  project group: ${project.group}"
+task displayInfo() {
+    doLast {
+        logger.lifecycle "  project name: ${project.name} (root: ${rootProject.name})"
+        logger.lifecycle "  project version: ${project.version}"
+        logger.lifecycle "  project group: ${project.group}"
+    }
 }
 
-
-project.ext {
-    outJar = project.name + '-' + project.version + '.jar'
-}
-
+project.ext.outJar = project.name + '-' + project.version + '.jar'
 
 def generatePom() {
     def pom = pom {
@@ -55,7 +53,7 @@ def generatePom() {
             version project.version
             description 'Exif extended library (java) for Android, based on jhead c library (http://www.sentex.net/~mwandel/jhead/) '
             inceptionYear '2013'
-            url 'git@github.com:sephiroth74/Android-Exif-Extended.git'
+            url 'http://blog.sephiroth.it'
 
             licenses {
                 license {
@@ -65,7 +63,7 @@ def generatePom() {
             }
 
             scm {
-                url                 "scm:git:git@github.com:sephiroth74/Android-Exif-Extended.git"
+                url                 "https://github.com/sephiroth74/Android-Exif-Extended"
                 connection          "scm:git:git@github.com:sephiroth74/Android-Exif-Extended.git"
                 developerConnection "scm:git:git@github.com:sephiroth74/Android-Exif-Extended.git"
             }
@@ -81,6 +79,13 @@ def generatePom() {
                         role 'author'
                         role 'developer'
                     }
+                }
+            }
+
+            repositories {
+                repository {
+                    id 's3.release'
+                    url 'http://maven.aviary.com/repo/release'
                 }
             }
         }
@@ -112,11 +117,16 @@ uploadArchives {
         repositories.mavenDeployer.pom = generatePom()
     }
 
-    repositories.mavenDeployer {
-        repository(url: "file://$System.env.HOME/.m2/repository/")
+    repositories {
+        mavenDeployer {
+            configuration = configurations.deployerJars
+
+            repository(url: mavenUploadServer + mavenRepo + mavenReleases){
+                authentication(userName: mavenUsername, password: mavenPassword)
+            }
+        }
     }
 }
-
 
 task updateVersion {
     def source = new File("src/it/sephiroth/android/library/media/ExifInterfaceExtended.java")
