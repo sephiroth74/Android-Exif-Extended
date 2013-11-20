@@ -54,6 +54,8 @@ public class MainActivity extends Activity implements OnClickListener {
 		// uriString = "content://media/external/images/media/25470";
 		// String uriString = "content://media/external/images/media/32705";
 		// String uriString = ( "content://media/external/images/media/18937";
+
+		Log.i( LOG_TAG, "ExifInterfaceExtended.Version: " + ExifInterfaceExtended.VERSION );
 		
 		Uri uri = Uri.parse( uriString );
 		processFile( uri );

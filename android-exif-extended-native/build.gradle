@@ -61,9 +61,14 @@ def generatePom() {
             }
 
             repositories {
-                repository {
-                    id 's3.release'
-                    url 'http://maven.aviary.com/repo/release'
+                project.repositories.each { repo ->
+
+                    if (repo.name != 'MavenRepo' && repo.name != 'MavenLocal' && !repo.url.toString().startsWith('file:/') ) {
+                        repository {
+                            id = repo.name
+                            url = repo.url
+                        }
+                    }
                 }
             }
         }
@@ -89,8 +94,16 @@ task deleteJarInLibs(description: 'delete the wrong .jar file in the libs folder
         ant.delete (includeEmptyDirs: 'true') {
             fileset(dir: file("$buildDir/libs"), includes: '*.*')
         }
-        ant.delete (includeEmptyDirs: 'true') {
-            fileset(dir: file("$buildDir/native-libs"), includes: '*.*')
+
+        def dir = new File("$buildDir/native-libs")
+
+        if( dir.exists() ) {
+            logger.lifecycle "Deleting $buildDir/native-libs..."
+            ant.delete (includeEmptyDirs: 'true') {
+                fileset(dir: file("$buildDir/native-libs"), includes: '*.*')
+            }
+        } else {
+            logger.lifecycle 'build/native-libs does not exist'
         }
     }
 }
@@ -177,17 +190,29 @@ tasks.withType(Compile) {
 }
 
 uploadArchives {
-    doFirst {
-        repositories.mavenDeployer.pom = generatePom()
+    repositories {
+        if( project.hasProperty('username') && project.hasProperty('password')) {
+
+
+            mavenDeployer {
+                pom = generatePom()
+                configuration = configurations.deployerJars
+
+                repository(url: mavenUploadServer + mavenRepo + mavenReleases){
+                    authentication(userName: username, password: password)
+                }
+
+                snapshotRepository(url: mavenUploadServer + mavenRepo + mavenSnapshot){
+                    authentication(userName: username, password: password)
+                }
+            }
+        } else {
+        }
     }
 
-    repositories {
-        mavenDeployer {
-            configuration = configurations.deployerJars
-
-            repository(url: mavenUploadServer + mavenRepo + mavenReleases){
-                authentication(userName: mavenUsername, password: mavenPassword)
-            }
+    doLast {
+        if( !project.hasProperty('username') || !project.hasProperty('password')) {
+            logger.error '\tError: Cannot upload artifacts, username and password missing'
         }
     }
 }

@@ -4,7 +4,7 @@ apply plugin: 'android-library'
 dependencies {
     compile 'com.android.support:support-v4:19.0.+'
 
-    if( rootProject.name.equals('Android-Exif-Extended') ) {
+    if( rootProject.name.equals('android-exif-extended') ) {
         compile project(':android-exif-extended-native')
     } else {
         compile project(':Android-Exif-Extended:android-exif-extended-native')
@@ -83,9 +83,14 @@ def generatePom() {
             }
 
             repositories {
-                repository {
-                    id 's3.release'
-                    url 'http://maven.aviary.com/repo/release'
+                project.repositories.each { repo ->
+
+                    if (repo.name != 'MavenRepo' && repo.name != 'MavenLocal' && !repo.url.toString().startsWith('file:/') ) {
+                        repository {
+                            id = repo.name
+                            url = repo.url
+                        }
+                    }
                 }
             }
         }
@@ -113,17 +118,29 @@ task writePom {
 }
 
 uploadArchives {
-    doFirst {
-        repositories.mavenDeployer.pom = generatePom()
+    repositories {
+        if( project.hasProperty('username') && project.hasProperty('password')) {
+
+
+            mavenDeployer {
+                pom = generatePom()
+                configuration = configurations.deployerJars
+
+                repository(url: mavenUploadServer + mavenRepo + mavenReleases){
+                    authentication(userName: username, password: password)
+                }
+
+                snapshotRepository(url: mavenUploadServer + mavenRepo + mavenSnapshot){
+                    authentication(userName: username, password: password)
+                }
+            }
+        } else {
+        }
     }
 
-    repositories {
-        mavenDeployer {
-            configuration = configurations.deployerJars
-
-            repository(url: mavenUploadServer + mavenRepo + mavenReleases){
-                authentication(userName: mavenUsername, password: mavenPassword)
-            }
+    doLast {
+        if( !project.hasProperty('username') || !project.hasProperty('password')) {
+            logger.error '\tError: Cannot upload artifacts, username and password missing'
         }
     }
 }
@@ -152,13 +169,13 @@ task updateVersion {
         println "Version mismatch. updating version to ${project.version}"
 
         def text = src.text
-        def pattern = /(?ms)^(\s*)(public static final String VERSION = ")([0-9\.]+)(";)$/
+        def pattern = /(?ms)^(\s*)(public static final String VERSION = ")([0-9\-a-zA-Z\.]+)(";)$/
         def matcher = ( text =~ pattern )
 
         if( matcher.size() > 0 ) {
             text = matcher.replaceFirst("\$1\$2" + project.version + "\$4")
             src.setText(text)
-            println "Updated version of AviaryCds.java to ${project.version}"
+            println "Updated version of ${source.name} to ${project.version}"
         }
 
     }

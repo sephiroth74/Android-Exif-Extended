@@ -1,4 +1,8 @@
 
+rootProject.name = 'android-exif-extended'
+gradle.ext.versionModifier = '-SNAPSHOT'
+
 include ':android-exif-extended-native'
 include ':android-exif-extended-java'
 include ':samples'
+
