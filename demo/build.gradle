@@ -4,6 +4,7 @@ apply plugin: 'android'
 
 dependencies {
     compile project(':library-java')
+    // compile 'it.sephiroth.android.library.exif:library-java:+'
 }
 
 android {
