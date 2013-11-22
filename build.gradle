@@ -2,9 +2,6 @@ buildscript {
     repositories {
         mavenCentral()
         mavenLocal()
-        maven {
-            url uri(mavenDownloadServer + mavenRepo + mavenReleases)
-        }
     }
 
     dependencies {
@@ -16,29 +13,13 @@ allprojects {
     apply plugin: 'maven'
     apply plugin: 'maven-publish'
 
-    group = 'it.sephiroth.android.library.media'
-    version = '2.97'+gradle.ext.versionModifier
+    group = 'it.sephiroth.android.library.exif'
+    version = '2.97'
 
-    configurations {
-        deployerJars
-    }
-
-    dependencies {
-        deployerJars "org.kuali.maven.wagons:maven-s3-wagon:1.1.20"
-    }
 
     repositories {
         mavenCentral()
         mavenLocal()
-        maven {
-            name 'aviary-release'
-            url uri(mavenDownloadServer + mavenRepo + mavenReleases)
-        }
-
-        maven {
-            name 'aviary-snapshot'
-            url uri(mavenDownloadServer + mavenRepo + mavenSnapshot)
-        }
     }
 }
 
