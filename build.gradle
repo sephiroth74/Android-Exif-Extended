@@ -5,7 +5,7 @@ buildscript {
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:0.6.3+'
+        classpath 'com.android.tools.build:gradle:0.8.+'
     }
 }
 
@@ -14,7 +14,7 @@ allprojects {
     apply plugin: 'maven-publish'
 
     group = 'it.sephiroth.android.library.exif'
-    version = '2.97'
+    version = '2.97.1'
 
 
     repositories {
@@ -24,5 +24,5 @@ allprojects {
 }
 
 task wrapper(type: Wrapper) {
-    gradleVersion = '1.8'
+    gradleVersion = '1.10'
 }

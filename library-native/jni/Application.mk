@@ -1,6 +1,6 @@
 
 APP_PLATFORM	:= android-9
-ENABLE_LOGGING	:= true
+ENABLE_LOGGING	:= false
 
 
 ifeq ($(HOST_OS),darwin)

@@ -45,7 +45,7 @@ import android.util.Log;
 @SuppressLint("DefaultLocale")
 public class ExifInterfaceExtended {
 
-	public static final String VERSION = "2.97";
+	public static final String VERSION = "2.97.1";
 
 	private static final String LOG_TAG = "ExifInterfaceExtended";
 
