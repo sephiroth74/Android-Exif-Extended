@@ -41,6 +41,9 @@ public class MainActivity extends Activity implements OnClickListener {
 		super.onCreate( savedInstanceState );
 		setContentView( R.layout.activity_main );
 
+		// initialize the library
+		ExifInterfaceExtended.initialize(this);
+
 		button1 = (Button) findViewById( R.id.button1 );
 		button2 = (Button) findViewById( R.id.button2 );
 		image = (ImageView) findViewById( R.id.image1 );
@@ -147,6 +150,7 @@ public class MainActivity extends Activity implements OnClickListener {
 		String filename = IOUtils.getRealFilePath( this, uri );
 		
 		if( null == filename ) {
+			Log.w( LOG_TAG, "filename is null. exiting");
 			return;
 		}
 		

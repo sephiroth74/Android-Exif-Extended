@@ -4,7 +4,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>it.sephiroth.android.library.exif</groupId>
   <artifactId>library-java</artifactId>
-  <version>2.971-SNAPSHOT</version>
+  <version>2.97.2-SNAPSHOT</version>
   <name>Android-Exif-Extended (Java)</name>
   <description>Exif extended library (java) for Android, based on jhead c library (http://www.sentex.net/~mwandel/jhead/) </description>
   <url>http://blog.sephiroth.it</url>
@@ -32,12 +32,4 @@
     <developerConnection>scm:git:git@github.com:sephiroth74/Android-Exif-Extended.git</developerConnection>
     <url>https://github.com/sephiroth74/Android-Exif-Extended</url>
   </scm>
-  <dependencies>
-    <dependency>
-      <groupId>it.sephiroth.android.library.exif</groupId>
-      <artifactId>library-native</artifactId>
-      <version>2.971-SNAPSHOT</version>
-      <scope>compile</scope>
-    </dependency>
-  </dependencies>
 </project>

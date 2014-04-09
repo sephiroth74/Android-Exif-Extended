@@ -39,13 +39,14 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.TreeSet;
 import android.annotation.SuppressLint;
+import android.content.Context;
 import android.os.Bundle;
 import android.util.Log;
 
 @SuppressLint("DefaultLocale")
 public class ExifInterfaceExtended {
 
-	public static final String VERSION = "2.97.1";
+	public static final String VERSION = "2.97.3";
 
 	private static final String LOG_TAG = "ExifInterfaceExtended";
 
@@ -679,9 +680,9 @@ public class ExifInterfaceExtended {
 	private HashMap<String, String> mAttributes;
 	private boolean mHasThumbnail;
 	private String mFilename;
+	private static boolean sInitialized = false;
 
 	static {
-		System.loadLibrary( "exif_extended" );
 		sFormatter = new SimpleDateFormat( "yyyy:MM:dd HH:mm:ss", Locale.US );
 		sFormatter.setTimeZone( TimeZone.getDefault() );
 	}
@@ -690,6 +691,20 @@ public class ExifInterfaceExtended {
 		Log.i( LOG_TAG, "filename: " + filename );
 		mFilename = filename;
 		loadAttributes();
+	}
+
+	/**
+	 * Call this method before creating the first instance
+	 * of the ExifInterfaceExtended. It is used to initialize
+	 * the shared libraries
+	 */
+	public static void initialize( Context context ) {
+		if(!sInitialized) {
+			Log.i( LOG_TAG, "initialize: " + sInitialized );
+			LibraryLoader.ensureInitialized(context);
+			LibraryLoader.loadLibrary( "exif_extended" );
+			sInitialized = true;
+		}
 	}
 
 	/**
