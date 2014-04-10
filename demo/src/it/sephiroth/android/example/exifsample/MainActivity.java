@@ -385,6 +385,9 @@ public class MainActivity extends Activity implements OnClickListener {
 			
 			
 		}
+
+		Log.d( LOG_TAG, exifText.getText().toString() );
+
 		new LoadThumbnailTask().execute( filename );
 	}
 	

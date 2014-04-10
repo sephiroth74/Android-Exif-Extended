@@ -4,7 +4,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>it.sephiroth.android.library.exif</groupId>
   <artifactId>demo</artifactId>
-  <version>2.97.2-SNAPSHOT</version>
+  <version>2.97.3</version>
   <name>Android-Exif-Extended (Demo)</name>
   <description>Demo app for the Android-Exif-Extended library</description>
   <url>http://blog.sephiroth.it</url>

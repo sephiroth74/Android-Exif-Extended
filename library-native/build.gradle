@@ -105,9 +105,13 @@ deleteJarInLibs.outputs.upToDateWhen{ false }
 // -----------------------------------
 
 task ndkBuild(type:Exec) {
-    commandLine 'ndk-build', '-j8'
+    commandLine '/Users/alessandro/Documents/Android/android-ndk/ndk-build', '-j8'
 
     doFirst {
+
+        outputDir = new File("$buildDir/native-libs")
+        outputDir.mkdirs()
+
         logger.lifecycle "\t(2) ndk-build"
     }
 }
@@ -126,6 +130,9 @@ task copyNativeLibs(type:Copy) {
 
 copyNativeLibs.outputs.upToDateWhen{ false }
 copyNativeLibs.onlyIf { true }
+
+ndkBuild.outputs.upToDateWhen{ false }
+ndkBuild.onlyIf { true }
 
 // -----------------------------------
 // 4. build/native-libs into *.jar

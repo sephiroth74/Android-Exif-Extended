@@ -3,11 +3,12 @@ package it.sephiroth.android.library.media;
 import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.util.Log;
+
 import java.io.File;
 
 /**
  * Created by alessandro on 08/04/14.
- *
+ * <p/>
  * Used to replace the regular android System.loadLibrary
  * as a workaround for the PackageManager bug which sometimes
  * doesn't install the shared libraries in the correct location
@@ -25,6 +26,7 @@ class LibraryLoader {
 	// Prefix string of app's native library directory,
 	// e.g., /data/app-lib/com.android.chrome-
 	private static String sNativeLibraryDirPrefix = null;
+	private static boolean sNativeLibraryHack;
 
 	public static void ensureInitialized( Context context ) {
 		synchronized( sLock ) {
@@ -100,24 +102,61 @@ class LibraryLoader {
 	//     Because of change 1, each version has a different native
 	//     library name, so avoids mistakenly using the old native library.
 	public static void loadLibrary( String library ) throws UnsatisfiedLinkError {
+
 		Log.i( LOG_TAG, "loadLibrary: " + library );
+
 		try {
 			System.loadLibrary( library );
 		} catch( UnsatisfiedLinkError e ) {
+			Log.w( LOG_TAG, "------------------------------------" );
+			Log.w( LOG_TAG, "failed to load " + library + " using System.loadLibrary" );
+			Log.w( LOG_TAG, "switching to a secondary method" );
+			Log.w( LOG_TAG, "------------------------------------" );
+			Log.w( LOG_TAG, "catching: " + e.getMessage() );
+
 			assert sInitialized;
+
+			// Android PackageManager usually flips 1 and 2.
 			if( sNativeLibraryDirPrefix != null ) {
-				// Android PackageManager usually flips 1 and 2.
-				for( int i = 1; i <= 2; i++ ) {
-					String libPath = sNativeLibraryDirPrefix + i + "/" + System.mapLibraryName( library );
+				int i;
+				String libPath;
+				final String libName = System.mapLibraryName( library );
+
+				// Trying using the android 4+ system path
+				// /data/app-lib/com.aviary.android.feather-1/...
+				for( i = 1; i <= 2; i++ ) {
+					libPath = sNativeLibraryDirPrefix + i + "/" + libName;
+					Log.d( LOG_TAG, "trying with libPath: " + libPath );
 
 					File f = new File( libPath );
 					if( f.exists() ) {
-						Log.w( LOG_TAG, "Loading library " + libPath );
+						Log.d( LOG_TAG, "loading library " + libPath );
 						System.load( libPath );
+						sNativeLibraryHack = true;
+						return;
+					}
+				}
+
+				// on android 2.3 the native library it's something like
+				// /mnt/asec/com.aviary.android.feather/lib/...
+				for( i = 1; i <= 2; i++ ) {
+					libPath = sNativeLibraryDirPrefix + i + "/lib/" + libName;
+					Log.d( LOG_TAG, "trying with libPath: " + libPath );
+
+					File f = new File( libPath );
+					if( f.exists() ) {
+						Log.d( LOG_TAG, "loading library " + libPath );
+						System.load( libPath );
+						sNativeLibraryHack = true;
 						return;
 					}
 				}
 			}
+			else {
+				Log.w( LOG_TAG, "Couldn't load shared library because sNativeLibraryDirPrefix is null" );
+			}
+
+			Log.e( LOG_TAG, "failed to load the shared library " + library );
 			throw e;
 		}
 	}
