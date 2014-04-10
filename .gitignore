@@ -21,6 +21,7 @@ local.properties
 
 library/.DS_Store
 library/obj
+library/build
 
 library/libs/armeabi/libexif_extended.so
 

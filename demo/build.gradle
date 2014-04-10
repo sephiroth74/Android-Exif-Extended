@@ -3,7 +3,7 @@ apply plugin: 'signing'
 apply plugin: 'android'
 
 dependencies {
-    compile project(':library-java')
+    compile project(':library')
     // compile 'it.sephiroth.android.library.exif:library-java:+'
 }
 
