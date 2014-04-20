@@ -20,21 +20,24 @@ class JpegHeader {
 	/** Start Of Image **/
 	public static final int TAG_SOI = 0xD8;
 
-	/** Start Of Scan **/
-	public static final int TAG_M_SOS = 0xDA;
-
-	public static final int TAG_M_DQT = 0xDB;
-	public static final int TAG_M_DHT = 0xC4;
-	public static final int TAG_M_EOI = 0xD9;
-	public static final int TAG_M_COM = 0xFE;
+	/** JFIF (JPEG File Interchange Format) */
 	public static final int TAG_M_JFIF = 0xE0;
-	public static final int TAG_M_IPTC = 0xED;
+
+	/** EXIF table */
 	public static final int TAG_M_EXIF = 0xE1;
 
+	/** Product Information Comment */
+	public static final int TAG_M_COM = 0xFE;
+
+	/** Quantization Table */
+	public static final int TAG_M_DQT = 0xDB;
+
+	/** Start of frame */
 	public static final int TAG_M_SOF0 = 0xC0;
 	public static final int TAG_M_SOF1 = 0xC1;
 	public static final int TAG_M_SOF2 = 0xC2;
 	public static final int TAG_M_SOF3 = 0xC3;
+	public static final int TAG_M_DHT = 0xC4;
 	public static final int TAG_M_SOF5 = 0xC5;
 	public static final int TAG_M_SOF6 = 0xC6;
 	public static final int TAG_M_SOF7 = 0xC7;
@@ -44,6 +47,22 @@ class JpegHeader {
 	public static final int TAG_M_SOF13 = 0xCD;
 	public static final int TAG_M_SOF14 = 0xCE;
 	public static final int TAG_M_SOF15 = 0xCF;
+
+	/** Start Of Scan **/
+	public static final int TAG_M_SOS = 0xDA;
+
+	/** End of Image */
+	public static final int TAG_M_EOI = 0xD9;
+
+	public static final int TAG_M_IPTC = 0xED;
+
+	/** default JFIF Header bytes */
+	public static final byte JFIF_HEADER[] = {
+			(byte) 0xff, (byte) JpegHeader.TAG_M_JFIF,
+			0x00, 0x10, 'J', 'F', 'I', 'F',
+			0x00, 0x01, 0x01, 0x01, 0x01, 0x2C, 0x01,
+			0x2C, 0x00, 0x00
+	};
 
 
 	public static final short SOI = (short) 0xFFD8;

@@ -37,7 +37,7 @@ class ExifData {
 	private static final byte[] USER_COMMENT_JIS = { 0x4A, 0x49, 0x53, 0x00, 0x00, 0x00, 0x00, 0x00 };
 	private static final byte[] USER_COMMENT_UNICODE = { 0x55, 0x4E, 0x49, 0x43, 0x4F, 0x44, 0x45, 0x00 };
 
-	public List<ExifParser.Section> mSections;
+	private List<ExifParser.Section> mSections;
 	private final IfdData[] mIfdDatas = new IfdData[IfdId.TYPE_IFD_COUNT];
 	private final ByteOrder mByteOrder;
 	private byte[] mThumbnail;
@@ -373,5 +373,13 @@ class ExifData {
 
 	public short getJpegProcess() {
 		return this.jpegProcess;
+	}
+
+	public void setSections( final List<ExifParser.Section> sections ) {
+		mSections = sections;
+	}
+
+	public List<ExifParser.Section> getSections() {
+		return mSections;
 	}
 }

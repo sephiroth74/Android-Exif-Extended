@@ -19,52 +19,17 @@ package it.sephiroth.android.library.exif2;
 import android.util.Log;
 
 import java.io.BufferedOutputStream;
-import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 
-/**
- * This class provides a way to replace the Exif header of a JPEG image.
- * <p/>
- * Below is an example of writing EXIF data into a file
- * <p/>
- * <pre>
- * public static void writeExif(byte[] jpeg, ExifData exif, String path) {
- *     OutputStream os = null;
- *     try {
- *         os = new FileOutputStream(path);
- *         ExifOutputStream eos = new ExifOutputStream(os);
- *         // Set the exif header
- *         eos.setExifData(exif);
- *         // Write the original jpeg out, the header will be add into the file.
- *         eos.write(jpeg);
- *     } catch (FileNotFoundException e) {
- *         e.printStackTrace();
- *     } catch (IOException e) {
- *         e.printStackTrace();
- *     } finally {
- *         if (os != null) {
- *             try {
- *                 os.close();
- *             } catch (IOException e) {
- *                 e.printStackTrace();
- *             }
- *         }
- *     }
- * }
- * </pre>
- */
-class ExifOutputStream extends FilterOutputStream {
+class ExifOutputStream {
 	private static final String TAG = "ExifOutputStream";
 	private static final int STREAMBUFFER_SIZE = 0x00010000; // 64Kb
 
 	private static final int STATE_SOI = 0;
-	private int mState = STATE_SOI;
-	private static final int STATE_FRAME_HEADER = 1;
-	private static final int STATE_JPEG_DATA = 2;
 	private static final int EXIF_HEADER = 0x45786966;
 	private static final short TIFF_HEADER = 0x002A;
 	private static final short TIFF_BIG_ENDIAN = 0x4d4d;
@@ -74,13 +39,9 @@ class ExifOutputStream extends FilterOutputStream {
 	private static final int MAX_EXIF_SIZE = 65535;
 	private final ExifInterface mInterface;
 	private ExifData mExifData;
-	private int mByteToSkip;
-	private int mByteToCopy;
-	private byte[] mSingleByteArray = new byte[1];
 	private ByteBuffer mBuffer = ByteBuffer.allocate( 4 );
 
-	protected ExifOutputStream( OutputStream ou, ExifInterface iRef ) {
-		super( new BufferedOutputStream( ou, STREAMBUFFER_SIZE ) );
+	protected ExifOutputStream( ExifInterface iRef ) {
 		mInterface = iRef;
 	}
 
@@ -107,104 +68,7 @@ class ExifOutputStream extends FilterOutputStream {
 		return byteToRead;
 	}
 
-	/**
-	 * Writes the image out. The input data should be a valid JPEG format. After
-	 * writing, it's Exif header will be replaced by the given header.
-	 */
-	@Override
-	public void write( byte[] buffer, int offset, int length ) throws IOException {
-		while( ( mByteToSkip > 0 || mByteToCopy > 0 || mState != STATE_JPEG_DATA ) && length > 0 ) {
-			if( mByteToSkip > 0 ) {
-				int byteToProcess = length > mByteToSkip ? mByteToSkip : length;
-				length -= byteToProcess;
-				mByteToSkip -= byteToProcess;
-				offset += byteToProcess;
-			}
-			if( mByteToCopy > 0 ) {
-				int byteToProcess = length > mByteToCopy ? mByteToCopy : length;
-				out.write( buffer, offset, byteToProcess );
-				length -= byteToProcess;
-				mByteToCopy -= byteToProcess;
-				offset += byteToProcess;
-			}
-			if( length == 0 ) {
-				return;
-			}
-			switch( mState ) {
-				case STATE_SOI:
-					int byteRead = requestByteToBuffer( 2, buffer, offset, length );
-					offset += byteRead;
-					length -= byteRead;
-					if( mBuffer.position() < 2 ) {
-						return;
-					}
-					mBuffer.rewind();
-					if( mBuffer.getShort() != JpegHeader.SOI ) {
-						throw new IOException( "Not a valid jpeg image, cannot write exif" );
-					}
-					out.write( mBuffer.array(), 0, 2 );
-					mState = STATE_FRAME_HEADER;
-					mBuffer.rewind();
-					writeExifData();
-					break;
-				case STATE_FRAME_HEADER:
-					// We ignore the M_EXIF segment and copy all other segments
-					// until SOF tag.
-					byteRead = requestByteToBuffer( 4, buffer, offset, length );
-					offset += byteRead;
-					length -= byteRead;
-					// Check if this image data doesn't contain SOF.
-					if( mBuffer.position() == 2 ) {
-						short tag = mBuffer.getShort();
-						if( tag == JpegHeader.M_EOI ) {
-							out.write( mBuffer.array(), 0, 2 );
-							mBuffer.rewind();
-						}
-					}
-					if( mBuffer.position() < 4 ) {
-						return;
-					}
-					mBuffer.rewind();
-					short marker = mBuffer.getShort();
-					if( marker == JpegHeader.M_EXIF ) {
-						mByteToSkip = ( mBuffer.getShort() & 0x0000ffff ) - 2;
-						mState = STATE_JPEG_DATA;
-					}
-					else if( ! JpegHeader.isSofMarker( marker ) ) {
-						out.write( mBuffer.array(), 0, 4 );
-						mByteToCopy = ( mBuffer.getShort() & 0x0000ffff ) - 2;
-					}
-					else {
-						out.write( mBuffer.array(), 0, 4 );
-						mState = STATE_JPEG_DATA;
-					}
-					mBuffer.rewind();
-			}
-		}
-		if( length > 0 ) {
-			out.write( buffer, offset, length );
-		}
-	}
-
-	/**
-	 * Writes the one bytes out. The input data should be a valid JPEG format.
-	 * After writing, it's Exif header will be replaced by the given header.
-	 */
-	@Override
-	public void write( int oneByte ) throws IOException {
-		mSingleByteArray[0] = (byte) ( 0xff & oneByte );
-		write( mSingleByteArray );
-	}
-
-	/**
-	 * Equivalent to calling write(buffer, 0, buffer.length).
-	 */
-	@Override
-	public void write( byte[] buffer ) throws IOException {
-		write( buffer, 0, buffer.length );
-	}
-
-	public void writeExifData() throws IOException {
+	public void writeExifData( OutputStream out ) throws IOException {
 		if( mExifData == null ) {
 			return;
 		}
@@ -217,12 +81,14 @@ class ExifOutputStream extends FilterOutputStream {
 		if( exifSize + 8 > MAX_EXIF_SIZE ) {
 			throw new IOException( "Exif header is too large (>64Kb)" );
 		}
-		OrderedDataOutputStream dataOutputStream = new OrderedDataOutputStream( out );
+
+		BufferedOutputStream outputStream = new BufferedOutputStream( out, STREAMBUFFER_SIZE );
+		OrderedDataOutputStream dataOutputStream = new OrderedDataOutputStream( outputStream );
+
 		dataOutputStream.setByteOrder( ByteOrder.BIG_ENDIAN );
 
-//		dataOutputStream.write( 0xFF );
-//		dataOutputStream.write( JpegHeader.TAG_M_EXIF );
-		dataOutputStream.writeShort( JpegHeader.M_EXIF );
+		dataOutputStream.write( 0xFF );
+		dataOutputStream.write( JpegHeader.TAG_M_EXIF );
 		dataOutputStream.writeShort( (short) ( exifSize + 8 ) );
 		dataOutputStream.writeInt( EXIF_HEADER );
 		dataOutputStream.writeShort( (short) 0x0000 );
@@ -240,6 +106,7 @@ class ExifOutputStream extends FilterOutputStream {
 		for( ExifTag t : nullTags ) {
 			mExifData.addTag( t );
 		}
+
 		dataOutputStream.flush();
 	}
 

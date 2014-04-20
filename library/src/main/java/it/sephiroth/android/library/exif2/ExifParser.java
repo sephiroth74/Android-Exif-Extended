@@ -87,6 +87,7 @@ class ExifParser {
 	 * Option bit to request to parse thumbnail.
 	 */
 	public static final int OPTION_THUMBNAIL = 1 << 5;
+
 	protected static final int EXIF_HEADER = 0x45786966; // EXIF header "Exif"
 	protected static final short EXIF_HEADER_TAIL = (short) 0x0000; // EXIF header in M_EXIF
 	// TIFF header
@@ -122,6 +123,8 @@ class ExifParser {
 	private int mImageWidth;
 	private int mImageLength;
 	private short mProcess = 0;
+	private List<Section> mSections;
+	private int mUncompressedDataPosition = 0;
 
 	static final int std_luminance_quant_tbl[];
 	static final int std_chrominance_quant_tbl[];
@@ -138,9 +141,6 @@ class ExifParser {
 
 		deftabs = new int[][]{ std_luminance_quant_tbl, std_chrominance_quant_tbl };
 	}
-
-	List<Section> mSections;
-	private int mUncompressedDataPosition = 0;
 
 	private ExifParser( InputStream inputStream, int options, ExifInterface iRef ) throws IOException, ExifInvalidFormatException {
 		if( inputStream == null ) {
@@ -288,6 +288,8 @@ class ExifParser {
 				case JpegHeader.TAG_M_JFIF:
 					if( itemlen < 16 ) {
 						ignore = true;
+					} else {
+						Log.e( TAG, "JFIF found" );
 					}
 					break;
 
@@ -316,7 +318,7 @@ class ExifParser {
 						short headerTail = readShort( data, 6 );
 						// header = Exif, headerTail=\0\0
 						if( header == EXIF_HEADER && headerTail == EXIF_HEADER_TAIL ) {
-							Log.d( TAG, "found exif section" );
+							Log.e( TAG, "EXIF found" );
 							tiffStream = new CountedDataInputStream( new ByteArrayInputStream( data, 8, itemlen - 8 ) );
 							tiffStream.setEnd( itemlen - 6 );
 							ignore = true;
@@ -331,7 +333,7 @@ class ExifParser {
 					break;
 			}
 
-			if( ! ignore ) {
+			if( !ignore ) {
 				Log.d( TAG, "adding section with size: " + section.size );
 				mSections.add( section );
 			}
@@ -349,9 +351,11 @@ class ExifParser {
 
 	private void process_M_SOFn( final byte[] data, final int marker ) {
 		Log.i( TAG, "process_M_SOFn: " + data.length + ", marker: " + marker );
-		if( data.length > 4 ) {
-			mImageLength = Get16m( data, 1 );
-			mImageWidth = Get16m( data, 3 );
+		if( data.length > 7 ) {
+			//int data_precision = data[2] & 0xff;
+			//int num_components = data[7] & 0xff;
+			mImageLength = Get16m( data, 3 );
+			mImageWidth = Get16m( data, 5 );
 		}
 		mProcess = (short) marker;
 	}
@@ -363,9 +367,7 @@ class ExifParser {
 		int c;
 		int tableindex, coefindex;
 		double cumsf = 0.0;
-//		double cumsf2 = 0.0;
 		int[] reftable = null;
-//		int table[] = new int[64];
 		int allones = 1;
 
 		while( a < data.length ) {
@@ -388,13 +390,11 @@ class ExifParser {
 				else {
 					val = (int) data[a++];
 				}
-//				table[coefindex] = val;
 				if( reftable != null ) {
 					double x;
 					// scaling factor in percent
 					x = 100.0 * (double) val / (double) reftable[coefindex];
 					cumsf += x;
-//					cumsf2 += x * x;
 					// separate check for all-ones table (Q 100)
 					if( val != 1 ) allones = 0;
 				}
@@ -402,10 +402,7 @@ class ExifParser {
 			// Print summary stats
 			if( reftable != null ) { // terse output includes quality
 				double qual;
-//				double var;
 				cumsf /= 64.0;    // mean scale factor
-//				cumsf2 /= 64.0;
-//				var = cumsf2 - ( cumsf * cumsf ); // variance
 				if( allones != 0 ) {      // special case for all-ones table
 					qual = 100.0;
 				}
@@ -446,6 +443,7 @@ class ExifParser {
 	}
 
 	private boolean isIfdRequested( int ifdType ) {
+		Log.i( TAG, "isIfdRequested: " + ifdType );
 		switch( ifdType ) {
 			case IfdId.TYPE_IFD_0:
 				return ( mOptions & OPTION_IFD_0 ) != 0;
@@ -490,6 +488,7 @@ class ExifParser {
 	}
 
 	private boolean isThumbnailRequested() {
+		Log.i( TAG, "isThumbnailRequested: " + ( ( mOptions & OPTION_THUMBNAIL ) != 0 ) );
 		return ( mOptions & OPTION_THUMBNAIL ) != 0;
 	}
 

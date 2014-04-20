@@ -20,7 +20,13 @@ public class IOUtils {
 		else if ( ContentResolver.SCHEME_FILE.equals( scheme ) ) {
 			data = uri.getPath();
 		} else if ( ContentResolver.SCHEME_CONTENT.equals( scheme ) ) {
-			Cursor cursor = context.getContentResolver().query( uri, new String[] { ImageColumns.DATA }, null, null, null );
+			Cursor cursor;
+			try {
+				cursor = context.getContentResolver().query( uri, new String[]{ ImageColumns.DATA }, null, null, null );
+			} catch( IllegalArgumentException e ) {
+				e.printStackTrace();
+				return null;
+			}
 			if ( null != cursor ) {
 				if ( cursor.moveToFirst() ) {
 					int index = cursor.getColumnIndex( ImageColumns.DATA );

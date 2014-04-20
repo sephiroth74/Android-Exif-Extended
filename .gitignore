@@ -44,3 +44,6 @@ build/
 
 .idea/
 .gradle/
+
+demo/demo.iml
+demo/pom.xml

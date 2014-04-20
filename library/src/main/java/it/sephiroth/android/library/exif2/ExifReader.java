@@ -42,10 +42,9 @@ class ExifReader {
 	 * @throws java.io.IOException
 	 */
 	protected ExifData read( InputStream inputStream ) throws ExifInvalidFormatException, IOException {
-		Log.i( TAG, "read: " + inputStream.available() );
 		ExifParser parser = ExifParser.parse( inputStream, mInterface );
 		ExifData exifData = new ExifData( parser.getByteOrder() );
-		exifData.mSections = parser.getSections();
+		exifData.setSections( parser.getSections() );
 		exifData.mUncompressedDataPosition = parser.getUncompressedDataPosition();
 
 		exifData.setQualityGuess( parser.getQualityGuess() );
