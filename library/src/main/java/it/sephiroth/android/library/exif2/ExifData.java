@@ -37,10 +37,15 @@ class ExifData {
 	private static final byte[] USER_COMMENT_JIS = { 0x4A, 0x49, 0x53, 0x00, 0x00, 0x00, 0x00, 0x00 };
 	private static final byte[] USER_COMMENT_UNICODE = { 0x55, 0x4E, 0x49, 0x43, 0x4F, 0x44, 0x45, 0x00 };
 
+	public List<ExifParser.Section> mSections;
 	private final IfdData[] mIfdDatas = new IfdData[IfdId.TYPE_IFD_COUNT];
 	private final ByteOrder mByteOrder;
 	private byte[] mThumbnail;
 	private ArrayList<byte[]> mStripBytes = new ArrayList<byte[]>();
+	private int qualityGuess = 0;
+	private int imageLength = -1, imageWidth = -1;
+	private short jpegProcess = 0;
+	public int mUncompressedDataPosition = 0;
 
 	ExifData( ByteOrder order ) {
 		mByteOrder = order;
@@ -60,6 +65,7 @@ class ExifData {
 	 * Sets the compressed thumbnail.
 	 */
 	protected void setCompressedThumbnail( byte[] thumbnail ) {
+		Log.i( TAG, "setCompressedThumbnail: " + thumbnail );
 		mThumbnail = thumbnail;
 	}
 
@@ -67,6 +73,7 @@ class ExifData {
 	 * Returns true it this header contains a compressed thumbnail.
 	 */
 	protected boolean hasCompressedThumbnail() {
+		Log.i( TAG, "hasCompressedThumbnail: " + ( mThumbnail != null ) );
 		return mThumbnail != null;
 	}
 
@@ -343,4 +350,28 @@ class ExifData {
 		return null;
 	}
 
+	protected void setQualityGuess( final int qualityGuess ) {
+		this.qualityGuess = qualityGuess;
+	}
+
+	public int getQualityGuess() {
+		return qualityGuess;
+	}
+
+	protected void setImageSize( final int imageWidth, final int imageLength ) {
+		this.imageWidth = imageWidth;
+		this.imageLength = imageLength;
+	}
+
+	public int[] getImageSize() {
+		return new int[]{ imageWidth, imageLength };
+	}
+
+	public void setJpegProcess( final short jpegProcess ) {
+		this.jpegProcess = jpegProcess;
+	}
+
+	public short getJpegProcess() {
+		return this.jpegProcess;
+	}
 }

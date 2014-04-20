@@ -18,7 +18,10 @@ package it.sephiroth.android.library.exif2;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.util.Log;
 import android.util.SparseIntArray;
+
+import org.apache.commons.io.IOUtils;
 
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
@@ -34,15 +37,19 @@ import java.io.OutputStream;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.channels.FileChannel;
 import java.nio.channels.FileChannel.MapMode;
 import java.text.DateFormat;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.TimeZone;
 
 /**
@@ -62,6 +69,8 @@ import java.util.TimeZone;
  * @see ExifTag
  */
 public class ExifInterface {
+	private static final String TAG = "ExifInterface";
+
 	public static final int TAG_NULL = - 1;
 	public static final int IFD_NULL = - 1;
 	public static final int DEFINITION_NULL = 0;
@@ -74,23 +83,102 @@ public class ExifInterface {
 	public static final int TAG_IMAGE_WIDTH = defineTag( IfdId.TYPE_IFD_0, (short) 0x0100 );
 	public static final int TAG_IMAGE_LENGTH = defineTag( IfdId.TYPE_IFD_0, (short) 0x0101 ); // Image height
 	public static final int TAG_BITS_PER_SAMPLE = defineTag( IfdId.TYPE_IFD_0, (short) 0x0102 );
+
+	/**
+	 * Value is unsigned int.<br />
+	 * (Read only tag) The compression scheme used for the image data. When a primary image is JPEG compressed, this designation is
+	 * not necessary and is omitted. When thumbnails use JPEG compression, this tag value is set to 6.
+	 * <ul>
+	 * <li>1 = uncompressed</li>
+	 * <li>6 = JPEG compression (thumbnails only)</li>
+	 * <li>Other = reserved</li>
+	 */
 	public static final int TAG_COMPRESSION = defineTag( IfdId.TYPE_IFD_0, (short) 0x0103 );
 	public static final int TAG_PHOTOMETRIC_INTERPRETATION = defineTag( IfdId.TYPE_IFD_0, (short) 0x0106 );
 	public static final int TAG_IMAGE_DESCRIPTION = defineTag( IfdId.TYPE_IFD_0, (short) 0x010E );
+
+	/**
+	 * Value is ascii string<br />
+	 * The manufacturer of the recording equipment. This is the manufacturer of the DSC, scanner, video digitizer or other equipment
+	 * that generated the image. When the field is left blank, it is treated as unknown.
+	 */
 	public static final int TAG_MAKE = defineTag( IfdId.TYPE_IFD_0, (short) 0x010F );
+
+	/**
+	 * Value is ascii string<br />
+	 * The model name or model number of the equipment. This is the model name of number of the DSC, scanner, video digitizer or
+	 * other equipment that generated the image. When the field is left blank, it is treated as unknown.
+	 */
 	public static final int TAG_MODEL = defineTag( IfdId.TYPE_IFD_0, (short) 0x0110 );
 	public static final int TAG_STRIP_OFFSETS = defineTag( IfdId.TYPE_IFD_0, (short) 0x0111 );
+
+	/**
+	 * Value is int<br />
+	 * The orientation of the camera relative to the scene, when the image was captured. The start point of stored data is:
+	 * <ul>
+	 * <li>'0' undefined</li>
+	 * <li>'1' normal</li>
+	 * <li>'2' flip horizontal</li>
+	 * <li>'3' rotate 180</li>
+	 * <li>'4' flip vertical</li>
+	 * <li>'5' transpose, flipped about top-left <--> bottom-right axis</li>
+	 * <li>'6' rotate 90 cw</li>
+	 * <li>'7' transverse, flipped about top-right <--> bottom-left axis</li>
+	 * <li>'8' rotate 270</li>
+	 * <li>'9' undefined</li>
+	 * </ul>
+	 */
 	public static final int TAG_ORIENTATION = defineTag( IfdId.TYPE_IFD_0, (short) 0x0112 );
 	public static final int TAG_SAMPLES_PER_PIXEL = defineTag( IfdId.TYPE_IFD_0, (short) 0x0115 );
 	public static final int TAG_ROWS_PER_STRIP = defineTag( IfdId.TYPE_IFD_0, (short) 0x0116 );
 	public static final int TAG_STRIP_BYTE_COUNTS = defineTag( IfdId.TYPE_IFD_0, (short) 0x0117 );
+
+	/**
+	 * Value is unsigned double.<br />
+	 * Display/Print resolution of image. Large number of digicam uses 1/72inch, but it has no mean because personal computer doesn't
+	 * use this value to display/print out.
+	 */
 	public static final int TAG_X_RESOLUTION = defineTag( IfdId.TYPE_IFD_0, (short) 0x011A );
+
+	/**
+	 * @see #TAG_X_RESOLUTION
+	 */
 	public static final int TAG_Y_RESOLUTION = defineTag( IfdId.TYPE_IFD_0, (short) 0x011B );
 	public static final int TAG_PLANAR_CONFIGURATION = defineTag( IfdId.TYPE_IFD_0, (short) 0x011C );
+
+	/**
+	 * Value is unsigned int.<br />
+	 * Unit of XResolution(0x011a)/YResolution(0x011b)
+	 * <ul>
+	 * <li>'1' means no-unit ( use inch )</li>
+	 * <li>'2' inch</li>
+	 * <li>'3' centimeter</li>
+	 * <li>'4' millimeter</li>
+	 * <li>'5' micrometer</li>
+	 * </ul>
+	 */
 	public static final int TAG_RESOLUTION_UNIT = defineTag( IfdId.TYPE_IFD_0, (short) 0x0128 );
 	public static final int TAG_TRANSFER_FUNCTION = defineTag( IfdId.TYPE_IFD_0, (short) 0x012D );
+
+	/**
+	 * Value is ascii string<br />
+	 * Shows firmware(internal software of digicam) version number.
+	 */
 	public static final int TAG_SOFTWARE = defineTag( IfdId.TYPE_IFD_0, (short) 0x0131 );
+
+	/**
+	 * Value is ascii string (20)<br />
+	 * Date/Time of image was last modified. Data format is "YYYY:MM:DD HH:MM:SS"+0x00, total 20bytes. In usual, it has the same
+	 * value of DateTimeOriginal(0x9003)
+	 */
 	public static final int TAG_DATE_TIME = defineTag( IfdId.TYPE_IFD_0, (short) 0x0132 );
+
+	/**
+	 * Vallue is ascii String<br />
+	 * This tag records the name of the camera owner, photographer or image creator. The detailed format is not specified, but it is
+	 * recommended that the information be written as in the example below for ease of Interoperability. When the field is left
+	 * blank, it is treated as unknown.
+	 */
 	public static final int TAG_ARTIST = defineTag( IfdId.TYPE_IFD_0, (short) 0x013B );
 	public static final int TAG_WHITE_POINT = defineTag( IfdId.TYPE_IFD_0, (short) 0x013E );
 	public static final int TAG_PRIMARY_CHROMATICITIES = defineTag( IfdId.TYPE_IFD_0, (short) 0x013F );
@@ -98,6 +186,11 @@ public class ExifInterface {
 	public static final int TAG_Y_CB_CR_SUB_SAMPLING = defineTag( IfdId.TYPE_IFD_0, (short) 0x0212 );
 	public static final int TAG_Y_CB_CR_POSITIONING = defineTag( IfdId.TYPE_IFD_0, (short) 0x0213 );
 	public static final int TAG_REFERENCE_BLACK_WHITE = defineTag( IfdId.TYPE_IFD_0, (short) 0x0214 );
+
+	/**
+	 * Values is ascii string<br />
+	 * Shows copyright information
+	 */
 	public static final int TAG_COPYRIGHT = defineTag( IfdId.TYPE_IFD_0, (short) 0x8298 );
 	public static final int TAG_EXIF_IFD = defineTag( IfdId.TYPE_IFD_0, (short) 0x8769 );
 	public static final int TAG_GPS_IFD = defineTag( IfdId.TYPE_IFD_0, (short) 0x8825 );
@@ -105,26 +198,212 @@ public class ExifInterface {
 	public static final int TAG_JPEG_INTERCHANGE_FORMAT = defineTag( IfdId.TYPE_IFD_1, (short) 0x0201 );
 	public static final int TAG_JPEG_INTERCHANGE_FORMAT_LENGTH = defineTag( IfdId.TYPE_IFD_1, (short) 0x0202 );
 	// IFD Exif Tags
+
+	/**
+	 * Value is unsigned double<br />
+	 * Exposure time (reciprocal of shutter speed). Unit is second
+	 */
 	public static final int TAG_EXPOSURE_TIME = defineTag( IfdId.TYPE_IFD_EXIF, (short) 0x829A );
+
+	/**
+	 * Value is unsigned double<br />
+	 * The actual F-number(F-stop) of lens when the image was taken
+	 *
+	 * @see #TAG_APERTURE_VALUE
+	 */
 	public static final int TAG_F_NUMBER = defineTag( IfdId.TYPE_IFD_EXIF, (short) 0x829D );
+
+	/**
+	 * Value is unsigned int.<br />
+	 * Exposure program that the camera used when image was taken.
+	 * <ul>
+	 * <li>'1' means manual control</li>
+	 * <li>'2' program normal</li>
+	 * <li>'3' aperture priority</li>
+	 * <li>'4' shutter priority</li>
+	 * <li>'5' program creative (slow program)</li>
+	 * <li>'6' program action(high-speed program)</li>
+	 * <li>'7' portrait mode</li>
+	 * <li>'8' landscape mode.</li>
+	 * </ul>
+	 */
 	public static final int TAG_EXPOSURE_PROGRAM = defineTag( IfdId.TYPE_IFD_EXIF, (short) 0x8822 );
 	public static final int TAG_SPECTRAL_SENSITIVITY = defineTag( IfdId.TYPE_IFD_EXIF, (short) 0x8824 );
+
+	/**
+	 * Value is unsigned int.<br />
+	 * CCD sensitivity equivalent to Ag-Hr film speedrate.<br />
+	 * Indicates the ISO Speed and ISO Latitude of the camera or input device as specified in ISO 12232
+	 */
 	public static final int TAG_ISO_SPEED_RATINGS = defineTag( IfdId.TYPE_IFD_EXIF, (short) 0x8827 );
 	public static final int TAG_OECF = defineTag( IfdId.TYPE_IFD_EXIF, (short) 0x8828 );
+
+	/**
+	 * ASCII string (4).<br />
+	 * The version of this standard supported. Nonexistence of this field is taken to mean nonconformance to the standard (see
+	 * section 4.2). Conformance to this standard is indicated by recording "0220" as 4-byte ASCII
+	 */
 	public static final int TAG_EXIF_VERSION = defineTag( IfdId.TYPE_IFD_EXIF, (short) 0x9000 );
+
+	/**
+	 * Value is ascii string (20)<br />
+	 * Date/Time of original image taken. This value should not be modified by user program.
+	 */
 	public static final int TAG_DATE_TIME_ORIGINAL = defineTag( IfdId.TYPE_IFD_EXIF, (short) 0x9003 );
+
+	/**
+	 * Value is ascii string (20)<br />
+	 * Date/Time of image digitized. Usually, it contains the same value of DateTimeOriginal(0x9003).
+	 */
 	public static final int TAG_DATE_TIME_DIGITIZED = defineTag( IfdId.TYPE_IFD_EXIF, (short) 0x9004 );
 	public static final int TAG_COMPONENTS_CONFIGURATION = defineTag( IfdId.TYPE_IFD_EXIF, (short) 0x9101 );
 	public static final int TAG_COMPRESSED_BITS_PER_PIXEL = defineTag( IfdId.TYPE_IFD_EXIF, (short) 0x9102 );
+
+	/**
+	 * Value is signed double.<br />
+	 * Shutter speed. To convert this value to ordinary 'Shutter Speed'; calculate this value's power of 2, then reciprocal. For
+	 * example, if value is '4', shutter speed is 1/(2^4)=1/16 second.
+	 */
 	public static final int TAG_SHUTTER_SPEED_VALUE = defineTag( IfdId.TYPE_IFD_EXIF, (short) 0x9201 );
+
+
+	/**
+	 * Value is unsigned double<br />
+	 * The actual aperture value of lens when the image was taken.<br />
+	 * To convert this value to ordinary F-number(F-stop), calculate this value's power of root 2 (=1.4142).<br />
+	 * For example, if value is '5', F-number is 1.4142^5 = F5.6<br />
+	 * <p/>
+	 * <pre>
+	 * FNumber = Math.exp( ApertureValue * Math.log( 2 ) * 0.5 );
+	 * </pre>
+	 *
+	 * @see #TAG_F_NUMBER
+	 */
 	public static final int TAG_APERTURE_VALUE = defineTag( IfdId.TYPE_IFD_EXIF, (short) 0x9202 );
+
+	/**
+	 * Value is signed double<br />
+	 * Brightness of taken subject, unit is EV.
+	 */
 	public static final int TAG_BRIGHTNESS_VALUE = defineTag( IfdId.TYPE_IFD_EXIF, (short) 0x9203 );
+
+	/**
+	 * Value is signed double.<br />
+	 * The exposure bias. The unit is the APEX value. Ordinarily it is given in the range of -99.99 to 99.99
+	 */
 	public static final int TAG_EXPOSURE_BIAS_VALUE = defineTag( IfdId.TYPE_IFD_EXIF, (short) 0x9204 );
+
+	/**
+	 * Value is unsigned double.<br />
+	 * Maximum aperture value of lens.<br />
+	 * You can convert to F-number by calculating power of root 2 (same process of ApertureValue(0x9202).<br />
+	 * <p/>
+	 * <pre>
+	 * FNumber = Math.exp( MaxApertureValue * Math.log( 2 ) * 0.5 )
+	 * </pre>
+	 */
 	public static final int TAG_MAX_APERTURE_VALUE = defineTag( IfdId.TYPE_IFD_EXIF, (short) 0x9205 );
+
+	/**
+	 * Value if signed double.<br />
+	 * Distance to focus point, unit is meter. If value < 0 then focus point is infinite
+	 */
 	public static final int TAG_SUBJECT_DISTANCE = defineTag( IfdId.TYPE_IFD_EXIF, (short) 0x9206 );
+
+	/**
+	 * Value is unsigned int.<br />
+	 * Exposure metering method:
+	 * <ul>
+	 * <li>0 = unknown</li>
+	 * <li>1 = Average</li>
+	 * <li>2 = CenterWeightedAverage</li>
+	 * <li>3 = Spot</li>
+	 * <li>4 = MultiSpot</li>
+	 * <li>5 = Pattern</li>
+	 * <li>6 = Partial</li>
+	 * <li>Other = reserved</li>
+	 * <li>255 = other</li>
+	 * </ul>
+	 */
 	public static final int TAG_METERING_MODE = defineTag( IfdId.TYPE_IFD_EXIF, (short) 0x9207 );
+
+	/**
+	 * Value is unsigned int.<br />
+	 * Light source, actually this means white balance setting.
+	 * <ul>
+	 * <li>0 = means auto</li>
+	 * <li>1 = Daylight</li>
+	 * <li>2 = Fluorescent</li>
+	 * <li>3 = Tungsten (incandescent light)</li>
+	 * <li>4 = Flash</li>
+	 * <li>9 = Fine weather</li>
+	 * <li>10 = Cloudy weather</li>
+	 * <li>11 = Shade</li>
+	 * <li>12 = Daylight fluorescent (D 5700 - 7100K)</li>
+	 * <li>13 = Day white fluorescent (N 4600 - 5400K)</li>
+	 * <li>14 = Cool white fluorescent (W 3900 - 4500K)</li>
+	 * <li>15 = White fluorescent (WW 3200 - 3700K)</li>
+	 * <li>17 = Standard light A</li>
+	 * <li>18 = Standard light B</li>
+	 * <li>19 = Standard light C</li>
+	 * <li>20 = D55</li>
+	 * <li>21 = D65</li>
+	 * <li>22 = D75</li>
+	 * <li>23 = D50</li>
+	 * <li>24 = ISO studio tungsten</li>
+	 * <li>255 = other light source</li>
+	 * <li>Other = reserved</li>
+	 * </ul>
+	 */
 	public static final int TAG_LIGHT_SOURCE = defineTag( IfdId.TYPE_IFD_EXIF, (short) 0x9208 );
+
+	/**
+	 * Value is unsigned integer<br />
+	 * The 8 bits can be extracted and evaluated in this way:<br />
+	 * <ol>
+	 * <li>Bit 0 indicates the flash firing status</li>
+	 * <li>bits 1 and 2 indicate the flash return status</li>
+	 * <li>bits 3 and 4 indicate the flash mode</li>
+	 * <li>bit 5 indicates whether the flash function is present</li>
+	 * <li>and bit 6 indicates "red eye" mode</li>
+	 * <li>bit 7 unused</li>
+	 * </ol>
+	 * <p/>
+	 * Resulting Flash tag values are:<br />
+	 * <ul>
+	 * <li>0000.H = Flash did not fire</li>
+	 * <li>0001.H = Flash fired</li>
+	 * <li>0005.H = Strobe return light not detected</li>
+	 * <li>0007.H = Strobe return light detected</li>
+	 * <li>0009.H = Flash fired, compulsory flash mode</li>
+	 * <li>000D.H = Flash fired, compulsory flash mode, return light not detected</li>
+	 * <li>000F.H = Flash fired, compulsory flash mode, return light detected</li>
+	 * <li>0010.H = Flash did not fire, compulsory flash mode</li>
+	 * <li>0018.H = Flash did not fire, auto mode</li>
+	 * <li>0019.H = Flash fired, auto mode</li>
+	 * <li>001D.H = Flash fired, auto mode, return light not detected</li>
+	 * <li>001F.H = Flash fired, auto mode, return light detected</li>
+	 * <li>0020.H = No flash function</li>
+	 * <li>0041.H = Flash fired, red-eye reduction mode</li>
+	 * <li>0045.H = Flash fired, red-eye reduction mode, return light not detected</li>
+	 * <li>0047.H = Flash fired, red-eye reduction mode, return light detected</li>
+	 * <li>0049.H = Flash fired, compulsory flash mode, red-eye reduction mode</li>
+	 * <li>004D.H = Flash fired, compulsory flash mode, red-eye reduction mode, return light not detected</li>
+	 * <li>004F.H = Flash fired, compulsory flash mode, red-eye reduction mode, return light detected</li>
+	 * <li>0059.H = Flash fired, auto mode, red-eye reduction mode</li>
+	 * <li>005D.H = Flash fired, auto mode, return light not detected, red-eye reduction mode</li>
+	 * <li>005F.H = Flash fired, auto mode, return light detected, red-eye reduction mode</li>
+	 * <li>Other = reserved</li>
+	 * </ul>
+	 *
+	 * @see <a href="http://www.exif.org/Exif2-2.PDF">http://www.exif.org/Exif2-2.PDF</a>
+	 */
 	public static final int TAG_FLASH = defineTag( IfdId.TYPE_IFD_EXIF, (short) 0x9209 );
+
+	/**
+	 * Value is unsigned double<br />
+	 * Focal length of lens used to take image. Unit is millimeter.
+	 */
 	public static final int TAG_FOCAL_LENGTH = defineTag( IfdId.TYPE_IFD_EXIF, (short) 0x920A );
 	public static final int TAG_SUBJECT_AREA = defineTag( IfdId.TYPE_IFD_EXIF, (short) 0x9214 );
 	public static final int TAG_MAKER_NOTE = defineTag( IfdId.TYPE_IFD_EXIF, (short) 0x927C );
@@ -133,49 +412,269 @@ public class ExifInterface {
 	public static final int TAG_SUB_SEC_TIME_ORIGINAL = defineTag( IfdId.TYPE_IFD_EXIF, (short) 0x9291 );
 	public static final int TAG_SUB_SEC_TIME_DIGITIZED = defineTag( IfdId.TYPE_IFD_EXIF, (short) 0x9292 );
 	public static final int TAG_FLASHPIX_VERSION = defineTag( IfdId.TYPE_IFD_EXIF, (short) 0xA000 );
+
+	/**
+	 * Value is int.<br />
+	 * Normally sRGB (=1) is used to define the color space based on the PC monitor conditions and environment. If a color space
+	 * other than sRGB is used, Uncalibrated (=FFFF.H) is set. Image data recorded as Uncalibrated can be treated as sRGB when it is
+	 * converted to Flashpix. On sRGB see Annex E.
+	 * <ul>
+	 * <li>'1' = sRGB</li>
+	 * <li>'FFFF' = Uncalibrated</li>
+	 * <li>'other' = Reserved</li>
+	 * </ul>
+	 */
 	public static final int TAG_COLOR_SPACE = defineTag( IfdId.TYPE_IFD_EXIF, (short) 0xA001 );
+
+	/**
+	 * Value is unsigned int.<br />
+	 * Specific to compressed data; the valid width of the meaningful image. When a compressed file is recorded, the valid width of
+	 * the meaningful image shall be recorded in this tag, whether or not there is padding data or a restart marker. This tag should
+	 * not exist in an uncompressed file.
+	 */
 	public static final int TAG_PIXEL_X_DIMENSION = defineTag( IfdId.TYPE_IFD_EXIF, (short) 0xA002 );
+
+	/**
+	 * @see #TAG_PIXEL_X_DIMENSION
+	 */
 	public static final int TAG_PIXEL_Y_DIMENSION = defineTag( IfdId.TYPE_IFD_EXIF, (short) 0xA003 );
 	public static final int TAG_RELATED_SOUND_FILE = defineTag( IfdId.TYPE_IFD_EXIF, (short) 0xA004 );
 	public static final int TAG_INTEROPERABILITY_IFD = defineTag( IfdId.TYPE_IFD_EXIF, (short) 0xA005 );
 	public static final int TAG_FLASH_ENERGY = defineTag( IfdId.TYPE_IFD_EXIF, (short) 0xA20B );
 	public static final int TAG_SPATIAL_FREQUENCY_RESPONSE = defineTag( IfdId.TYPE_IFD_EXIF, (short) 0xA20C );
+
+	/**
+	 * Value is unsigned double.<br />
+	 * Indicates the number of pixels in the image width (X) direction per FocalPlaneResolutionUnit on the camera focal plane. CCD's
+	 * pixel density
+	 *
+	 * @see #TAG_FOCAL_PLANE_RESOLUTION_UNIT
+	 */
 	public static final int TAG_FOCAL_PLANE_X_RESOLUTION = defineTag( IfdId.TYPE_IFD_EXIF, (short) 0xA20E );
+
+	/**
+	 * @see #TAG_FOCAL_PLANE_X_RESOLUTION
+	 */
 	public static final int TAG_FOCAL_PLANE_Y_RESOLUTION = defineTag( IfdId.TYPE_IFD_EXIF, (short) 0xA20F );
+
+	/**
+	 * Value is unsigned int.<br />
+	 * Unit of FocalPlaneXResoluton/FocalPlaneYResolution.
+	 * <ul>
+	 * <li>'1' means no-unit</li>
+	 * <li>'2' inch</li>
+	 * <li>'3' centimeter</li>
+	 * <li>'4' millimeter</li>
+	 * <li>'5' micrometer</li>
+	 * </ul>
+	 * <p/>
+	 * This tag can be used to calculate the CCD Width:
+	 * <p/>
+	 * <pre>
+	 * CCDWidth = ( PixelXDimension * FocalPlaneResolutionUnit / FocalPlaneXResolution )
+	 * </pre>
+	 */
 	public static final int TAG_FOCAL_PLANE_RESOLUTION_UNIT = defineTag( IfdId.TYPE_IFD_EXIF, (short) 0xA210 );
 	public static final int TAG_SUBJECT_LOCATION = defineTag( IfdId.TYPE_IFD_EXIF, (short) 0xA214 );
 	public static final int TAG_EXPOSURE_INDEX = defineTag( IfdId.TYPE_IFD_EXIF, (short) 0xA215 );
+
+	/**
+	 * Value is unsigned int.<br />
+	 * Indicates the image sensor type on the camera or input device. The values are as follows:
+	 * <ul>
+	 * <li>1 = Not defined</li>
+	 * <li>2 = One-chip color area sensor</li>
+	 * <li>3 = Two-chip color area sensor JEITA CP-3451 - 41</li>
+	 * <li>4 = Three-chip color area sensor</li>
+	 * <li>5 = Color sequential area sensor</li>
+	 * <li>7 = Trilinear sensor</li>
+	 * <li>8 = Color sequential linear sensor</li>
+	 * <li>Other = reserved</li>
+	 * </ul>
+	 */
 	public static final int TAG_SENSING_METHOD = defineTag( IfdId.TYPE_IFD_EXIF, (short) 0xA217 );
 	public static final int TAG_FILE_SOURCE = defineTag( IfdId.TYPE_IFD_EXIF, (short) 0xA300 );
 	public static final int TAG_SCENE_TYPE = defineTag( IfdId.TYPE_IFD_EXIF, (short) 0xA301 );
 	public static final int TAG_CFA_PATTERN = defineTag( IfdId.TYPE_IFD_EXIF, (short) 0xA302 );
 	public static final int TAG_CUSTOM_RENDERED = defineTag( IfdId.TYPE_IFD_EXIF, (short) 0xA401 );
+
+	/**
+	 * Value is int.<br />
+	 * This tag indicates the exposure mode set when the image was shot. In auto-bracketing mode, the camera shoots a series of
+	 * frames of the same scene at different exposure settings.
+	 * <ul>
+	 * <li>0 = Auto exposure</li>
+	 * <li>1 = Manual exposure</li>
+	 * <li>2 = Auto bracket</li>
+	 * <li>Other = reserved</li>
+	 * </ul>
+	 */
 	public static final int TAG_EXPOSURE_MODE = defineTag( IfdId.TYPE_IFD_EXIF, (short) 0xA402 );
 	public static final int TAG_WHITE_BALANCE = defineTag( IfdId.TYPE_IFD_EXIF, (short) 0xA403 );
+
+	/**
+	 * Value is double.<br />
+	 * This tag indicates the digital zoom ratio when the image was shot. If the numerator of the recorded value is 0, this indicates
+	 * that digital zoom was not used
+	 */
 	public static final int TAG_DIGITAL_ZOOM_RATIO = defineTag( IfdId.TYPE_IFD_EXIF, (short) 0xA404 );
+
+	/**
+	 * Value is unsigned int.<br />
+	 * This tag indicates the equivalent focal length assuming a 35mm film camera, in mm.<br />
+	 * Exif 2.2 tag, usually not present, it can be calculated by:
+	 * <p/>
+	 * <pre>
+	 * CCDWidth = ( PixelXDimension * FocalplaneUnits / FocalplaneXRes );
+	 * FocalLengthIn35mmFilm = ( FocalLength / CCDWidth * 36 + 0.5 );
+	 * </pre>
+	 */
 	public static final int TAG_FOCAL_LENGTH_IN_35_MM_FILE = defineTag( IfdId.TYPE_IFD_EXIF, (short) 0xA405 );
+
+	/**
+	 * Value is int.<br />
+	 * This tag indicates the type of scene that was shot. It can also be used to record the mode in which the image was shot. Note
+	 * that this differs from the scene type (SceneType) tag.
+	 * <ul>
+	 * <li>0 = Standard</li>
+	 * <li>1 = Landscape</li>
+	 * <li>2 = Portrait</li>
+	 * <li>3 = Night scene</li>
+	 * <li>Other = reserved</li>
+	 * </ul>
+	 */
 	public static final int TAG_SCENE_CAPTURE_TYPE = defineTag( IfdId.TYPE_IFD_EXIF, (short) 0xA406 );
+
+	/**
+	 * Value is int.<br />
+	 * This tag indicates the degree of overall image gain adjustment.
+	 * <ul>
+	 * <li>0 = None</li>
+	 * <li>1 = Low gain up</li>
+	 * <li>2 = High gain up</li>
+	 * <li>3 = Low gain down</li>
+	 * <li>4 = High gain down</li>
+	 * <li>Other = reserved</li>
+	 * </ul>
+	 */
 	public static final int TAG_GAIN_CONTROL = defineTag( IfdId.TYPE_IFD_EXIF, (short) 0xA407 );
+
+	/**
+	 * Value is int.<br />
+	 * This tag indicates the direction of contrast processing applied by the camera when the image was shot.
+	 * <ul>
+	 * <li>0 = Normal</li>
+	 * <li>1 = Soft</li>
+	 * <li>2 = Hard</li>
+	 * <li>Other = reserved</li>
+	 * </ul>
+	 */
 	public static final int TAG_CONTRAST = defineTag( IfdId.TYPE_IFD_EXIF, (short) 0xA408 );
+
+	/**
+	 * Value is int.<br />
+	 * This tag indicates the direction of saturation processing applied by the camera when the image was shot.
+	 * <ul>
+	 * <li>0 = Normal</li>
+	 * <li>1 = Low saturation</li>
+	 * <li>2 = High saturation</li>
+	 * <li>Other = reserved</li>
+	 * </ul>
+	 */
 	public static final int TAG_SATURATION = defineTag( IfdId.TYPE_IFD_EXIF, (short) 0xA409 );
+
+	/**
+	 * Value is int.<br />
+	 * This tag indicates the direction of sharpness processing applied by the camera when the image was shot
+	 * <ul>
+	 * <li>0 = Normal</li>
+	 * <li>1 = Soft</li>
+	 * <li>2 = Hard</li>
+	 * <li>Other = reserved</li>
+	 * </ul>
+	 */
 	public static final int TAG_SHARPNESS = defineTag( IfdId.TYPE_IFD_EXIF, (short) 0xA40A );
 	public static final int TAG_DEVICE_SETTING_DESCRIPTION = defineTag( IfdId.TYPE_IFD_EXIF, (short) 0xA40B );
+
+	/**
+	 * Value is int.<br />
+	 * This tag indicates the distance to the subject.
+	 * <ul>
+	 * <li>0 = unknown</li>
+	 * <li>1 = Macro</li>
+	 * <li>2 = Close view</li>
+	 * <li>3 = Distant view</li>
+	 * <li>Other = reserved</li>
+	 * </ul>
+	 */
 	public static final int TAG_SUBJECT_DISTANCE_RANGE = defineTag( IfdId.TYPE_IFD_EXIF, (short) 0xA40C );
+
+	/**
+	 * {@link ExifTag#TYPE_ASCII}
+	 */
 	public static final int TAG_IMAGE_UNIQUE_ID = defineTag( IfdId.TYPE_IFD_EXIF, (short) 0xA420 );
 	// IFD GPS tags
 	public static final int TAG_GPS_VERSION_ID = defineTag( IfdId.TYPE_IFD_GPS, (short) 0 );
+
+	/**
+	 * Value is string(1)<br />
+	 * Indicates whether the latitude is north or south latitude. The ASCII value 'N' indicates north latitude, and 'S' is south latitude.
+	 */
 	public static final int TAG_GPS_LATITUDE_REF = defineTag( IfdId.TYPE_IFD_GPS, (short) 1 );
+
+	/**
+	 * Value is string.<br />
+	 * Indicates the latitude. The latitude is expressed as three RATIONAL values giving the degrees, minutes, and
+	 * seconds, respectively. If latitude is expressed as degrees, minutes and seconds, a typical format would be
+	 * dd/1,mm/1,ss/1. When degrees and minutes are used and, for example, fractions of minutes are given up to two
+	 * decimal places, the format would be dd/1,mmmm/100,0/1.
+	 */
 	public static final int TAG_GPS_LATITUDE = defineTag( IfdId.TYPE_IFD_GPS, (short) 2 );
+
+	/**
+	 * Value is string(1)<br />
+	 * Indicates whether the longitude is east or west longitude. ASCII 'E' indicates east longitude, and 'W' is west longitude.
+	 */
 	public static final int TAG_GPS_LONGITUDE_REF = defineTag( IfdId.TYPE_IFD_GPS, (short) 3 );
+
+	/**
+	 * Value is string.<br />
+	 * Indicates the longitude. The longitude is expressed as three RATIONAL values giving the degrees, minutes, and
+	 * seconds, respectively. If longitude is expressed as degrees, minutes and seconds, a typical format would be
+	 * ddd/1,mm/1,ss/1. When degrees and minutes are used and, for example, fractions of minutes are given up to two
+	 * decimal places, the format would be ddd/1,mmmm/100,0/1.
+	 */
 	public static final int TAG_GPS_LONGITUDE = defineTag( IfdId.TYPE_IFD_GPS, (short) 4 );
+
+	/**
+	 * Value is byte<br />
+	 * Indicates the altitude used as the reference altitude. If the reference is sea level and the altitude is above sea level,
+	 * 0 is given. If the altitude is below sea level, a value of 1 is given and the altitude is indicated as an absolute value in
+	 * the GPSAltitude tag. The reference unit is meters. Note that this tag is BYTE type, unlike other reference tags
+	 */
 	public static final int TAG_GPS_ALTITUDE_REF = defineTag( IfdId.TYPE_IFD_GPS, (short) 5 );
+
+	/**
+	 * Value is string.<br />
+	 * Indicates the altitude based on the reference in GPSAltitudeRef. Altitude is expressed as one RATIONAL value. The reference unit is meters.
+	 */
 	public static final int TAG_GPS_ALTITUDE = defineTag( IfdId.TYPE_IFD_GPS, (short) 6 );
 	public static final int TAG_GPS_TIME_STAMP = defineTag( IfdId.TYPE_IFD_GPS, (short) 7 );
 	public static final int TAG_GPS_SATTELLITES = defineTag( IfdId.TYPE_IFD_GPS, (short) 8 );
 	public static final int TAG_GPS_STATUS = defineTag( IfdId.TYPE_IFD_GPS, (short) 9 );
 	public static final int TAG_GPS_MEASURE_MODE = defineTag( IfdId.TYPE_IFD_GPS, (short) 10 );
 	public static final int TAG_GPS_DOP = defineTag( IfdId.TYPE_IFD_GPS, (short) 11 );
+
+	/**
+	 * Value is string(1).<br />
+	 * Indicates the unit used to express the GPS receiver speed of movement. 'K' 'M' and 'N' represents kilometers per  hour, miles per hour, and knots.
+	 */
 	public static final int TAG_GPS_SPEED_REF = defineTag( IfdId.TYPE_IFD_GPS, (short) 12 );
+
+	/**
+	 * Value is string.<br />
+	 * Indicates the speed of GPS receiver movement
+	 */
 	public static final int TAG_GPS_SPEED = defineTag( IfdId.TYPE_IFD_GPS, (short) 13 );
 	public static final int TAG_GPS_TRACK_REF = defineTag( IfdId.TYPE_IFD_GPS, (short) 14 );
 	public static final int TAG_GPS_TRACK = defineTag( IfdId.TYPE_IFD_GPS, (short) 15 );
@@ -199,15 +698,18 @@ public class ExifInterface {
 	public static final ByteOrder DEFAULT_BYTE_ORDER = ByteOrder.BIG_ENDIAN;
 	private ExifData mData = new ExifData( DEFAULT_BYTE_ORDER );
 	private static final String NULL_ARGUMENT_STRING = "Argument is null";
+
 	private static final String GPS_DATE_FORMAT_STR = "yyyy:MM:dd";
-	private final DateFormat mGPSDateStampFormat = new SimpleDateFormat( GPS_DATE_FORMAT_STR );
+	private static final DateFormat mGPSDateStampFormat = new SimpleDateFormat( GPS_DATE_FORMAT_STR );
 	private static final String DATETIME_FORMAT_STR = "yyyy:MM:dd kk:mm:ss";
-	private final DateFormat mDateTimeStampFormat = new SimpleDateFormat( DATETIME_FORMAT_STR );
+	private static final DateFormat mDateTimeStampFormat = new SimpleDateFormat( DATETIME_FORMAT_STR );
+
 	/**
 	 * Tags that contain offset markers. These are included in the banned
 	 * defines.
 	 */
 	private static HashSet<Short> sOffsetTags = new HashSet<Short>();
+
 	static {
 		sOffsetTags.add( getTrueTagKey( TAG_GPS_IFD ) );
 		sOffsetTags.add( getTrueTagKey( TAG_EXIF_IFD ) );
@@ -215,15 +717,18 @@ public class ExifInterface {
 		sOffsetTags.add( getTrueTagKey( TAG_INTEROPERABILITY_IFD ) );
 		sOffsetTags.add( getTrueTagKey( TAG_STRIP_OFFSETS ) );
 	}
+
 	/**
 	 * Tags with definitions that cannot be overridden (banned defines).
 	 */
 	protected static HashSet<Short> sBannedDefines = new HashSet<Short>( sOffsetTags );
+
 	static {
 		sBannedDefines.add( getTrueTagKey( TAG_NULL ) );
 		sBannedDefines.add( getTrueTagKey( TAG_JPEG_INTERCHANGE_FORMAT_LENGTH ) );
 		sBannedDefines.add( getTrueTagKey( TAG_STRIP_BYTE_COUNTS ) );
 	}
+
 	private final Calendar mGPSTimeStampCalendar = Calendar.getInstance( TimeZone.getTimeZone( "UTC" ) );
 	private SparseIntArray mTagInfo = null;
 
@@ -292,6 +797,33 @@ public class ExifInterface {
 	}
 
 	/**
+	 * Given the value from {@link #TAG_FOCAL_PLANE_RESOLUTION_UNIT} or {@link #TAG_RESOLUTION_UNIT}
+	 * this method will return the corresponding value in millimeters
+	 *
+	 * @param resolution
+	 * @return resolution in millimeters
+	 */
+	public double getResolutionUnit( int resolution ) {
+		switch( resolution ) {
+			case 1:
+			case ResolutionUnit.INCHES:
+				return 25.4;
+
+			case ResolutionUnit.CENTIMETERS:
+				return 10;
+
+			case ResolutionUnit.MILLIMETERS:
+				return 1;
+
+			case ResolutionUnit.MICROMETERS:
+				return .001;
+
+			default:
+				return 25.4;
+		}
+	}
+
+	/**
 	 * Gets the double representation of the GPS latitude or longitude
 	 * coordinate.
 	 *
@@ -309,7 +841,7 @@ public class ExifInterface {
 			double minutes = coordinate[1].toDouble();
 			double seconds = coordinate[2].toDouble();
 			double result = degrees + minutes / 60.0 + seconds / 3600.0;
-			if( ( reference.equals( "S" ) || reference.equals( "W" ) ) ) {
+			if( ( reference.startsWith( "S" ) || reference.startsWith( "W" ) ) ) {
 				return - result;
 			}
 			return result;
@@ -353,7 +885,7 @@ public class ExifInterface {
 		}
 		InputStream is = null;
 		try {
-			is = (InputStream) new BufferedInputStream( new FileInputStream( inFileName ) );
+			is = new BufferedInputStream( new FileInputStream( inFileName ) );
 			readExif( is );
 		} catch( IOException e ) {
 			closeSilently( is );
@@ -373,10 +905,11 @@ public class ExifInterface {
 		if( inStream == null ) {
 			throw new IllegalArgumentException( NULL_ARGUMENT_STRING );
 		}
-		ExifData d = null;
+		ExifData d;
 		try {
 			d = new ExifReader( this ).read( inStream );
 		} catch( ExifInvalidFormatException e ) {
+			Log.e( TAG, e.getMessage() );
 			throw new IOException( "Invalid exif format : " + e );
 		}
 		mData = d;
@@ -418,6 +951,7 @@ public class ExifInterface {
 	 * @see #setTag
 	 */
 	public void setTags( Collection<ExifTag> tags ) {
+		if( null == tags ) return;
 		for( ExifTag t : tags ) {
 			setTag( t );
 		}
@@ -445,7 +979,7 @@ public class ExifInterface {
 	 *                      exif tags will be written.
 	 * @throws java.io.IOException
 	 */
-	public void writeExif( byte[] jpeg, OutputStream exifOutStream ) throws IOException {
+	public void _writeExif( byte[] jpeg, OutputStream exifOutStream ) throws IOException {
 		if( jpeg == null || exifOutStream == null ) {
 			throw new IllegalArgumentException( NULL_ARGUMENT_STRING );
 		}
@@ -465,7 +999,7 @@ public class ExifInterface {
 	 * @return an OutputStream that wraps the outStream parameter, and adds exif
 	 * metadata. A jpeg image should be written to this stream.
 	 */
-	public OutputStream getExifWriterStream( OutputStream outStream ) {
+	public ExifOutputStream getExifWriterStream( OutputStream outStream ) {
 		if( outStream == null ) {
 			throw new IllegalArgumentException( NULL_ARGUMENT_STRING );
 		}
@@ -483,7 +1017,7 @@ public class ExifInterface {
 	 *                      exif tags will be written.
 	 * @throws java.io.IOException
 	 */
-	public void writeExif( Bitmap bmap, OutputStream exifOutStream ) throws IOException {
+	public void _writeExif( Bitmap bmap, OutputStream exifOutStream ) throws IOException {
 		if( bmap == null || exifOutStream == null ) {
 			throw new IllegalArgumentException( NULL_ARGUMENT_STRING );
 		}
@@ -501,7 +1035,7 @@ public class ExifInterface {
 	 *                      exif tags will be written.
 	 * @throws java.io.IOException
 	 */
-	public void writeExif( InputStream jpegStream, OutputStream exifOutStream ) throws IOException {
+	public void _writeExif( InputStream jpegStream, OutputStream exifOutStream ) throws IOException {
 		if( jpegStream == null || exifOutStream == null ) {
 			throw new IllegalArgumentException( NULL_ARGUMENT_STRING );
 		}
@@ -529,7 +1063,7 @@ public class ExifInterface {
 	 * @throws java.io.FileNotFoundException
 	 * @throws java.io.IOException
 	 */
-	public void writeExif( Bitmap bmap, String exifOutFileName ) throws FileNotFoundException, IOException {
+	public void _writeExif( Bitmap bmap, String exifOutFileName ) throws FileNotFoundException, IOException {
 		if( bmap == null || exifOutFileName == null ) {
 			throw new IllegalArgumentException( NULL_ARGUMENT_STRING );
 		}
@@ -581,14 +1115,14 @@ public class ExifInterface {
 	 * @throws java.io.FileNotFoundException
 	 * @throws java.io.IOException
 	 */
-	public void writeExif( String jpegFileName, String exifOutFileName ) throws FileNotFoundException, IOException {
+	public void _writeExif( String jpegFileName, String exifOutFileName ) throws FileNotFoundException, IOException {
 		if( jpegFileName == null || exifOutFileName == null ) {
 			throw new IllegalArgumentException( NULL_ARGUMENT_STRING );
 		}
 		InputStream is = null;
 		try {
 			is = new FileInputStream( jpegFileName );
-			writeExif( is, exifOutFileName );
+			_writeExif( is, exifOutFileName );
 		} catch( IOException e ) {
 			closeSilently( is );
 			throw e;
@@ -606,7 +1140,7 @@ public class ExifInterface {
 	 * @throws java.io.FileNotFoundException
 	 * @throws java.io.IOException
 	 */
-	public void writeExif( InputStream jpegStream, String exifOutFileName ) throws FileNotFoundException, IOException {
+	public void _writeExif( InputStream jpegStream, String exifOutFileName ) throws FileNotFoundException, IOException {
 		if( jpegStream == null || exifOutFileName == null ) {
 			throw new IllegalArgumentException( NULL_ARGUMENT_STRING );
 		}
@@ -630,7 +1164,7 @@ public class ExifInterface {
 	 * @param filename a String containing a filepath for a jpeg file.
 	 * @throws java.io.FileNotFoundException
 	 * @throws java.io.IOException
-	 * @see #rewriteExif
+	 * @see #writeExif
 	 */
 	public void forceRewriteExif( String filename ) throws FileNotFoundException, IOException {
 		forceRewriteExif( filename, getAllTags() );
@@ -646,34 +1180,151 @@ public class ExifInterface {
 	 *                 tags if possible.
 	 * @throws java.io.FileNotFoundException
 	 * @throws java.io.IOException
-	 * @see #rewriteExif
+	 * @see #writeExif
 	 */
-	public void forceRewriteExif( String filename, Collection<ExifTag> tags ) throws FileNotFoundException, IOException {
+	public void forceRewriteExif( String filename, Collection<ExifTag> tags ) throws IOException {
 		// Attempt in-place write
-		if( ! rewriteExif( filename, tags ) ) {
-			// Fall back to doing a copy
-			ExifData tempData = mData;
-			mData = new ExifData( DEFAULT_BYTE_ORDER );
-			FileInputStream is = null;
-			ByteArrayOutputStream bytes = null;
-			try {
-				is = new FileInputStream( filename );
-				bytes = new ByteArrayOutputStream();
-				doExifStreamIO( is, bytes );
-				byte[] imageBytes = bytes.toByteArray();
-				readExif( imageBytes );
-				setTags( tags );
-				writeExif( imageBytes, filename );
-			} catch( IOException e ) {
-				closeSilently( is );
-				throw e;
-			} finally {
-				is.close();
-				// Prevent clobbering of mData
-				mData = tempData;
-			}
+		boolean rewrite_result = false;
+
+		try {
+			rewrite_result = rewriteExif( filename, tags );
+		} catch( IOException e ) {}
+
+		if( ! rewrite_result ) {
+			_rewriteExif( filename, tags, false );
 		}
 	}
+
+	public void _rewriteExif( final String filename, final Collection<ExifTag> tags, boolean override ) throws IOException {
+		ExifData tempData = mData;
+		mData = new ExifData( DEFAULT_BYTE_ORDER );
+		FileInputStream is = null;
+		ByteArrayOutputStream bytes = null;
+		try {
+			is = new FileInputStream( filename );
+			bytes = new ByteArrayOutputStream();
+			doExifStreamIO( is, bytes );
+			byte[] imageBytes = bytes.toByteArray();
+			readExif( imageBytes );
+			if( override ) {
+				clearExif();
+			}
+			setTags( tags );
+			_writeExif( imageBytes, filename );
+		} catch( IOException e ) {
+			closeSilently( is );
+			throw e;
+		} finally {
+			is.close();
+			// Prevent clobbering of mData
+			mData = tempData;
+		}
+	}
+
+	public void writeExif( final String dstFilename ) throws IOException {
+		Log.i( TAG, "writeExif: " + dstFilename );
+
+		// 2. create a backup file
+		File dst_file = new File( dstFilename );
+		File bak_file = new File( dstFilename + ".t" );
+
+		// 3. rename dst file into backup file
+		if( !dst_file.renameTo( bak_file ) ) return;
+
+		try {
+			writeExif( bak_file.getAbsolutePath(), dst_file.getAbsolutePath() );
+		} finally {
+			Log.v( TAG, "deleting backup.." );
+			bak_file.delete();
+		}
+	}
+
+	public void writeExif( final String srcFilename, final String dstFilename ) throws IOException {
+		Log.i( TAG, "writeExif: " + dstFilename );
+
+		// src and dst cannot be the same
+		if( srcFilename.equals( dstFilename ) ) return;
+
+		// srcFilename is used *ONLY* to read the image uncompressed data
+		// exif tags are not used here
+
+		// 3. rename dst file into backup file
+		FileInputStream input = new FileInputStream( srcFilename );
+		FileOutputStream output = new FileOutputStream( dstFilename );
+
+		int position = writeExif_internal( input, output, mData );
+
+		// 7. write the rest of the image..
+		FileChannel in_channel = input.getChannel();
+		FileChannel out_channel = output.getChannel();
+		in_channel.transferTo( position, in_channel.size() - position, out_channel );
+
+		output.flush();
+
+		IOUtils.closeQuietly( input );
+		IOUtils.closeQuietly( output );
+	}
+
+
+	public void writeExif( final InputStream input, final String dstFilename ) throws IOException {
+		Log.i( TAG, "writeExif: " + dstFilename );
+
+		// inpur is used *ONLY* to read the image uncompressed data
+		// exif tags are not used here
+
+		FileOutputStream output = new FileOutputStream( dstFilename );
+		int position = writeExif_internal( input, output, mData );
+
+		// 7. write the rest of the image..
+		IOUtils.copyLarge( input, output );
+
+		output.flush();
+		output.close();
+	}
+
+	private static int writeExif_internal( final InputStream input, final OutputStream output, ExifData exifData ) throws IOException {
+		Log.i( TAG, "writeExif_internal" );
+
+		// 1. read the output file first
+		ExifInterface src_exif = new ExifInterface();
+		src_exif.readExif( input );
+
+		// 4. Create the destination outputstream
+		// 5. write headers
+		output.write( 0xFF );
+		output.write( JpegHeader.TAG_SOI );
+
+		final List<ExifParser.Section> sections = src_exif.mData.mSections;
+
+		// 6. write all the sections from the srcFilename
+		if( sections.get( 0 ).type != JpegHeader.TAG_M_JFIF && sections.get( 0 ).type != JpegHeader.TAG_M_EXIF ) {
+			Log.w( TAG, "first section is not a JFIF or EXIF tag" );
+		}
+
+		// 6.1 write all the sections except for the M_SOS
+		for( int a = 0; a < sections.size() - 1; a++ ) {
+			ExifParser.Section current = sections.get( a );
+			Log.v( TAG, "writing section.. " + String.format( "0x%2X", current.type ) );
+			output.write( 0xFF );
+			output.write( current.type );
+			output.write( current.data );
+		}
+
+		// 6.2 write the M_EXIF tag
+		ExifOutputStream eo = new ExifOutputStream( output, src_exif );
+		eo.setExifData( exifData );
+		eo.writeExifData();
+
+		// 6.3 write the last M_SOS marker
+		ExifParser.Section current = sections.get( sections.size() - 1 );
+		Log.v( TAG, "writing last section.. " + String.format( "0x%2X", current.type ) );
+		output.write( 0xFF );
+		output.write( current.type );
+		output.write( current.data );
+
+		return src_exif.mData.mUncompressedDataPosition;
+	}
+
 
 	/**
 	 * Get the exif tags in this ExifInterface object or null if none exist.
@@ -706,7 +1357,7 @@ public class ExifInterface {
 			File temp = new File( filename );
 			is = new BufferedInputStream( new FileInputStream( temp ) );
 
-			// Parse beginning of APP1 in exif to find size of exif header.
+			// Parse beginning of M_EXIF in exif to find size of exif header.
 			ExifParser parser = null;
 			try {
 				parser = ExifParser.parse( is, this );
@@ -714,6 +1365,9 @@ public class ExifInterface {
 				throw new IOException( "Invalid exif format : ", e );
 			}
 			long exifSize = parser.getOffsetToExifEndFromSOF();
+
+			Log.v( TAG, "exifSize: " + exifSize );
+			if( exifSize < 6 ) return false;
 
 			// Free up resources
 			is.close();
@@ -729,8 +1383,7 @@ public class ExifInterface {
 			// Map only exif header into memory.
 			ByteBuffer buf = file.getChannel().map( MapMode.READ_WRITE, 0, exifSize );
 
-			// Attempt to overwrite tag values without changing lengths (avoids
-			// file copy).
+			// Attempt to overwrite tag values without changing lengths (avoids file copy).
 			ret = rewriteExif( buf, tags );
 		} catch( IOException e ) {
 			closeSilently( file );
@@ -763,7 +1416,7 @@ public class ExifInterface {
 	 * @throws java.io.FileNotFoundException
 	 * @throws java.io.IOException
 	 */
-	public void writeExif( byte[] jpeg, String exifOutFileName ) throws FileNotFoundException, IOException {
+	public void _writeExif( byte[] jpeg, String exifOutFileName ) throws FileNotFoundException, IOException {
 		if( jpeg == null || exifOutFileName == null ) {
 			throw new IllegalArgumentException( NULL_ARGUMENT_STRING );
 		}
@@ -1568,6 +2221,47 @@ public class ExifInterface {
 	}
 
 	/**
+	 * Returns the JPEG quality used to generate the image
+	 * or 0 if not found
+	 * @return
+	 */
+	public int getQualityGuess() {
+		return mData.getQualityGuess();
+	}
+
+	/**
+	 * this gives information about the process used to create the JPEG file.
+	 * Possible values are:
+	 * <ul>
+	 * <li>'0' Unknown</li>
+	 * <li>'192' Baseline</li>
+	 * <li>'193' Extended sequential</li>
+	 * <li>'194' Progressive</li>
+	 * <li>'195' Lossless</li>
+	 * <li>'197' Differential sequential</li>
+	 * <li>'198' Differential progressive</li>
+	 * <li>'199' Differential lossless</li>
+	 * <li>'201' Extended sequential, arithmetic coding</li>
+	 * <li>'202' Progressive, arithmetic coding</li>
+	 * <li>'203' Lossless, arithmetic coding</li>
+	 * <li>'205' Differential sequential, arithmetic coding</li>
+	 * <li>'206' Differential progressive, arithmetic codng</li>
+	 * <li>'207' Differential lossless, arithmetic coding</li>
+	 * </ul>
+	 */
+	public short getJpegProcess() {
+		return mData.getJpegProcess();
+	}
+
+	/**
+	 * Returns the Image size as decoded from the SOF marker
+	 * @return
+	 */
+	public int[] getImageSize() {
+		return mData.getImageSize();
+	}
+
+	/**
 	 * Check if thumbnail is compressed.
 	 *
 	 * @return true if the thumbnail is compressed.
@@ -1630,6 +2324,29 @@ public class ExifInterface {
 	}
 
 	/**
+	 * Return the altitude in meters. If the exif tag does not exist, return
+	 * <var>defaultValue</var>.
+	 *
+	 * @param defaultValue the value to return if the tag is not available.
+	 */
+	public double getAltitude( double defaultValue ) {
+
+		Byte ref = getTagByteValue( TAG_GPS_ALTITUDE_REF );
+		Rational gpsAltitude = getTagRationalValue( TAG_GPS_ALTITUDE );
+
+		int seaLevel = 1;
+		if( null != ref ) {
+			seaLevel = ref.intValue() == 1 ? - 1 : 1;
+		}
+
+		if( gpsAltitude != null ) {
+			return gpsAltitude.toDouble() * seaLevel;
+		}
+
+		return defaultValue;
+	}
+
+	/**
 	 * Gets the GPS latitude and longitude as a pair of doubles from this
 	 * ExifInterface object's tags, or null if the necessary tags do not exist.
 	 *
@@ -1649,6 +2366,75 @@ public class ExifInterface {
 		latLon[0] = convertLatOrLongToDouble( latitude, latitudeRef );
 		latLon[1] = convertLatOrLongToDouble( longitude, longitudeRef );
 		return latLon;
+	}
+
+	/**
+	 * Returns a formatted String with the latitude representation:<br />
+	 * 39° 8' 16.8" N
+	 *
+	 * @return
+	 */
+	public String getLatitude() {
+		Rational[] latitude = getTagRationalValues( TAG_GPS_LATITUDE );
+		String latitudeRef = getTagStringValue( TAG_GPS_LATITUDE_REF );
+
+		if( null == latitude || null == latitudeRef ) return null;
+		return convertRationalLatLonToString( latitude, latitudeRef );
+	}
+
+	/**
+	 * Returns a formatted String with the longitude representation:<br />
+	 * 77° 37' 51.6" W
+	 *
+	 * @return
+	 */
+	public String getLongitude() {
+		Rational[] longitude = getTagRationalValues( TAG_GPS_LONGITUDE );
+		String longitudeRef = getTagStringValue( TAG_GPS_LONGITUDE_REF );
+
+		if( null == longitude || null == longitudeRef ) return null;
+		return convertRationalLatLonToString( longitude, longitudeRef );
+	}
+
+	private static String convertRationalLatLonToString( Rational[] coord, String ref ) {
+		try {
+
+			double degrees = coord[0].toDouble();
+			double minutes = coord[1].toDouble();
+			double seconds = coord[2].toDouble();
+			ref = ref.substring( 0, 1 );
+
+			return String.format( "%1$.0f° %2$.0f' %3$.0f\" %4$s", degrees, minutes, seconds, ref.toUpperCase( Locale.getDefault() ) );
+		} catch( NumberFormatException e ) {
+			e.printStackTrace();
+		} catch( ArrayIndexOutOfBoundsException e ) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	/**
+	 * Given an exif date time, like {@link #TAG_DATE_TIME} or {@link #TAG_DATE_TIME_DIGITIZED}
+	 * returns a java Date object
+	 *
+	 * @param dateTimeString
+	 * @param timeZone
+	 * @return
+	 */
+	public static Date getDateTime( String dateTimeString, TimeZone timeZone ) {
+		if( dateTimeString == null ) return null;
+
+		DateFormat formatter = new SimpleDateFormat( DATETIME_FORMAT_STR );
+		formatter.setTimeZone( timeZone );
+
+		try {
+			return formatter.parse( dateTimeString );
+		} catch( IllegalArgumentException e ) {
+			e.printStackTrace();
+		} catch( ParseException e ) {
+			e.printStackTrace();
+		}
+		return null;
 	}
 
 	/**
@@ -1742,10 +2528,8 @@ public class ExifInterface {
 	public boolean addGpsTags( double latitude, double longitude ) {
 		ExifTag latTag = buildTag( TAG_GPS_LATITUDE, toExifLatLong( latitude ) );
 		ExifTag longTag = buildTag( TAG_GPS_LONGITUDE, toExifLatLong( longitude ) );
-		ExifTag latRefTag = buildTag( TAG_GPS_LATITUDE_REF, latitude >= 0 ? GpsLatitudeRef.NORTH : GpsLatitudeRef.SOUTH
-		);
-		ExifTag longRefTag = buildTag( TAG_GPS_LONGITUDE_REF, longitude >= 0 ? GpsLongitudeRef.EAST : GpsLongitudeRef.WEST
-		);
+		ExifTag latRefTag = buildTag( TAG_GPS_LATITUDE_REF, latitude >= 0 ? GpsLatitudeRef.NORTH : GpsLatitudeRef.SOUTH );
+		ExifTag longRefTag = buildTag( TAG_GPS_LONGITUDE_REF, longitude >= 0 ? GpsLongitudeRef.EAST : GpsLongitudeRef.WEST );
 		if( latTag == null || longTag == null || latRefTag == null || longRefTag == null ) {
 			return false;
 		}
@@ -1782,12 +2566,30 @@ public class ExifInterface {
 		mGPSTimeStampCalendar.setTimeInMillis( timestamp );
 		t = buildTag( TAG_GPS_TIME_STAMP,
 		              new Rational[]{ new Rational( mGPSTimeStampCalendar.get( Calendar.HOUR_OF_DAY ), 1 ), new Rational( mGPSTimeStampCalendar.get( Calendar.MINUTE ), 1 ),
-				              new Rational( mGPSTimeStampCalendar.get( Calendar.SECOND ), 1 ) } );
+				              new Rational( mGPSTimeStampCalendar.get( Calendar.SECOND ), 1 ) }
+		);
 		if( t == null ) {
 			return false;
 		}
 		setTag( t );
 		return true;
+	}
+
+	/**
+	 * Return the aperture size, if present, 0 if missing
+	 * @return
+	 */
+	public double getApertureSize() {
+		Rational rational = getTagRationalValue( TAG_F_NUMBER );
+		if( null != rational && rational.toDouble() > 0 ) {
+			return rational.toDouble();
+		}
+
+		rational = getTagRationalValue( TAG_APERTURE_VALUE );
+		if( null != rational && rational.toDouble() > 0 ) {
+			return Math.exp( rational.toDouble() * Math.log( 2 ) * 0.5 );
+		}
+		return 0;
 	}
 
 	/**
@@ -1839,6 +2641,8 @@ public class ExifInterface {
 	public static interface ResolutionUnit {
 		public static final short INCHES = 2;
 		public static final short CENTIMETERS = 3;
+		public static final short MILLIMETERS = 4;
+		public static final short MICROMETERS = 5;
 	}
 
 	/**
@@ -1888,34 +2692,48 @@ public class ExifInterface {
 		public static final short OTHER = 255;
 	}
 
+	public static byte[] toBitArray( short value ) {
+		byte[] result = new byte[16];
+		for( int i = 0; i < 16; i++ ) {
+			result[15-i] = (byte) ((value >> i) & 1);
+		}
+		return result;
+	}
+
 	/**
 	 * Constants for {@link #TAG_FLASH} As the definition in Jeita EXIF 2.2
-	 * standard, we can treat this constant as bitwise flag.
-	 * <p/>
-	 * e.g.
-	 * <p/>
-	 * short flash = FIRED | RETURN_STROBE_RETURN_LIGHT_DETECTED |
-	 * MODE_AUTO_MODE
 	 */
 	public static interface Flash {
-		// LSB
-		public static final short DID_NOT_FIRED = 0;
-		public static final short FIRED = 1;
-		// 1st~2nd bits
-		public static final short RETURN_NO_STROBE_RETURN_DETECTION_FUNCTION = 0 << 1;
-		public static final short RETURN_STROBE_RETURN_LIGHT_NOT_DETECTED = 2 << 1;
-		public static final short RETURN_STROBE_RETURN_LIGHT_DETECTED = 3 << 1;
-		// 3rd~4th bits
-		public static final short MODE_UNKNOWN = 0 << 3;
-		public static final short MODE_COMPULSORY_FLASH_FIRING = 1 << 3;
-		public static final short MODE_COMPULSORY_FLASH_SUPPRESSION = 2 << 3;
-		public static final short MODE_AUTO_MODE = 3 << 3;
-		// 5th bit
-		public static final short FUNCTION_PRESENT = 0 << 5;
-		public static final short FUNCTION_NO_FUNCTION = 1 << 5;
-		// 6th bit
-		public static final short RED_EYE_REDUCTION_NO_OR_UNKNOWN = 0 << 6;
-		public static final short RED_EYE_REDUCTION_SUPPORT = 1 << 6;
+
+		/** first bit */
+		public static enum FlashFired {
+			NO, YES
+		}
+
+		/** Values for bits 1 and 2 indicating the status of returned light */
+		public static enum StrobeLightDetection {
+			NO_DETECTION, RESERVED, LIGHT_NOT_DETECTED, LIGHT_DETECTED
+		}
+
+		/** Values for bits 3 and 4 indicating the camera's flash mode */
+		public static enum CompulsoryMode {
+			UNKNOWN,
+			FIRING,
+			SUPPRESSION,
+			AUTO
+		}
+
+		/** Values for bit 5 indicating the presence of a flash function. */
+		public static enum FlashFunction {
+			FUNCTION_PRESENT,
+			FUNCTION_NOR_PRESENT
+		}
+
+		/** Values for bit 6 indicating the camera's red-eye mode. */
+		public static enum RedEyeMode {
+			NONE,
+			SUPPORTED
+		}
 	}
 
 	/**
@@ -1942,18 +2760,22 @@ public class ExifInterface {
 		public static final short AUTO = 0;
 		public static final short MANUAL = 1;
 	}
+
 	/**
 	 * Constants for {@link #TAG_SCENE_CAPTURE_TYPE}
 	 */
+	@SuppressWarnings("unused")
 	public static interface SceneCapture {
 		public static final short STANDARD = 0;
 		public static final short LANDSCAPE = 1;
 		public static final short PROTRAIT = 2;
 		public static final short NIGHT_SCENE = 3;
 	}
+
 	/**
 	 * Constants for {@link #TAG_COMPONENTS_CONFIGURATION}
 	 */
+	@SuppressWarnings("unused")
 	public static interface ComponentsConfiguration {
 		public static final short NOT_EXIST = 0;
 		public static final short Y = 1;
@@ -1963,9 +2785,11 @@ public class ExifInterface {
 		public static final short G = 5;
 		public static final short B = 6;
 	}
+
 	/**
 	 * Constants for {@link #TAG_LIGHT_SOURCE}
 	 */
+	@SuppressWarnings("unused")
 	public static interface LightSource {
 		public static final short UNKNOWN = 0;
 		public static final short DAYLIGHT = 1;
@@ -1989,9 +2813,11 @@ public class ExifInterface {
 		public static final short ISO_STUDIO_TUNGSTEN = 24;
 		public static final short OTHER = 255;
 	}
+
 	/**
 	 * Constants for {@link #TAG_SENSING_METHOD}
 	 */
+	@SuppressWarnings("unused")
 	public static interface SensingMethod {
 		public static final short NOT_DEFINED = 1;
 		public static final short ONE_CHIP_COLOR = 2;
@@ -2005,6 +2831,7 @@ public class ExifInterface {
 	/**
 	 * Constants for {@link #TAG_FILE_SOURCE}
 	 */
+	@SuppressWarnings("unused")
 	public static interface FileSource {
 		public static final short DSC = 3;
 	}
@@ -2012,6 +2839,7 @@ public class ExifInterface {
 	/**
 	 * Constants for {@link #TAG_SCENE_TYPE}
 	 */
+	@SuppressWarnings("unused")
 	public static interface SceneType {
 		public static final short DIRECT_PHOTOGRAPHED = 1;
 	}
@@ -2019,6 +2847,7 @@ public class ExifInterface {
 	/**
 	 * Constants for {@link #TAG_GAIN_CONTROL}
 	 */
+	@SuppressWarnings("unused")
 	public static interface GainControl {
 		public static final short NONE = 0;
 		public static final short LOW_UP = 1;
@@ -2030,6 +2859,7 @@ public class ExifInterface {
 	/**
 	 * Constants for {@link #TAG_CONTRAST}
 	 */
+	@SuppressWarnings("unused")
 	public static interface Contrast {
 		public static final short NORMAL = 0;
 		public static final short SOFT = 1;
@@ -2039,6 +2869,7 @@ public class ExifInterface {
 	/**
 	 * Constants for {@link #TAG_SATURATION}
 	 */
+	@SuppressWarnings("unused")
 	public static interface Saturation {
 		public static final short NORMAL = 0;
 		public static final short LOW = 1;
@@ -2048,6 +2879,7 @@ public class ExifInterface {
 	/**
 	 * Constants for {@link #TAG_SHARPNESS}
 	 */
+	@SuppressWarnings("unused")
 	public static interface Sharpness {
 		public static final short NORMAL = 0;
 		public static final short SOFT = 1;
@@ -2057,6 +2889,7 @@ public class ExifInterface {
 	/**
 	 * Constants for {@link #TAG_SUBJECT_DISTANCE}
 	 */
+	@SuppressWarnings("unused")
 	public static interface SubjectDistance {
 		public static final short UNKNOWN = 0;
 		public static final short MACRO = 1;
@@ -2068,6 +2901,7 @@ public class ExifInterface {
 	 * Constants for {@link #TAG_GPS_LATITUDE_REF},
 	 * {@link #TAG_GPS_DEST_LATITUDE_REF}
 	 */
+	@SuppressWarnings("unused")
 	public static interface GpsLatitudeRef {
 		public static final String NORTH = "N";
 		public static final String SOUTH = "S";
@@ -2077,6 +2911,7 @@ public class ExifInterface {
 	 * Constants for {@link #TAG_GPS_LONGITUDE_REF},
 	 * {@link #TAG_GPS_DEST_LONGITUDE_REF}
 	 */
+	@SuppressWarnings("unused")
 	public static interface GpsLongitudeRef {
 		public static final String EAST = "E";
 		public static final String WEST = "W";
@@ -2085,6 +2920,7 @@ public class ExifInterface {
 	/**
 	 * Constants for {@link #TAG_GPS_ALTITUDE_REF}
 	 */
+	@SuppressWarnings("unused")
 	public static interface GpsAltitudeRef {
 		public static final short SEA_LEVEL = 0;
 		public static final short SEA_LEVEL_NEGATIVE = 1;
@@ -2093,6 +2929,7 @@ public class ExifInterface {
 	/**
 	 * Constants for {@link #TAG_GPS_STATUS}
 	 */
+	@SuppressWarnings("unused")
 	public static interface GpsStatus {
 		public static final String IN_PROGRESS = "A";
 		public static final String INTEROPERABILITY = "V";
@@ -2101,6 +2938,7 @@ public class ExifInterface {
 	/**
 	 * Constants for {@link #TAG_GPS_MEASURE_MODE}
 	 */
+	@SuppressWarnings("unused")
 	public static interface GpsMeasureMode {
 		public static final String MODE_2_DIMENSIONAL = "2";
 		public static final String MODE_3_DIMENSIONAL = "3";
@@ -2110,6 +2948,7 @@ public class ExifInterface {
 	 * Constants for {@link #TAG_GPS_SPEED_REF},
 	 * {@link #TAG_GPS_DEST_DISTANCE_REF}
 	 */
+	@SuppressWarnings("unused")
 	public static interface GpsSpeedRef {
 		public static final String KILOMETERS = "K";
 		public static final String MILES = "M";
@@ -2120,6 +2959,7 @@ public class ExifInterface {
 	 * Constants for {@link #TAG_GPS_TRACK_REF},
 	 * {@link #TAG_GPS_IMG_DIRECTION_REF}, {@link #TAG_GPS_DEST_BEARING_REF}
 	 */
+	@SuppressWarnings("unused")
 	public static interface GpsTrackRef {
 		public static final String TRUE_DIRECTION = "T";
 		public static final String MAGNETIC_DIRECTION = "M";
@@ -2128,9 +2968,30 @@ public class ExifInterface {
 	/**
 	 * Constants for {@link #TAG_GPS_DIFFERENTIAL}
 	 */
+	@SuppressWarnings("unused")
 	public static interface GpsDifferential {
 		public static final short WITHOUT_DIFFERENTIAL_CORRECTION = 0;
 		public static final short DIFFERENTIAL_CORRECTION_APPLIED = 1;
 	}
 
+	/**
+	 * Constants for the jpeg process algorithm used.
+	 * @see #getJpegProcess()
+	 */
+	@SuppressWarnings("unused")
+	public static interface JpegProcess {
+		public static final short BASELINE = (short) 0xFFC0;
+		public static final short EXTENDED_SEQUENTIAL = (short) 0xFFC1;
+		public static final short PROGRESSIVE = (short) 0xFFC2;
+		public static final short LOSSLESS = (short) 0xFFC3;
+		public static final short DIFFERENTIAL_SEQUENTIAL = (short) 0xFFC5;
+		public static final short DIFFERENTIAL_PROGRESSIVE = (short) 0xFFC6;
+		public static final short DIFFERENTIAL_LOSSLESS = (short) 0xFFC7;
+		public static final short EXTENDED_SEQ_ARITHMETIC_CODING = (short) 0xFFC9;
+		public static final short PROGRESSIVE_AIRTHMETIC_CODING = (short) 0xFFCA;
+		public static final short LOSSLESS_AITHMETIC_CODING = (short) 0xFFCB;
+		public static final short DIFFERENTIAL_SEQ_ARITHMETIC_CODING = (short) 0xFFCD;
+		public static final short DIFFERENTIAL_PROGRESSIVE_ARITHMETIC_CODING = (short) 0xFFCE;
+		public static final short DIFFERENTIAL_LOSSLESS_ARITHMETIC_CODING = (short) 0xFFCF;
+	}
 }

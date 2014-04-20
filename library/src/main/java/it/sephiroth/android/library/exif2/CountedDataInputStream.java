@@ -30,9 +30,18 @@ class CountedDataInputStream extends FilterInputStream {
 	private final byte mByteArray[] = new byte[8];
 	private final ByteBuffer mByteBuffer = ByteBuffer.wrap( mByteArray );
 	private int mCount = 0;
+	private int mEnd = 0;
 
 	protected CountedDataInputStream( InputStream in ) {
 		super( in );
+	}
+
+	public void setEnd( int end ) {
+		mEnd = end;
+	}
+
+	public int getEnd() {
+		return mEnd;
 	}
 
 	public int getReadByteCount() {
@@ -94,6 +103,18 @@ class CountedDataInputStream extends FilterInputStream {
 		readOrThrow( mByteArray, 0, 2 );
 		mByteBuffer.rewind();
 		return mByteBuffer.getShort();
+	}
+
+	public byte readByte() throws IOException {
+		readOrThrow( mByteArray, 0, 1 );
+		mByteBuffer.rewind();
+		return mByteBuffer.get();
+	}
+
+	public int readUnsignedByte() throws IOException {
+		readOrThrow( mByteArray, 0, 1 );
+		mByteBuffer.rewind();
+		return (mByteBuffer.get() & 0xff);
 	}
 
 	public void readOrThrow( byte[] b, int off, int len ) throws IOException {

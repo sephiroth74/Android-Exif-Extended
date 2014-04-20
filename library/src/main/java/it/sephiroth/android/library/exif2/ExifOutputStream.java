@@ -59,7 +59,6 @@ import java.util.ArrayList;
  */
 class ExifOutputStream extends FilterOutputStream {
 	private static final String TAG = "ExifOutputStream";
-	private static final boolean DEBUG = false;
 	private static final int STREAMBUFFER_SIZE = 0x00010000; // 64Kb
 
 	private static final int STATE_SOI = 0;
@@ -149,7 +148,7 @@ class ExifOutputStream extends FilterOutputStream {
 					writeExifData();
 					break;
 				case STATE_FRAME_HEADER:
-					// We ignore the APP1 segment and copy all other segments
+					// We ignore the M_EXIF segment and copy all other segments
 					// until SOF tag.
 					byteRead = requestByteToBuffer( 4, buffer, offset, length );
 					offset += byteRead;
@@ -157,7 +156,7 @@ class ExifOutputStream extends FilterOutputStream {
 					// Check if this image data doesn't contain SOF.
 					if( mBuffer.position() == 2 ) {
 						short tag = mBuffer.getShort();
-						if( tag == JpegHeader.EOI ) {
+						if( tag == JpegHeader.M_EOI ) {
 							out.write( mBuffer.array(), 0, 2 );
 							mBuffer.rewind();
 						}
@@ -167,7 +166,7 @@ class ExifOutputStream extends FilterOutputStream {
 					}
 					mBuffer.rewind();
 					short marker = mBuffer.getShort();
-					if( marker == JpegHeader.APP1 ) {
+					if( marker == JpegHeader.M_EXIF ) {
 						mByteToSkip = ( mBuffer.getShort() & 0x0000ffff ) - 2;
 						mState = STATE_JPEG_DATA;
 					}
@@ -205,13 +204,13 @@ class ExifOutputStream extends FilterOutputStream {
 		write( buffer, 0, buffer.length );
 	}
 
-	private void writeExifData() throws IOException {
+	public void writeExifData() throws IOException {
 		if( mExifData == null ) {
 			return;
 		}
-		if( DEBUG ) {
-			Log.v( TAG, "Writing exif data..." );
-		}
+
+		Log.v( TAG, "Writing exif data..." );
+
 		ArrayList<ExifTag> nullTags = stripNullValueTags( mExifData );
 		createRequiredIfdAndTag();
 		int exifSize = calculateAllOffset();
@@ -220,7 +219,10 @@ class ExifOutputStream extends FilterOutputStream {
 		}
 		OrderedDataOutputStream dataOutputStream = new OrderedDataOutputStream( out );
 		dataOutputStream.setByteOrder( ByteOrder.BIG_ENDIAN );
-		dataOutputStream.writeShort( JpegHeader.APP1 );
+
+//		dataOutputStream.write( 0xFF );
+//		dataOutputStream.write( JpegHeader.TAG_M_EXIF );
+		dataOutputStream.writeShort( JpegHeader.M_EXIF );
 		dataOutputStream.writeShort( (short) ( exifSize + 8 ) );
 		dataOutputStream.writeInt( EXIF_HEADER );
 		dataOutputStream.writeShort( (short) 0x0000 );
@@ -238,6 +240,7 @@ class ExifOutputStream extends FilterOutputStream {
 		for( ExifTag t : nullTags ) {
 			mExifData.addTag( t );
 		}
+		dataOutputStream.flush();
 	}
 
 	private ArrayList<ExifTag> stripNullValueTags( ExifData data ) {
@@ -252,10 +255,13 @@ class ExifOutputStream extends FilterOutputStream {
 	}
 
 	private void writeThumbnail( OrderedDataOutputStream dataOutputStream ) throws IOException {
+		Log.i( TAG, "writeThumbnail" );
 		if( mExifData.hasCompressedThumbnail() ) {
+			Log.d( TAG, "writing thumbnail.." );
 			dataOutputStream.write( mExifData.getCompressedThumbnail() );
 		}
 		else if( mExifData.hasUncompressedStrip() ) {
+			Log.d( TAG, "writing uncompressed strip.." );
 			for( int i = 0; i < mExifData.getStripCount(); i++ ) {
 				dataOutputStream.write( mExifData.getStrip( i ) );
 			}
@@ -286,9 +292,7 @@ class ExifOutputStream extends FilterOutputStream {
 			dataOutputStream.writeShort( tag.getTagId() );
 			dataOutputStream.writeShort( tag.getDataType() );
 			dataOutputStream.writeInt( tag.getComponentCount() );
-			if( DEBUG ) {
-				Log.v( TAG, "\n" + tag.toString() );
-			}
+			// Log.v( TAG, "\n" + tag.toString() );
 			if( tag.getDataSize() > 4 ) {
 				dataOutputStream.writeInt( tag.getOffset() );
 			}

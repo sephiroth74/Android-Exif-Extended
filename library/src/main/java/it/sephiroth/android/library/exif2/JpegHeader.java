@@ -17,22 +17,74 @@
 package it.sephiroth.android.library.exif2;
 
 class JpegHeader {
+	/** Start Of Image **/
+	public static final int TAG_SOI = 0xD8;
+
+	/** Start Of Scan **/
+	public static final int TAG_M_SOS = 0xDA;
+
+	public static final int TAG_M_DQT = 0xDB;
+	public static final int TAG_M_DHT = 0xC4;
+	public static final int TAG_M_EOI = 0xD9;
+	public static final int TAG_M_COM = 0xFE;
+	public static final int TAG_M_JFIF = 0xE0;
+	public static final int TAG_M_IPTC = 0xED;
+	public static final int TAG_M_EXIF = 0xE1;
+
+	public static final int TAG_M_SOF0 = 0xC0;
+	public static final int TAG_M_SOF1 = 0xC1;
+	public static final int TAG_M_SOF2 = 0xC2;
+	public static final int TAG_M_SOF3 = 0xC3;
+	public static final int TAG_M_SOF5 = 0xC5;
+	public static final int TAG_M_SOF6 = 0xC6;
+	public static final int TAG_M_SOF7 = 0xC7;
+	public static final int TAG_M_SOF9 = 0xC9;
+	public static final int TAG_M_SOF10 = 0xCA;
+	public static final int TAG_M_SOF11 = 0xCB;
+	public static final int TAG_M_SOF13 = 0xCD;
+	public static final int TAG_M_SOF14 = 0xCE;
+	public static final int TAG_M_SOF15 = 0xCF;
+
+
 	public static final short SOI = (short) 0xFFD8;
-	public static final short APP1 = (short) 0xFFE1;
-	public static final short APP0 = (short) 0xFFE0;
-	public static final short EOI = (short) 0xFFD9;
+	public static final short M_EXIF = (short) 0xFFE1;
+	public static final short M_JFIF = (short) 0xFFE0;
+	public static final short M_EOI = (short) 0xFFD9;
 
 	/**
-	 * SOF (start of frame). All value between SOF0 and SOF15 is SOF marker except for DHT, JPG,
+	 * SOF (start of frame). All value between M_SOF0 and SOF15 is SOF marker except for M_DHT, JPG,
 	 * and DAC marker.
 	 */
-	public static final short SOF0 = (short) 0xFFC0;
-	public static final short SOF15 = (short) 0xFFCF;
-	public static final short DHT = (short) 0xFFC4;
+	public static final short M_SOF0 = (short) 0xFFC0;
+	public static final short M_SOF1 = (short) 0xFFC1;
+	public static final short M_SOF2 = (short) 0xFFC2;
+	public static final short M_SOF3 = (short) 0xFFC3;
+	public static final short M_SOF5 = (short) 0xFFC5;
+	public static final short M_SOF6 = (short) 0xFFC6;
+	public static final short M_SOF7 = (short) 0xFFC7;
+	public static final short M_SOF9 = (short) 0xFFC9;
+	public static final short M_SOF10 = (short) 0xFFCA;
+	public static final short M_SOF11 = (short) 0xFFCB;
+	public static final short M_SOF13 = (short) 0xFFCD;
+	public static final short M_SOF14 = (short) 0xFFCE;
+	public static final short M_SOF15 = (short) 0xFFCF;
+	public static final short M_DHT = (short) 0xFFC4;
 	public static final short JPG = (short) 0xFFC8;
 	public static final short DAC = (short) 0xFFCC;
 
+	/** Define quantization table */
+	public static final short M_DQT = (short) 0xFFDB;
+
+	/** IPTC marker */
+	public static final short M_IPTC = (short) 0xFFED;
+
+	/** Start of scan (begins compressed data */
+	public static final short M_SOS = (short) 0xFFDA;
+
+	/** Comment section * */
+	public static final short M_COM = (short) 0xFFFE;          // Comment section
+
 	public static final boolean isSofMarker( short marker ) {
-		return marker >= SOF0 && marker <= SOF15 && marker != DHT && marker != JPG && marker != DAC;
+		return marker >= M_SOF0 && marker <= M_SOF15 && marker != M_DHT && marker != JPG && marker != DAC;
 	}
 }

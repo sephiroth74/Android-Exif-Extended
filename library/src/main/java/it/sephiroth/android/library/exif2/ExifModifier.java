@@ -52,6 +52,7 @@ class ExifModifier {
 	}
 
 	protected boolean commit() throws IOException, ExifInvalidFormatException {
+		Log.i( TAG, "commit" );
 		InputStream is = null;
 		try {
 			is = new ByteBufferInputStream( mByteBuffer );
@@ -91,6 +92,7 @@ class ExifModifier {
 						ExifTag newTag = currIfd.getTag( oldTag.getTagId() );
 						if( newTag != null ) {
 							if( newTag.getComponentCount() != oldTag.getComponentCount() || newTag.getDataType() != oldTag.getDataType() ) {
+								Log.w( TAG, "different component count, returning false" );
 								return false;
 							}
 							else {
@@ -107,6 +109,7 @@ class ExifModifier {
 			}
 			for( IfdData ifd : ifdDatas ) {
 				if( ifd != null && ifd.getTagCount() > 0 ) {
+					Log.w( TAG, "return false" );
 					return false;
 				}
 			}

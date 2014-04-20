@@ -18,55 +18,20 @@ package it.sephiroth.android.library.exif2;
 
 import android.util.Log;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 
-/**
- * This class provides a low-level EXIF parsing API. Given a JPEG format
- * InputStream, the caller can request which IFD's to read via
- * {@link #parse(java.io.InputStream, int)} with given options.
- * <p/>
- * Below is an example of getting EXIF data from IFD 0 and EXIF IFD using the
- * parser.
- * <p/>
- * <pre>
- * void parse() {
- *     ExifParser parser = ExifParser.parse(mImageInputStream,
- *             ExifParser.OPTION_IFD_0 | ExifParser.OPTIONS_IFD_EXIF);
- *     int event = parser.next();
- *     while (event != ExifParser.EVENT_END) {
- *         switch (event) {
- *             case ExifParser.EVENT_START_OF_IFD:
- *                 break;
- *             case ExifParser.EVENT_NEW_TAG:
- *                 ExifTag tag = parser.getTag();
- *                 if (!tag.hasValue()) {
- *                     parser.registerForTagValue(tag);
- *                 } else {
- *                     processTag(tag);
- *                 }
- *                 break;
- *             case ExifParser.EVENT_VALUE_OF_REGISTERED_TAG:
- *                 tag = parser.getTag();
- *                 if (tag.getDataType() != ExifTag.TYPE_UNDEFINED) {
- *                     processTag(tag);
- *                 }
- *                 break;
- *         }
- *         event = parser.next();
- *     }
- * }
- *
- * void processTag(ExifTag tag) {
- *     // process the tag as you like.
- * }
- * </pre>
- */
 class ExifParser {
+	private static final String TAG = "ExifParser";
+
 	/**
 	 * When the parser reaches a new IFD area. Call {@link #getCurrentIfd()} to
 	 * know which IFD we are in.
@@ -92,7 +57,6 @@ class ExifParser {
 	 * {@link #getStripIndex()} to get the index of the strip.
 	 *
 	 * @see #getStripIndex()
-	 * @see #getStripCount()
 	 */
 	public static final int EVENT_UNCOMPRESSED_STRIP = 4;
 	/**
@@ -102,7 +66,7 @@ class ExifParser {
 	/**
 	 * Option bit to request to parse IFD0.
 	 */
-	public static final int OPTION_IFD_0 = 1 << 0;
+	public static final int OPTION_IFD_0 = 1;
 	/**
 	 * Option bit to request to parse IFD1.
 	 */
@@ -124,7 +88,7 @@ class ExifParser {
 	 */
 	public static final int OPTION_THUMBNAIL = 1 << 5;
 	protected static final int EXIF_HEADER = 0x45786966; // EXIF header "Exif"
-	protected static final short EXIF_HEADER_TAIL = (short) 0x0000; // EXIF header in APP1
+	protected static final short EXIF_HEADER_TAIL = (short) 0x0000; // EXIF header in M_EXIF
 	// TIFF header
 	protected static final short LITTLE_ENDIAN_TAG = (short) 0x4949; // "II"
 	protected static final short BIG_ENDIAN_TAG = (short) 0x4d4d; // "MM"
@@ -132,8 +96,6 @@ class ExifParser {
 	protected static final int TAG_SIZE = 12;
 	protected static final int OFFSET_SIZE = 2;
 	protected static final int DEFAULT_IFD0_OFFSET = 8;
-	private static final boolean LOGV = false;
-	private static final String TAG = "ExifParser";
 	private static final Charset US_ASCII = Charset.forName( "US-ASCII" );
 	private static final short TAG_EXIF_IFD = ExifInterface.getTrueTagKey( ExifInterface.TAG_EXIF_IFD );
 	private static final short TAG_GPS_IFD = ExifInterface.getTrueTagKey( ExifInterface.TAG_GPS_IFD );
@@ -142,105 +104,343 @@ class ExifParser {
 	private static final short TAG_JPEG_INTERCHANGE_FORMAT_LENGTH = ExifInterface.getTrueTagKey( ExifInterface.TAG_JPEG_INTERCHANGE_FORMAT_LENGTH );
 	private static final short TAG_STRIP_OFFSETS = ExifInterface.getTrueTagKey( ExifInterface.TAG_STRIP_OFFSETS );
 	private static final short TAG_STRIP_BYTE_COUNTS = ExifInterface.getTrueTagKey( ExifInterface.TAG_STRIP_BYTE_COUNTS );
-	private final CountedDataInputStream mTiffStream;
 	private final int mOptions;
 	private final ExifInterface mInterface;
 	private final TreeMap<Integer, Object> mCorrespondingEvent = new TreeMap<Integer, Object>();
+	private final CountedDataInputStream mTiffStream;
 	private int mIfdStartOffset = 0;
 	private int mNumOfTagInIfd = 0;
 	private int mIfdType;
 	private ExifTag mTag;
 	private ImageEvent mImageEvent;
-	private int mStripCount;
 	private ExifTag mStripSizeTag;
 	private ExifTag mJpegSizeTag;
 	private boolean mNeedToParseOffsetsInCurrentIfd;
-	private boolean mContainExifData = false;
-	private int mApp1End;
-	private int mOffsetToApp1EndFromSOF = 0;
 	private byte[] mDataAboveIfd0;
 	private int mIfd0Position;
-	private int mTiffStartPosition;
+	private int mQualityGuess;
+	private int mImageWidth;
+	private int mImageLength;
+	private short mProcess = 0;
+
+	static final int std_luminance_quant_tbl[];
+	static final int std_chrominance_quant_tbl[];
+	static final int deftabs[][];
+
+	static {
+		std_luminance_quant_tbl = new int[]{ 16, 11, 12, 14, 12, 10, 16, 14, 13, 14, 18, 17, 16, 19, 24, 40, 26, 24, 22, 22, 24, 49, 35, 37, 29, 40, 58, 51, 61, 60, 57, 51, 56, 55, 64,
+				72, 92, 78, 64, 68, 87, 69, 55, 56, 80, 109, 81, 87, 95, 98, 103, 104, 103, 62, 77, 113, 121, 112, 100, 120, 92, 101, 103, 99 };
+
+		std_chrominance_quant_tbl = new int[]
+
+				{ 17, 18, 18, 24, 21, 24, 47, 26, 26, 47, 99, 66, 56, 66, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99,
+						99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99 };
+
+		deftabs = new int[][]{ std_luminance_quant_tbl, std_chrominance_quant_tbl };
+	}
+
+	List<Section> mSections;
+	private int mUncompressedDataPosition = 0;
 
 	private ExifParser( InputStream inputStream, int options, ExifInterface iRef ) throws IOException, ExifInvalidFormatException {
 		if( inputStream == null ) {
 			throw new IOException( "Null argument inputStream to ExifParser" );
 		}
-		if( LOGV ) {
-			Log.v( TAG, "Reading exif..." );
-		}
+
+		Log.v( TAG, "Reading exif..." );
+		mSections = new ArrayList<Section>(0);
+
 		mInterface = iRef;
-		mContainExifData = seekTiffData( inputStream );
-		mTiffStream = new CountedDataInputStream( inputStream );
+		mTiffStream = seekTiffData( inputStream );
 		mOptions = options;
-		if( ! mContainExifData ) {
+
+		Log.d( TAG, "sections size: " + mSections.size() );
+
+		if( mTiffStream == null ) {
 			return;
 		}
 
-		parseTiffHeader();
+		parseTiffHeader( mTiffStream );
+
 		long offset = mTiffStream.readUnsignedInt();
 		if( offset > Integer.MAX_VALUE ) {
+			Log.e( TAG, "Invalid offset " + offset );
 			throw new ExifInvalidFormatException( "Invalid offset " + offset );
 		}
 		mIfd0Position = (int) offset;
 		mIfdType = IfdId.TYPE_IFD_0;
+
 		if( isIfdRequested( IfdId.TYPE_IFD_0 ) || needToParseOffsetsInCurrentIfd() ) {
 			registerIfd( IfdId.TYPE_IFD_0, offset );
 			if( offset != DEFAULT_IFD0_OFFSET ) {
 				mDataAboveIfd0 = new byte[(int) offset - DEFAULT_IFD0_OFFSET];
+				Log.v( TAG, "read dataAboveIfd0.." );
 				read( mDataAboveIfd0 );
 			}
 		}
 	}
 
-	private boolean seekTiffData( InputStream inputStream ) throws IOException, ExifInvalidFormatException {
-		CountedDataInputStream dataStream = new CountedDataInputStream( inputStream );
-		if( dataStream.readShort() != JpegHeader.SOI ) {
-			throw new ExifInvalidFormatException( "Invalid JPEG format" );
-		}
+	private final byte mByteArray[] = new byte[8];
+	private final ByteBuffer mByteBuffer = ByteBuffer.wrap( mByteArray );
 
-		short marker = dataStream.readShort();
-		while( marker != JpegHeader.EOI && ! JpegHeader.isSofMarker( marker ) ) {
-			int length = dataStream.readUnsignedShort();
-			// Some invalid formatted image contains multiple APP1,
-			// try to find the one with Exif data.
-			if( marker == JpegHeader.APP1 ) {
-				int header = 0;
-				short headerTail = 0;
-				if( length >= 8 ) {
-					header = dataStream.readInt();
-					headerTail = dataStream.readShort();
-					length -= 6;
-					if( header == EXIF_HEADER && headerTail == EXIF_HEADER_TAIL ) {
-						mTiffStartPosition = dataStream.getReadByteCount();
-						mApp1End = length;
-						mOffsetToApp1EndFromSOF = mTiffStartPosition + mApp1End;
-						return true;
-					}
-				}
-			}
-			if( length < 2 || ( length - 2 ) != dataStream.skip( length - 2 ) ) {
-				Log.w( TAG, "Invalid JPEG format." );
-				return false;
-			}
-			marker = dataStream.readShort();
-		}
-		return false;
+	private int readInt( byte b[], int offset ) {
+		mByteBuffer.rewind();
+		mByteBuffer.put( b, offset, 4 );
+		mByteBuffer.rewind();
+		return mByteBuffer.getInt();
 	}
 
-	private void parseTiffHeader() throws IOException, ExifInvalidFormatException {
-		short byteOrder = mTiffStream.readShort();
+	private short readShort( byte b[], int offset ) {
+		mByteBuffer.rewind();
+		mByteBuffer.put( b, offset, 2 );
+		mByteBuffer.rewind();
+		return mByteBuffer.getShort();
+	}
+
+	private CountedDataInputStream seekTiffData( InputStream inputStream ) throws IOException, ExifInvalidFormatException {
+		CountedDataInputStream dataStream = new CountedDataInputStream( inputStream );
+		CountedDataInputStream tiffStream = null;
+
+		int a = dataStream.readUnsignedByte();
+		int b = dataStream.readUnsignedByte();
+
+		if( a != 0xFF || b != JpegHeader.TAG_SOI ) {
+			Log.e( TAG, "invalid jpeg header" );
+			return null;
+		}
+
+		while( true ) {
+			int itemlen;
+			int prev;
+			int marker;
+			byte ll,lh;
+			int got;
+			byte data[];
+
+			prev = 0;
+			for( a = 0; ; a++ ) {
+				marker = dataStream.readUnsignedByte();
+				if( marker != 0xff && prev == 0xff ) break;
+				prev = marker;
+			}
+
+			if (a > 10){
+				Log.w( TAG, "Extraneous " + ( a - 1 ) + " padding bytes before section " + marker );
+			}
+
+			Section section = new Section();
+			section.type = marker;
+
+			// Read the length of the section.
+			lh = dataStream.readByte();
+			ll = dataStream.readByte();
+			itemlen = ( ( lh & 0xff ) << 8 ) | ( ll & 0xff );
+
+			if( itemlen < 2 ) {
+				Log.e( TAG, "Invalid marker" );
+				throw new ExifInvalidFormatException( "Invalid marker" );
+			}
+
+			section.size = itemlen;
+
+			data = new byte[itemlen];
+			data[0] = lh;
+			data[1] = ll;
+
+			got = dataStream.read( data, 2, itemlen-2 );
+			if( got != itemlen - 2 ) {
+				Log.e( TAG, "Premature end of file?" );
+				throw new ExifInvalidFormatException( "Premature end of file?" );
+			}
+
+			section.data = data;
+
+			Log.i( TAG, "marker: " + String.format( "0x%2X", marker ) + ": " + itemlen );
+
+			boolean ignore = false;
+
+			switch( marker ) {
+				case JpegHeader.TAG_M_SOS:
+					// stop before hitting compressed data
+					Log.d( TAG, "Begins of of image data: " + dataStream.getReadByteCount() );
+					mSections.add( section );
+					mUncompressedDataPosition = dataStream.getReadByteCount();
+					return tiffStream;
+
+				case JpegHeader.TAG_M_DQT:
+					// Use for jpeg quality guessing
+					process_M_DQT( data, itemlen );
+					break;
+
+				case JpegHeader.TAG_M_DHT:
+					break;
+
+				case JpegHeader.TAG_M_EOI:
+					// in case it's a tables-only JPEG stream
+					Log.w( TAG, "No image in jpeg!" );
+					return null;
+
+				case JpegHeader.TAG_M_COM:
+					// Comment section
+					ignore = true;
+					break;
+
+				case JpegHeader.TAG_M_JFIF:
+					if( itemlen < 16 ) {
+						ignore = true;
+					}
+					break;
+
+				case JpegHeader.TAG_M_IPTC:
+					break;
+
+				case JpegHeader.TAG_M_SOF0:
+				case JpegHeader.TAG_M_SOF1:
+				case JpegHeader.TAG_M_SOF2:
+				case JpegHeader.TAG_M_SOF3:
+				case JpegHeader.TAG_M_SOF5:
+				case JpegHeader.TAG_M_SOF6:
+				case JpegHeader.TAG_M_SOF7:
+				case JpegHeader.TAG_M_SOF9:
+				case JpegHeader.TAG_M_SOF10:
+				case JpegHeader.TAG_M_SOF11:
+				case JpegHeader.TAG_M_SOF13:
+				case JpegHeader.TAG_M_SOF14:
+				case JpegHeader.TAG_M_SOF15:
+					process_M_SOFn( data, marker );
+					break;
+
+				case JpegHeader.TAG_M_EXIF:
+					if( itemlen >= 8 ) {
+						int header = readInt( data, 2 );
+						short headerTail = readShort( data, 6 );
+						// header = Exif, headerTail=\0\0
+						if( header == EXIF_HEADER && headerTail == EXIF_HEADER_TAIL ) {
+							Log.d( TAG, "found exif section" );
+							tiffStream = new CountedDataInputStream( new ByteArrayInputStream( data, 8, itemlen - 8 ) );
+							tiffStream.setEnd( itemlen - 6 );
+							ignore = true;
+						} else {
+							// Log.v( TAG, "Image cotains XMP section" );
+						}
+					}
+					break;
+
+				default:
+					Log.w( TAG, "Unknown marker: " + String.format( "0x%2X", marker ) + ", length: " + itemlen );
+					break;
+			}
+
+			if( ! ignore ) {
+				Log.d( TAG, "adding section with size: " + section.size );
+				mSections.add( section );
+			}
+			else {
+				Log.v( TAG, "ignoring marker: " + String.format( "0x%2X", marker ) + ", length: " + itemlen );
+			}
+		}
+	}
+
+	static int Get16m( byte[] data, int position ) {
+		int b1 = ( data[position] & 0xFF ) << 8;
+		int b2 = data[position + 1] & 0xFF;
+		return b1 | b2;
+	}
+
+	private void process_M_SOFn( final byte[] data, final int marker ) {
+		Log.i( TAG, "process_M_SOFn: " + data.length + ", marker: " + marker );
+		if( data.length > 4 ) {
+			mImageLength = Get16m( data, 1 );
+			mImageWidth = Get16m( data, 3 );
+		}
+		mProcess = (short) marker;
+	}
+
+	private void process_M_DQT( final byte[] data, int length ) {
+		Log.i( TAG, "process_M_DQT: " + length );
+
+		int a = 2;
+		int c;
+		int tableindex, coefindex;
+		double cumsf = 0.0;
+//		double cumsf2 = 0.0;
+		int[] reftable = null;
+//		int table[] = new int[64];
+		int allones = 1;
+
+		while( a < data.length ) {
+			c = data[a++];
+			tableindex = c & 0x0f;
+
+			if( tableindex < 2 ) {
+				reftable = deftabs[tableindex];
+			}
+
+			// Read in the table, compute statistics relative to reference table
+			for( coefindex = 0; coefindex < 64; coefindex++ ) {
+				int val;
+				if( ( c >> 4 ) != 0 ) {
+					int temp;
+					temp = (int) ( data[a++] );
+					temp *= 256;
+					val = (int) data[a++] + temp;
+				}
+				else {
+					val = (int) data[a++];
+				}
+//				table[coefindex] = val;
+				if( reftable != null ) {
+					double x;
+					// scaling factor in percent
+					x = 100.0 * (double) val / (double) reftable[coefindex];
+					cumsf += x;
+//					cumsf2 += x * x;
+					// separate check for all-ones table (Q 100)
+					if( val != 1 ) allones = 0;
+				}
+			}
+			// Print summary stats
+			if( reftable != null ) { // terse output includes quality
+				double qual;
+//				double var;
+				cumsf /= 64.0;    // mean scale factor
+//				cumsf2 /= 64.0;
+//				var = cumsf2 - ( cumsf * cumsf ); // variance
+				if( allones != 0 ) {      // special case for all-ones table
+					qual = 100.0;
+				}
+				else if( cumsf <= 100.0 ) {
+					qual = ( 200.0 - cumsf ) / 2.0;
+				}
+				else {
+					qual = 5000.0 / cumsf;
+				}
+
+				if( tableindex == 0 ) {
+					mQualityGuess = (int) ( qual + 0.5 );
+					Log.v( TAG, "quality guess: " + mQualityGuess );
+				}
+			}
+		}
+	}
+
+	private void parseTiffHeader( final CountedDataInputStream stream ) throws IOException, ExifInvalidFormatException {
+		Log.i( TAG, "parseTiffHeader" );
+
+		short byteOrder = stream.readShort();
 		if( LITTLE_ENDIAN_TAG == byteOrder ) {
-			mTiffStream.setByteOrder( ByteOrder.LITTLE_ENDIAN );
+			stream.setByteOrder( ByteOrder.LITTLE_ENDIAN );
 		}
 		else if( BIG_ENDIAN_TAG == byteOrder ) {
-			mTiffStream.setByteOrder( ByteOrder.BIG_ENDIAN );
+			stream.setByteOrder( ByteOrder.BIG_ENDIAN );
 		}
 		else {
+			Log.e( TAG, "Invalid TIFF header (1)" );
 			throw new ExifInvalidFormatException( "Invalid TIFF header" );
 		}
 
-		if( mTiffStream.readShort() != TIFF_HEADER_TAIL ) {
+		if( stream.readShort() != TIFF_HEADER_TAIL ) {
+			Log.e( TAG, "Invalid TIFF header (2)" );
 			throw new ExifInvalidFormatException( "Invalid TIFF header" );
 		}
 	}
@@ -278,7 +478,7 @@ class ExifParser {
 
 	private void registerIfd( int ifdType, long offset ) {
 		// Cast unsigned int to int since the offset is always smaller
-		// than the size of APP1 (65536)
+		// than the size of M_EXIF (65536)
 		mCorrespondingEvent.put( (int) offset, new IfdEvent( ifdType, isIfdRequested( ifdType ) ) );
 	}
 
@@ -309,7 +509,6 @@ class ExifParser {
 	 *
 	 * @throws java.io.IOException
 	 * @throws ExifInvalidFormatException
-	 * @see #parse(java.io.InputStream, int)
 	 */
 	protected static ExifParser parse( InputStream inputStream, ExifInterface iRef ) throws IOException, ExifInvalidFormatException {
 		return new ExifParser( inputStream, OPTION_IFD_0 | OPTION_IFD_1 | OPTION_IFD_EXIF | OPTION_IFD_GPS | OPTION_IFD_INTEROPERABILITY | OPTION_THUMBNAIL, iRef );
@@ -328,9 +527,10 @@ class ExifParser {
 	 * @see #EVENT_END
 	 */
 	protected int next() throws IOException, ExifInvalidFormatException {
-		if( ! mContainExifData ) {
+		if( null == mTiffStream ) {
 			return EVENT_END;
 		}
+
 		int offset = mTiffStream.getReadByteCount();
 		int endOfTags = mIfdStartOffset + OFFSET_SIZE + TAG_SIZE * mNumOfTagInIfd;
 		if( offset < endOfTags ) {
@@ -385,7 +585,7 @@ class ExifParser {
 				mNumOfTagInIfd = mTiffStream.readUnsignedShort();
 				mIfdStartOffset = entry.getKey();
 
-				if( mNumOfTagInIfd * TAG_SIZE + mIfdStartOffset + OFFSET_SIZE > mApp1End ) {
+				if( mNumOfTagInIfd * TAG_SIZE + mIfdStartOffset + OFFSET_SIZE > mTiffStream.getEnd() ) {
 					Log.w( TAG, "Invalid size of IFD " + mIfdType );
 					return EVENT_END;
 				}
@@ -483,7 +683,7 @@ class ExifParser {
 	/**
 	 * Gets number of tags in the current IFD area.
 	 */
-	protected int getTagCountInCurrentIfd() {
+	public int getTagCountInCurrentIfd() {
 		return mNumOfTagInIfd;
 	}
 
@@ -503,21 +703,9 @@ class ExifParser {
 	/**
 	 * When receiving {@link #EVENT_UNCOMPRESSED_STRIP}, call this function to
 	 * get the index of this strip.
-	 *
-	 * @see #getStripCount()
 	 */
 	protected int getStripIndex() {
 		return mImageEvent.stripIndex;
-	}
-
-	/**
-	 * When receiving {@link #EVENT_UNCOMPRESSED_STRIP}, call this function to
-	 * get the number of strip data.
-	 *
-	 * @see #getStripIndex()
-	 */
-	protected int getStripCount() {
-		return mStripCount;
 	}
 
 	/**
@@ -575,6 +763,7 @@ class ExifParser {
 		short dataFormat = mTiffStream.readShort();
 		long numOfComp = mTiffStream.readUnsignedInt();
 		if( numOfComp > Integer.MAX_VALUE ) {
+			Log.e( TAG, "Number of component is larger then Integer.MAX_VALUE" );
 			throw new ExifInvalidFormatException( "Number of component is larger then Integer.MAX_VALUE" );
 		}
 		// Some invalid image file contains invalid data type. Ignore those tags
@@ -589,6 +778,7 @@ class ExifParser {
 		if( dataSize > 4 ) {
 			long offset = mTiffStream.readUnsignedInt();
 			if( offset > Integer.MAX_VALUE ) {
+				Log.e( TAG, "offset is larger then Integer.MAX_VALUE" );
 				throw new ExifInvalidFormatException( "offset is larger then Integer.MAX_VALUE" );
 			}
 			// Some invalid images put some undefined data before IFD0.
@@ -764,17 +954,24 @@ class ExifParser {
 			}
 			break;
 		}
-		if( LOGV ) {
-			Log.v( TAG, "\n" + tag.toString() );
-		}
+
+//		if( LOGV ) {
+//			Log.v( TAG, "\n" + tag.toString() );
+//		}
 	}
 
 	protected int getOffsetToExifEndFromSOF() {
-		return mOffsetToApp1EndFromSOF;
+//		if( null != mTiffData ) {
+//			return mTiffData.offsetToApp1EndFromSOF;
+//		}
+		return 0;
 	}
 
 	protected int getTiffStartPosition() {
-		return mTiffStartPosition;
+//		if( null != mTiffData ) {
+//			return mTiffData.tiffStartPosition;
+//		}
+		return 0;
 	}
 
 	/**
@@ -853,7 +1050,32 @@ class ExifParser {
 	 * Gets the byte order of the current InputStream.
 	 */
 	protected ByteOrder getByteOrder() {
-		return mTiffStream.getByteOrder();
+		if( null != mTiffStream ) return mTiffStream.getByteOrder();
+		return null;
+	}
+
+	public int getQualityGuess() {
+		return mQualityGuess;
+	}
+
+	public int getImageWidth() {
+		return mImageWidth;
+	}
+
+	public short getJpegProcess() {
+		return mProcess;
+	}
+
+	public int getImageLength() {
+		return mImageLength;
+	}
+
+	public List<Section> getSections() {
+		return mSections;
+	}
+
+	public int getUncompressedDataPosition() {
+		return mUncompressedDataPosition;
 	}
 
 	private static class ImageEvent {
@@ -889,5 +1111,11 @@ class ExifParser {
 			this.tag = tag;
 			this.isRequested = isRequireByUser;
 		}
+	}
+
+	public static class Section {
+		int size;
+		int type;
+		byte[] data;
 	}
 }
