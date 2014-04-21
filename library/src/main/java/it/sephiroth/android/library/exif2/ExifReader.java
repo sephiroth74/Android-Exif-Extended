@@ -41,8 +41,8 @@ class ExifReader {
 	 * @throws ExifInvalidFormatException
 	 * @throws java.io.IOException
 	 */
-	protected ExifData read( InputStream inputStream ) throws ExifInvalidFormatException, IOException {
-		ExifParser parser = ExifParser.parse( inputStream, mInterface );
+	protected ExifData read( InputStream inputStream, int options ) throws ExifInvalidFormatException, IOException {
+		ExifParser parser = ExifParser.parse( inputStream, options, mInterface );
 		ExifData exifData = new ExifData( parser.getByteOrder() );
 		exifData.setSections( parser.getSections() );
 		exifData.mUncompressedDataPosition = parser.getUncompressedDataPosition();

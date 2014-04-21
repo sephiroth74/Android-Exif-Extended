@@ -16,7 +16,6 @@
 
 package it.sephiroth.android.library.exif2;
 
-import android.annotation.SuppressLint;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.SystemClock;
@@ -31,16 +30,12 @@ import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.RandomAccessFile;
-import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.channels.FileChannel;
-import java.nio.channels.FileChannel.MapMode;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -615,6 +610,61 @@ public class ExifInterface {
 	 * {@link ExifTag#TYPE_ASCII}
 	 */
 	public static final int TAG_IMAGE_UNIQUE_ID = defineTag( IfdId.TYPE_IFD_EXIF, (short) 0xA420 );
+
+	/**
+	 * Lens Specifications. The value it's a 4 rational containing:
+	 * <ol>
+	 * <li>Minimum focal length (in mm)</li>
+	 * <li>Maximum focal length (in mm)</li>
+	 * <li>Minimum F Number in the minimum focal length</li>
+	 * <li>Maximum F Number in the maximum focal length</li>
+	 * </ol>
+	 *
+	 * {@link ExifTag#TYPE_RATIONAL}
+	 * @since EXIF 2.3
+	 * @see it.sephiroth.android.library.exif2.ExifUtil#processLensSpecifications(Rational[])
+	 */
+	public static final int TAG_LENS_SPECS = defineTag( IfdId.TYPE_IFD_EXIF, (short) 0xA432 );
+
+	/**
+	 * Lens maker
+	 * {@link ExifTag#TYPE_ASCII}
+	 * @since EXIF 2.3
+	 */
+	public static final int TAG_LENS_MAKE = defineTag( IfdId.TYPE_IFD_EXIF, (short) 0xA433 );
+	/**
+	 * Lens model name and number
+	 * {@link ExifTag#TYPE_ASCII}
+	 * @since EXIF 2.3
+	 */
+	public static final int TAG_LENS_MODEL = defineTag( IfdId.TYPE_IFD_EXIF, (short) 0xA434 );
+
+	/**
+	 * The SensitivityType tag indicates which one of the parameters of ISO12232 is the
+	 * PhotographicSensitivity tag. Although it is an optional tag, it should be recorded
+	 * when a PhotographicSensitivity tag is recorded.
+	 * Value = 4, 5, 6, or 7 may be used in case that the values of plural
+	 * parameters are the same.<br/>
+	 * Values:
+	 * <ul>
+	 * <li>0: Unknown</li>
+	 * <li>1: Standardoutputsensitivity(SOS)</li>
+	 * <li>2: Recommended exposure index (REI)</li>
+	 * <li>3: ISOspeed</li>
+	 * <li>4: Standard output sensitivity (SOS) and recommended exposure index (REI)</li>
+	 * <li>5: Standardoutputsensitivity(SOS)andISOspeed</li>
+	 * <li>6: Recommendedexposureindex(REI)andISOspeed</li>
+	 * <li>7: Standard output sensitivity (SOS) and recommended exposure index (REI) and ISO speed</li>
+	 * <li>Other: Reserved</li>
+	 * </ul>
+	 *
+	 * {@link ExifTag#TYPE_UNSIGNED_SHORT}
+	 * @see it.sephiroth.android.library.exif2.ExifInterface.SensitivityType
+	 * @since EXIF 2.3
+	 */
+	public static final int TAG_SENSITIVITY_TYPE = defineTag( IfdId.TYPE_IFD_EXIF, (short) 0x8830 );
+
+
 	// IFD GPS tags
 	public static final int TAG_GPS_VERSION_ID = defineTag( IfdId.TYPE_IFD_GPS, (short) 0 );
 
@@ -697,6 +747,10 @@ public class ExifInterface {
 	public static final int TAG_GPS_DIFFERENTIAL = defineTag( IfdId.TYPE_IFD_GPS, (short) 30 );
 	// IFD Interoperability tags
 	public static final int TAG_INTEROPERABILITY_INDEX = defineTag( IfdId.TYPE_IFD_INTEROPERABILITY, (short) 1 );
+
+
+
+
 	public static final ByteOrder DEFAULT_BYTE_ORDER = ByteOrder.BIG_ENDIAN;
 	private ExifData mData = new ExifData( DEFAULT_BYTE_ORDER );
 	private static final String NULL_ARGUMENT_STRING = "Argument is null";
@@ -880,18 +934,19 @@ public class ExifInterface {
 	 * existing exif tags.
 	 *
 	 * @param inFileName a string representing the filepath to jpeg file.
-	 * @throws java.io.FileNotFoundException
+	 * @param options bit flag which defines which type of tags to process, see {@link it.sephiroth.android.library.exif2.ExifInterface.Options}
+	 * @see #readExif(java.io.InputStream, int)
 	 * @throws java.io.IOException
 	 */
 	@SuppressWarnings( "unused" )
-	public void readExif( String inFileName ) throws IOException {
+	public void readExif( String inFileName, int options ) throws IOException {
 		if( inFileName == null ) {
 			throw new IllegalArgumentException( NULL_ARGUMENT_STRING );
 		}
 		InputStream is = null;
 		try {
 			is = new BufferedInputStream( new FileInputStream( inFileName ) );
-			readExif( is );
+			readExif( is, options );
 		} catch( IOException e ) {
 			closeSilently( is );
 			throw e;
@@ -902,17 +957,26 @@ public class ExifInterface {
 	/**
 	 * Reads the exif tags from an InputStream, clearing this ExifInterface
 	 * object's existing exif tags.
+	 * <pre>
+	 *     ExifInterface exif = new ExifInterface();
+	 *     exif.readExif( stream, Options.OPTION_IFD_0 | Options.OPTION_IFD_1 | Options.OPTION_IFD_EXIF );
+	 *     ...
+	 *     // to request all the options use the OPTION_ALL bit mask
+	 *     exif.readExif( stream, Options.OPTION_ALL );
+	 * </pre>
 	 *
 	 * @param inStream an InputStream containing a jpeg compressed image.
+	 * @param options bit flag which defines which type of tags to process, see {@link it.sephiroth.android.library.exif2.ExifInterface.Options}
 	 * @throws java.io.IOException
 	 */
-	public void readExif( InputStream inStream ) throws IOException {
+	@SuppressWarnings( "unused" )
+	public void readExif( InputStream inStream, int options ) throws IOException {
 		if( inStream == null ) {
 			throw new IllegalArgumentException( NULL_ARGUMENT_STRING );
 		}
 		ExifData d;
 		try {
-			d = new ExifReader( this ).read( inStream );
+			d = new ExifReader( this ).read( inStream, options );
 		} catch( ExifInvalidFormatException e ) {
 			Log.e( TAG, e.getMessage() );
 			throw new IOException( "Invalid exif format : " + e );
@@ -1064,7 +1128,7 @@ public class ExifInterface {
 
 		// 1. read the output file first
 		ExifInterface src_exif = new ExifInterface();
-		src_exif.readExif( input );
+		src_exif.readExif( input, 0 );
 
 		// 4. Create the destination outputstream
 		// 5. write headers
@@ -1119,11 +1183,13 @@ public class ExifInterface {
 	 * object's existing exif tags.
 	 *
 	 * @param jpeg a byte array containing a jpeg compressed image.
+	 * @param options bit flag which defines which type of tags to process, see {@link it.sephiroth.android.library.exif2.ExifInterface.Options}
 	 * @throws java.io.IOException
+	 * @see #readExif(java.io.InputStream, int)
 	 */
 	@SuppressWarnings( "unused" )
-	public void readExif( byte[] jpeg ) throws IOException {
-		readExif( new ByteArrayInputStream( jpeg ) );
+	public void readExif( byte[] jpeg, int options ) throws IOException {
+		readExif( new ByteArrayInputStream( jpeg ), options );
 	}
 
 	/**
@@ -1250,7 +1316,6 @@ public class ExifInterface {
 		mTagInfo.put( ExifInterface.TAG_REFERENCE_BLACK_WHITE, ifdFlags | ExifTag.TYPE_UNSIGNED_RATIONAL << 16 | 6 );
 		mTagInfo.put( ExifInterface.TAG_DATE_TIME, ifdFlags | ExifTag.TYPE_ASCII << 16 | 20 );
 		mTagInfo.put( ExifInterface.TAG_IMAGE_DESCRIPTION, ifdFlags | ExifTag.TYPE_ASCII << 16 );
-		mTagInfo.put( ExifInterface.TAG_MAKE, ifdFlags | ExifTag.TYPE_ASCII << 16 );
 		mTagInfo.put( ExifInterface.TAG_MODEL, ifdFlags | ExifTag.TYPE_ASCII << 16 );
 		mTagInfo.put( ExifInterface.TAG_SOFTWARE, ifdFlags | ExifTag.TYPE_ASCII << 16 );
 		mTagInfo.put( ExifInterface.TAG_ARTIST, ifdFlags | ExifTag.TYPE_ASCII << 16 );
@@ -1281,6 +1346,10 @@ public class ExifInterface {
 		mTagInfo.put( ExifInterface.TAG_SUB_SEC_TIME_ORIGINAL, exifFlags | ExifTag.TYPE_ASCII << 16 );
 		mTagInfo.put( ExifInterface.TAG_SUB_SEC_TIME_DIGITIZED, exifFlags | ExifTag.TYPE_ASCII << 16 );
 		mTagInfo.put( ExifInterface.TAG_IMAGE_UNIQUE_ID, exifFlags | ExifTag.TYPE_ASCII << 16 | 33 );
+		mTagInfo.put( ExifInterface.TAG_LENS_SPECS, exifFlags | ExifTag.TYPE_RATIONAL << 16 | 3 );
+		mTagInfo.put( ExifInterface.TAG_LENS_MAKE, exifFlags | ExifTag.TYPE_ASCII << 16 );
+		mTagInfo.put( ExifInterface.TAG_LENS_MODEL, exifFlags | ExifTag.TYPE_ASCII << 16 );
+		mTagInfo.put( ExifInterface.TAG_SENSITIVITY_TYPE, exifFlags | ExifTag.TYPE_UNSIGNED_SHORT << 16 | 1 );
 		mTagInfo.put( ExifInterface.TAG_EXPOSURE_TIME, exifFlags | ExifTag.TYPE_UNSIGNED_RATIONAL << 16 | 1 );
 		mTagInfo.put( ExifInterface.TAG_F_NUMBER, exifFlags | ExifTag.TYPE_UNSIGNED_RATIONAL << 16 | 1 );
 		mTagInfo.put( ExifInterface.TAG_EXPOSURE_PROGRAM, exifFlags | ExifTag.TYPE_UNSIGNED_SHORT << 16 | 1 );
@@ -2688,5 +2757,70 @@ public class ExifInterface {
 		public static final short DIFFERENTIAL_SEQ_ARITHMETIC_CODING = (short) 0xFFCD;
 		public static final short DIFFERENTIAL_PROGRESSIVE_ARITHMETIC_CODING = (short) 0xFFCE;
 		public static final short DIFFERENTIAL_LOSSLESS_ARITHMETIC_CODING = (short) 0xFFCF;
+	}
+
+	/**
+	 * Constants for the {@link #TAG_SENSITIVITY_TYPE} tag
+	 */
+	@SuppressWarnings( "unused" )
+	public static interface SensitivityType {
+
+		public static final short UNKNOWN = 0;
+
+		/** Standard output sensitivity */
+		public static final short SOS = 1;
+
+		/** Recommended exposure index */
+		public static final short REI = 2;
+
+		/** ISO Speed */
+		public static final short ISO = 3;
+
+		/** Standard output sensitivity and Recommended output index */
+		public static final short SOS_REI = 4;
+
+		/** Standard output sensitivity and ISO speed */
+		public static final short SOS_ISO = 5;
+
+		/** Recommended output index and ISO Speed */
+		public static final short REI_ISO = 6;
+
+		/** Standard output sensitivity and Recommended output index and ISO Speed */
+		public static final short SOS_REI_ISO = 7;
+	}
+
+	/**
+	 * Options for calling {@link #readExif(java.io.InputStream, int)}, {@link #readExif(byte[], int)},
+	 * {@link #readExif(String, int)}
+	 */
+	public static interface Options {
+		/**
+		 * Option bit to request to parse IFD0.
+		 */
+		int OPTION_IFD_0 = 1;
+		/**
+		 * Option bit to request to parse IFD1.
+		 */
+		int OPTION_IFD_1 = 1 << 1;
+		/**
+		 * Option bit to request to parse Exif-IFD.
+		 */
+		int OPTION_IFD_EXIF = 1 << 2;
+		/**
+		 * Option bit to request to parse GPS-IFD.
+		 */
+		int OPTION_IFD_GPS = 1 << 3;
+		/**
+		 * Option bit to request to parse Interoperability-IFD.
+		 */
+		int OPTION_IFD_INTEROPERABILITY = 1 << 4;
+		/**
+		 * Option bit to request to parse thumbnail.
+		 */
+		int OPTION_THUMBNAIL = 1 << 5;
+		/**
+		 * Option bit to request all the options
+		 */
+		int OPTION_ALL = OPTION_IFD_0 ^ OPTION_IFD_1 ^ OPTION_IFD_EXIF ^ OPTION_IFD_GPS ^ OPTION_IFD_INTEROPERABILITY ^ OPTION_THUMBNAIL;
 	}
 }

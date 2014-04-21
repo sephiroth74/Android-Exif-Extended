@@ -3,8 +3,6 @@ package it.sephiroth.android.example.exifsample;
 import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.drawable.BitmapDrawable;
 import android.location.Address;
 import android.location.Geocoder;
 import android.net.Uri;
@@ -29,7 +27,6 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.Date;
@@ -41,6 +38,9 @@ import it.sephiroth.android.example.exifsample.utils.IOUtils;
 import it.sephiroth.android.library.exif2.BuildConfig;
 import it.sephiroth.android.library.exif2.ExifInterface;
 import it.sephiroth.android.library.exif2.ExifTag;
+import it.sephiroth.android.library.exif2.ExifUtil;
+import it.sephiroth.android.library.exif2.IfdId;
+import it.sephiroth.android.library.exif2.Rational;
 
 public class MainActivity extends Activity implements OnClickListener {
 
@@ -166,11 +166,42 @@ public class MainActivity extends Activity implements OnClickListener {
 		}
 	}
 
-	private String createStringFromIfFound( ExifInterface exif, int key, String label ) {
+	int mTagsCount = 0;
+
+	private String createStringFromIfFound( ExifInterface exif, int key, String label, final List<ExifTag> all_tags ) {
 		String exifString = "";
 		ExifTag tag = exif.getTag( key );
 		if( null != tag ) {
-			exifString += "<b>" + label + ": </b>";
+
+			all_tags.remove( tag );
+
+			int ifid = tag.getIfd();
+			String ifdid_str = "";
+
+			switch( ifid ) {
+				case IfdId.TYPE_IFD_0:
+					ifdid_str = "ifd0";
+					break;
+
+				case IfdId.TYPE_IFD_1:
+					ifdid_str = "ifd1";
+					break;
+
+				case IfdId.TYPE_IFD_EXIF:
+					ifdid_str = "exif";
+					break;
+
+				case IfdId.TYPE_IFD_GPS:
+					ifdid_str = "gps";
+					break;
+
+				case IfdId.TYPE_IFD_INTEROPERABILITY:
+					ifdid_str = "interop";
+					break;
+			}
+
+			mTagsCount++;
+			exifString += "<b>" + label + "(" + ifdid_str + "): </b>";
 
 			if( key == ExifInterface.TAG_DATE_TIME || key == ExifInterface.TAG_DATE_TIME_DIGITIZED || key == ExifInterface.TAG_DATE_TIME_ORIGINAL ) {
 				Date date = ExifInterface.getDateTime( tag.getValueAsString(), TimeZone.getDefault() );
@@ -207,23 +238,28 @@ public class MainActivity extends Activity implements OnClickListener {
 	private void processInputStream( InputStream stream ) {
 
 		mExif = new ExifInterface();
+		List<ExifTag> all_tags = null;
 
 		if( null != stream ) {
 			long t1 = System.currentTimeMillis();
 			try {
-				mExif.readExif( stream );
+				mExif.readExif( stream, ExifInterface.Options.OPTION_ALL );
 			} catch( IOException e ) {
 				e.printStackTrace();
 				mExif = null;
 			}
 			long t2 = System.currentTimeMillis();
 			Log.d( LOG_TAG, "parser time: " + ( t2 - t1 ) + "ms" );
+
+			all_tags = mExif.getAllTags();
+			Log.d( LOG_TAG, "total tags: " + ( all_tags != null ? all_tags.size() : 0 ) );
 		}
 
 		image.setImageBitmap( null );
 		exifText.setText( "" );
 
 		if( null != mExif ) {
+			mTagsCount = 0;
 			StringBuilder string = new StringBuilder();
 			NumberFormat numberFormatter = DecimalFormat.getNumberInstance();
 
@@ -231,8 +267,6 @@ public class MainActivity extends Activity implements OnClickListener {
 			exifText.setText( "<h2>JPEG Info<h2><br/>" );
 
 			new LoadThumbnailTask().execute( mExif );
-
-			List<ExifTag> list = mExif.getAllTags();
 
 			if( mExif.getQualityGuess() > 0 ) {
 				string.append( "<b>JPEG quality:</b> " + mExif.getQualityGuess() + "<br>" );
@@ -243,129 +277,137 @@ public class MainActivity extends Activity implements OnClickListener {
 				string.append( "<b>Image Size: </b>" + imagesize[0] + "x" + imagesize[1] + "<br>" );
 			}
 
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_EXIF_VERSION, "TAG_EXIF_VERSION" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_IMAGE_WIDTH, "TAG_IMAGE_WIDTH" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_IMAGE_LENGTH, "TAG_IMAGE_LENGTH" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_BITS_PER_SAMPLE, "TAG_BITS_PER_SAMPLE" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_COMPRESSION, "TAG_COMPRESSION" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_PHOTOMETRIC_INTERPRETATION, "TAG_PHOTOMETRIC_INTERPRETATION" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_IMAGE_DESCRIPTION, "TAG_IMAGE_DESCRIPTION" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_MAKE, "TAG_MAKE" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_MODEL, "TAG_MODEL" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_STRIP_OFFSETS, "TAG_STRIP_OFFSETS" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_ORIENTATION, "TAG_ORIENTATION" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_SAMPLES_PER_PIXEL, "TAG_SAMPLES_PER_PIXEL" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_ROWS_PER_STRIP, "TAG_ROWS_PER_STRIP" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_STRIP_BYTE_COUNTS, "TAG_STRIP_BYTE_COUNTS" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_X_RESOLUTION, "TAG_X_RESOLUTION" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_Y_RESOLUTION, "TAG_Y_RESOLUTION" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_PLANAR_CONFIGURATION, "TAG_PLANAR_CONFIGURATION" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_RESOLUTION_UNIT, "TAG_RESOLUTION_UNIT" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_TRANSFER_FUNCTION, "TAG_TRANSFER_FUNCTION" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_SOFTWARE, "TAG_SOFTWARE" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_DATE_TIME, "TAG_DATE_TIME" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_ARTIST, "TAG_ARTIST" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_WHITE_POINT, "TAG_WHITE_POINT" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_PRIMARY_CHROMATICITIES, "TAG_PRIMARY_CHROMATICITIES" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_Y_CB_CR_COEFFICIENTS, "TAG_Y_CB_CR_COEFFICIENTS" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_Y_CB_CR_SUB_SAMPLING, "TAG_Y_CB_CR_SUB_SAMPLING" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_Y_CB_CR_POSITIONING, "TAG_Y_CB_CR_POSITIONING" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_REFERENCE_BLACK_WHITE, "TAG_REFERENCE_BLACK_WHITE" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_COPYRIGHT, "TAG_COPYRIGHT" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_EXIF_IFD, "TAG_EXIF_IFD" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_GPS_IFD, "TAG_GPS_IFD" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_JPEG_INTERCHANGE_FORMAT, "TAG_JPEG_INTERCHANGE_FORMAT" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_JPEG_INTERCHANGE_FORMAT_LENGTH, "TAG_JPEG_INTERCHANGE_FORMAT_LENGTH	" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_EXPOSURE_TIME, "TAG_EXPOSURE_TIME" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_F_NUMBER, "TAG_F_NUMBER" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_EXPOSURE_PROGRAM, "TAG_EXPOSURE_PROGRAM" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_SPECTRAL_SENSITIVITY, "TAG_SPECTRAL_SENSITIVITY" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_ISO_SPEED_RATINGS, "TAG_ISO_SPEED_RATINGS" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_OECF, "TAG_OECF" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_DATE_TIME_ORIGINAL, "TAG_DATE_TIME_ORIGINAL" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_DATE_TIME_DIGITIZED, "TAG_DATE_TIME_DIGITIZED" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_COMPONENTS_CONFIGURATION, "TAG_COMPONENTS_CONFIGURATION" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_COMPRESSED_BITS_PER_PIXEL, "TAG_COMPRESSED_BITS_PER_PIXEL" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_SHUTTER_SPEED_VALUE, "TAG_SHUTTER_SPEED_VALUE" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_APERTURE_VALUE, "TAG_APERTURE_VALUE" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_BRIGHTNESS_VALUE, "TAG_BRIGHTNESS_VALUE" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_EXPOSURE_BIAS_VALUE, "TAG_EXPOSURE_BIAS_VALUE" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_MAX_APERTURE_VALUE, "TAG_MAX_APERTURE_VALUE" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_SUBJECT_DISTANCE, "TAG_SUBJECT_DISTANCE" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_METERING_MODE, "TAG_METERING_MODE" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_LIGHT_SOURCE, "TAG_LIGHT_SOURCE" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_FLASH, "TAG_FLASH" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_FOCAL_LENGTH, "TAG_FOCAL_LENGTH" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_SUBJECT_AREA, "TAG_SUBJECT_AREA" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_MAKER_NOTE, "TAG_MAKER_NOTE" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_USER_COMMENT, "TAG_USER_COMMENT" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_SUB_SEC_TIME, "TAG_SUB_SEC_TIME" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_SUB_SEC_TIME_ORIGINAL, "TAG_SUB_SEC_TIME_ORIGINAL" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_SUB_SEC_TIME_DIGITIZED, "TAG_SUB_SEC_TIME_DIGITIZED" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_FLASHPIX_VERSION, "TAG_FLASHPIX_VERSION" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_COLOR_SPACE, "TAG_COLOR_SPACE" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_PIXEL_X_DIMENSION, "TAG_PIXEL_X_DIMENSION" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_PIXEL_Y_DIMENSION, "TAG_PIXEL_Y_DIMENSION" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_RELATED_SOUND_FILE, "TAG_RELATED_SOUND_FILE" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_INTEROPERABILITY_IFD, "TAG_INTEROPERABILITY_IFD" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_FLASH_ENERGY, "TAG_FLASH_ENERGY" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_SPATIAL_FREQUENCY_RESPONSE, "TAG_SPATIAL_FREQUENCY_RESPONSE" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_FOCAL_PLANE_X_RESOLUTION, "TAG_FOCAL_PLANE_X_RESOLUTION" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_FOCAL_PLANE_Y_RESOLUTION, "TAG_FOCAL_PLANE_Y_RESOLUTION" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_FOCAL_PLANE_RESOLUTION_UNIT, "TAG_FOCAL_PLANE_RESOLUTION_UNIT" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_SUBJECT_LOCATION, "TAG_SUBJECT_LOCATION" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_EXPOSURE_INDEX, "TAG_EXPOSURE_INDEX" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_SENSING_METHOD, "TAG_SENSING_METHOD" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_FILE_SOURCE, "TAG_FILE_SOURCE" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_SCENE_TYPE, "TAG_SCENE_TYPE" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_CFA_PATTERN, "TAG_CFA_PATTERN" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_CUSTOM_RENDERED, "TAG_CUSTOM_RENDERED" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_EXPOSURE_MODE, "TAG_EXPOSURE_MODE" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_WHITE_BALANCE, "TAG_WHITE_BALANCE" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_DIGITAL_ZOOM_RATIO, "TAG_DIGITAL_ZOOM_RATIO" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_FOCAL_LENGTH_IN_35_MM_FILE, "TAG_FOCAL_LENGTH_IN_35_MM_FILE" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_SCENE_CAPTURE_TYPE, "TAG_SCENE_CAPTURE_TYPE" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_GAIN_CONTROL, "TAG_GAIN_CONTROL" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_CONTRAST, "TAG_CONTRAST" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_SATURATION, "TAG_SATURATION" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_SHARPNESS, "TAG_SHARPNESS" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_DEVICE_SETTING_DESCRIPTION, "TAG_DEVICE_SETTING_DESCRIPTION" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_SUBJECT_DISTANCE_RANGE, "TAG_SUBJECT_DISTANCE_RANGE" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_IMAGE_UNIQUE_ID, "TAG_IMAGE_UNIQUE_ID" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_GPS_VERSION_ID, "TAG_GPS_VERSION_ID" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_GPS_LATITUDE_REF, "TAG_GPS_LATITUDE_REF" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_GPS_LATITUDE, "TAG_GPS_LATITUDE" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_GPS_LONGITUDE_REF, "TAG_GPS_LONGITUDE_REF" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_GPS_LONGITUDE, "TAG_GPS_LONGITUDE" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_GPS_ALTITUDE_REF, "TAG_GPS_ALTITUDE_REF" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_GPS_ALTITUDE, "TAG_GPS_ALTITUDE" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_GPS_TIME_STAMP, "TAG_GPS_TIME_STAMP" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_GPS_SATTELLITES, "TAG_GPS_SATTELLITES" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_GPS_STATUS, "TAG_GPS_STATUS" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_GPS_MEASURE_MODE, "TAG_GPS_MEASURE_MODE" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_GPS_DOP, "TAG_GPS_DOP" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_GPS_SPEED_REF, "TAG_GPS_SPEED_REF" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_GPS_SPEED, "TAG_GPS_SPEED" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_GPS_TRACK_REF, "TAG_GPS_TRACK_REF" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_GPS_TRACK, "TAG_GPS_TRACK" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_GPS_IMG_DIRECTION_REF, "TAG_GPS_IMG_DIRECTION_REF" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_GPS_IMG_DIRECTION, "TAG_GPS_IMG_DIRECTION" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_GPS_MAP_DATUM, "TAG_GPS_MAP_DATUM" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_GPS_DEST_LATITUDE_REF, "TAG_GPS_DEST_LATITUDE_REF" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_GPS_DEST_LATITUDE, "TAG_GPS_DEST_LATITUDE" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_GPS_DEST_LONGITUDE_REF, "TAG_GPS_DEST_LONGITUDE_REF" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_GPS_DEST_LONGITUDE, "TAG_GPS_DEST_LONGITUDE" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_GPS_DEST_BEARING_REF, "TAG_GPS_DEST_BEARING_REF" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_GPS_DEST_BEARING, "TAG_GPS_DEST_BEARING" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_GPS_DEST_DISTANCE_REF, "TAG_GPS_DEST_DISTANCE_REF" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_GPS_DEST_DISTANCE, "TAG_GPS_DEST_DISTANCE" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_GPS_PROCESSING_METHOD, "TAG_GPS_PROCESSING_METHOD" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_GPS_AREA_INFORMATION, "TAG_GPS_AREA_INFORMATION" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_GPS_DATE_STAMP, "TAG_GPS_DATE_STAMP" ) );
-			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_GPS_DIFFERENTIAL, "TAG_GPS_DIFFERENTIAL" ) );
-
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_IMAGE_WIDTH, "TAG_IMAGE_WIDTH", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_IMAGE_LENGTH, "TAG_IMAGE_LENGTH", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_BITS_PER_SAMPLE, "TAG_BITS_PER_SAMPLE", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_COMPRESSION, "TAG_COMPRESSION", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_PHOTOMETRIC_INTERPRETATION, "TAG_PHOTOMETRIC_INTERPRETATION", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_IMAGE_DESCRIPTION, "TAG_IMAGE_DESCRIPTION", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_MAKE, "TAG_MAKE", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_MODEL, "TAG_MODEL", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_STRIP_OFFSETS, "TAG_STRIP_OFFSETS", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_ORIENTATION, "TAG_ORIENTATION", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_SAMPLES_PER_PIXEL, "TAG_SAMPLES_PER_PIXEL", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_ROWS_PER_STRIP, "TAG_ROWS_PER_STRIP", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_STRIP_BYTE_COUNTS, "TAG_STRIP_BYTE_COUNTS", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_X_RESOLUTION, "TAG_X_RESOLUTION", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_Y_RESOLUTION, "TAG_Y_RESOLUTION", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_PLANAR_CONFIGURATION, "TAG_PLANAR_CONFIGURATION", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_RESOLUTION_UNIT, "TAG_RESOLUTION_UNIT", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_TRANSFER_FUNCTION, "TAG_TRANSFER_FUNCTION", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_SOFTWARE, "TAG_SOFTWARE", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_DATE_TIME, "TAG_DATE_TIME", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_ARTIST, "TAG_ARTIST", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_WHITE_POINT, "TAG_WHITE_POINT", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_PRIMARY_CHROMATICITIES, "TAG_PRIMARY_CHROMATICITIES", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_Y_CB_CR_COEFFICIENTS, "TAG_Y_CB_CR_COEFFICIENTS", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_Y_CB_CR_SUB_SAMPLING, "TAG_Y_CB_CR_SUB_SAMPLING", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_Y_CB_CR_POSITIONING, "TAG_Y_CB_CR_POSITIONING", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_REFERENCE_BLACK_WHITE, "TAG_REFERENCE_BLACK_WHITE", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_COPYRIGHT, "TAG_COPYRIGHT", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_EXIF_IFD, "TAG_EXIF_IFD", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_GPS_IFD, "TAG_GPS_IFD", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_JPEG_INTERCHANGE_FORMAT, "TAG_JPEG_INTERCHANGE_FORMAT", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_JPEG_INTERCHANGE_FORMAT_LENGTH, "TAG_JPEG_INTERCHANGE_FORMAT_LENGTH", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_EXPOSURE_TIME, "TAG_EXPOSURE_TIME", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_F_NUMBER, "TAG_F_NUMBER", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_EXPOSURE_PROGRAM, "TAG_EXPOSURE_PROGRAM", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_SPECTRAL_SENSITIVITY, "TAG_SPECTRAL_SENSITIVITY", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_ISO_SPEED_RATINGS, "TAG_ISO_SPEED_RATINGS", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_OECF, "TAG_OECF", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_EXIF_VERSION, "TAG_EXIF_VERSION", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_DATE_TIME_ORIGINAL, "TAG_DATE_TIME_ORIGINAL", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_DATE_TIME_DIGITIZED, "TAG_DATE_TIME_DIGITIZED", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_COMPONENTS_CONFIGURATION, "TAG_COMPONENTS_CONFIGURATION", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_COMPRESSED_BITS_PER_PIXEL, "TAG_COMPRESSED_BITS_PER_PIXEL", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_SHUTTER_SPEED_VALUE, "TAG_SHUTTER_SPEED_VALUE", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_APERTURE_VALUE, "TAG_APERTURE_VALUE", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_BRIGHTNESS_VALUE, "TAG_BRIGHTNESS_VALUE", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_EXPOSURE_BIAS_VALUE, "TAG_EXPOSURE_BIAS_VALUE", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_MAX_APERTURE_VALUE, "TAG_MAX_APERTURE_VALUE", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_SUBJECT_DISTANCE, "TAG_SUBJECT_DISTANCE", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_METERING_MODE, "TAG_METERING_MODE", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_LIGHT_SOURCE, "TAG_LIGHT_SOURCE", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_FLASH, "TAG_FLASH", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_FOCAL_LENGTH, "TAG_FOCAL_LENGTH", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_SUBJECT_AREA, "TAG_SUBJECT_AREA", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_MAKER_NOTE, "TAG_MAKER_NOTE", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_USER_COMMENT, "TAG_USER_COMMENT", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_SUB_SEC_TIME, "TAG_SUB_SEC_TIME", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_SUB_SEC_TIME_ORIGINAL, "TAG_SUB_SEC_TIME_ORIGINAL", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_SUB_SEC_TIME_DIGITIZED, "TAG_SUB_SEC_TIME_DIGITIZED", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_FLASHPIX_VERSION, "TAG_FLASHPIX_VERSION", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_COLOR_SPACE, "TAG_COLOR_SPACE", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_PIXEL_X_DIMENSION, "TAG_PIXEL_X_DIMENSION", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_PIXEL_Y_DIMENSION, "TAG_PIXEL_Y_DIMENSION", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_RELATED_SOUND_FILE, "TAG_RELATED_SOUND_FILE", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_INTEROPERABILITY_IFD, "TAG_INTEROPERABILITY_IFD", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_FLASH_ENERGY, "TAG_FLASH_ENERGY", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_SPATIAL_FREQUENCY_RESPONSE, "TAG_SPATIAL_FREQUENCY_RESPONSE", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_FOCAL_PLANE_X_RESOLUTION, "TAG_FOCAL_PLANE_X_RESOLUTION", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_FOCAL_PLANE_Y_RESOLUTION, "TAG_FOCAL_PLANE_Y_RESOLUTION", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_FOCAL_PLANE_RESOLUTION_UNIT, "TAG_FOCAL_PLANE_RESOLUTION_UNIT", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_SUBJECT_LOCATION, "TAG_SUBJECT_LOCATION", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_EXPOSURE_INDEX, "TAG_EXPOSURE_INDEX", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_SENSING_METHOD, "TAG_SENSING_METHOD", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_FILE_SOURCE, "TAG_FILE_SOURCE", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_SCENE_TYPE, "TAG_SCENE_TYPE", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_CFA_PATTERN, "TAG_CFA_PATTERN", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_CUSTOM_RENDERED, "TAG_CUSTOM_RENDERED", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_EXPOSURE_MODE, "TAG_EXPOSURE_MODE", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_WHITE_BALANCE, "TAG_WHITE_BALANCE", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_DIGITAL_ZOOM_RATIO, "TAG_DIGITAL_ZOOM_RATIO", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_FOCAL_LENGTH_IN_35_MM_FILE, "TAG_FOCAL_LENGTH_IN_35_MM_FILE", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_SCENE_CAPTURE_TYPE, "TAG_SCENE_CAPTURE_TYPE", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_GAIN_CONTROL, "TAG_GAIN_CONTROL", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_CONTRAST, "TAG_CONTRAST", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_SATURATION, "TAG_SATURATION", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_SHARPNESS, "TAG_SHARPNESS", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_DEVICE_SETTING_DESCRIPTION, "TAG_DEVICE_SETTING_DESCRIPTION", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_SUBJECT_DISTANCE_RANGE, "TAG_SUBJECT_DISTANCE_RANGE", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_IMAGE_UNIQUE_ID, "TAG_IMAGE_UNIQUE_ID", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_GPS_VERSION_ID, "TAG_GPS_VERSION_ID", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_GPS_LATITUDE_REF, "TAG_GPS_LATITUDE_REF", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_GPS_LATITUDE, "TAG_GPS_LATITUDE", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_GPS_LONGITUDE_REF, "TAG_GPS_LONGITUDE_REF", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_GPS_LONGITUDE, "TAG_GPS_LONGITUDE", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_GPS_ALTITUDE_REF, "TAG_GPS_ALTITUDE_REF", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_GPS_ALTITUDE, "TAG_GPS_ALTITUDE", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_GPS_TIME_STAMP, "TAG_GPS_TIME_STAMP", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_GPS_SATTELLITES, "TAG_GPS_SATTELLITES", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_GPS_STATUS, "TAG_GPS_STATUS", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_GPS_MEASURE_MODE, "TAG_GPS_MEASURE_MODE", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_GPS_DOP, "TAG_GPS_DOP", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_GPS_SPEED_REF, "TAG_GPS_SPEED_REF", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_GPS_SPEED, "TAG_GPS_SPEED", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_GPS_TRACK_REF, "TAG_GPS_TRACK_REF", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_GPS_TRACK, "TAG_GPS_TRACK", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_GPS_IMG_DIRECTION_REF, "TAG_GPS_IMG_DIRECTION_REF", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_GPS_IMG_DIRECTION, "TAG_GPS_IMG_DIRECTION", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_GPS_MAP_DATUM, "TAG_GPS_MAP_DATUM", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_GPS_DEST_LATITUDE_REF, "TAG_GPS_DEST_LATITUDE_REF", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_GPS_DEST_LATITUDE, "TAG_GPS_DEST_LATITUDE", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_GPS_DEST_LONGITUDE_REF, "TAG_GPS_DEST_LONGITUDE_REF", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_GPS_DEST_LONGITUDE, "TAG_GPS_DEST_LONGITUDE", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_GPS_DEST_BEARING_REF, "TAG_GPS_DEST_BEARING_REF", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_GPS_DEST_BEARING, "TAG_GPS_DEST_BEARING", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_GPS_DEST_DISTANCE_REF, "TAG_GPS_DEST_DISTANCE_REF", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_GPS_DEST_DISTANCE, "TAG_GPS_DEST_DISTANCE", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_GPS_PROCESSING_METHOD, "TAG_GPS_PROCESSING_METHOD", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_GPS_AREA_INFORMATION, "TAG_GPS_AREA_INFORMATION", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_GPS_DATE_STAMP, "TAG_GPS_DATE_STAMP", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_GPS_DIFFERENTIAL, "TAG_GPS_DIFFERENTIAL", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_INTEROPERABILITY_INDEX, "TAG_INTEROPERABILITY_INDEX", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_LENS_MAKE, "TAG_LENS_MAKE", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_LENS_MODEL, "TAG_LENS_MODEL", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_LENS_SPECS, "TAG_LENS_SPECS", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_SENSITIVITY_TYPE, "TAG_SENSITIVITY_TYPE", all_tags ) );
 
 			string.append( "<br>--------------<br>" );
+			string.append( "<b>Total tags parsed:</b> " + mTagsCount + "<br>" );
+			string.append( "<b>Remaining tags:</b> " + ( all_tags != null ? all_tags.size() : 0 ) + "<br>" );
+			string.append( "<b>Has Thumbnail:</b> " + mExif.hasThumbnail() + "<br>" );
+
 
 			ExifTag tag = mExif.getTag( ExifInterface.TAG_EXIF_VERSION );
 			if( null != tag ) {
@@ -381,9 +423,9 @@ public class MainActivity extends Activity implements OnClickListener {
 			}
 
 			Integer val = mExif.getTagIntValue( ExifInterface.TAG_ORIENTATION );
-			short orientation = 0;
+			int orientation = 0;
 			if( null != val ) {
-				orientation = ExifInterface.getOrientationValueForRotation( val.shortValue() );
+				orientation = ExifInterface.getRotationForOrientationValue( val.shortValue() );
 			}
 			string.append( "<b>Orientation: </b> " + orientation + "<br>" );
 
@@ -397,7 +439,6 @@ public class MainActivity extends Activity implements OnClickListener {
 			if( null != shutterSpeed ) {
 				double speed = shutterSpeed.getValueAsRational( 0 ).toDouble();
 				Log.d( LOG_TAG, "speed: " + speed );
-//				shutter speed is 1/(2^4)=1/16 second.
 
 				NumberFormat decimalFormatter = DecimalFormat.getNumberInstance();
 				decimalFormatter.setMaximumFractionDigits( 1 );
@@ -405,11 +446,23 @@ public class MainActivity extends Activity implements OnClickListener {
 				string.append( "<b>Shutter Speed: </b> " + speedString + "<br>" );
 			}
 
+			Rational[] rationals = mExif.getTagRationalValues( ExifInterface.TAG_LENS_SPECS );
+			if( null != rationals ) {
+				String result = ExifUtil.processLensSpecifications( rationals );
+				string.append( "<b>Lens Specifications: </b> " + result + "<br>" );
+			}
+
+
 			short process = mExif.getJpegProcess();
 			string.append( "<b>JPEG Process: </b> " + process + "<br>" );
-
 			exifText.setText( Html.fromHtml( string.toString() ) );
 
+			if( null != all_tags ) {
+				Log.i( LOG_TAG, "---- remaining tags ---" );
+				for( ExifTag remaining_tag : all_tags ) {
+					Log.v( LOG_TAG, "tag: " + String.format( "0x%X", remaining_tag.getTagId() ) + ", value: " + remaining_tag.forceGetValueAsString() );
+				}
+			}
 
 			double[] latlon = mExif.getLatLongAsDoubles();
 			if( null != latlon ) {

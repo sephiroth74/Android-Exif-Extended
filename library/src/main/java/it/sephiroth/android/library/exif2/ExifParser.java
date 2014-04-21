@@ -63,30 +63,6 @@ class ExifParser {
 	 * When there is nothing more to parse.
 	 */
 	public static final int EVENT_END = 5;
-	/**
-	 * Option bit to request to parse IFD0.
-	 */
-	public static final int OPTION_IFD_0 = 1;
-	/**
-	 * Option bit to request to parse IFD1.
-	 */
-	public static final int OPTION_IFD_1 = 1 << 1;
-	/**
-	 * Option bit to request to parse Exif-IFD.
-	 */
-	public static final int OPTION_IFD_EXIF = 1 << 2;
-	/**
-	 * Option bit to request to parse GPS-IFD.
-	 */
-	public static final int OPTION_IFD_GPS = 1 << 3;
-	/**
-	 * Option bit to request to parse Interoperability-IFD.
-	 */
-	public static final int OPTION_IFD_INTEROPERABILITY = 1 << 4;
-	/**
-	 * Option bit to request to parse thumbnail.
-	 */
-	public static final int OPTION_THUMBNAIL = 1 << 5;
 
 	protected static final int EXIF_HEADER = 0x45786966; // EXIF header "Exif"
 	protected static final short EXIF_HEADER_TAIL = (short) 0x0000; // EXIF header in M_EXIF
@@ -164,7 +140,6 @@ class ExifParser {
 
 		long offset = mTiffStream.readUnsignedInt();
 		if( offset > Integer.MAX_VALUE ) {
-			Log.e( TAG, "Invalid offset " + offset );
 			throw new ExifInvalidFormatException( "Invalid offset " + offset );
 		}
 		mIfd0Position = (int) offset;
@@ -174,7 +149,6 @@ class ExifParser {
 			registerIfd( IfdId.TYPE_IFD_0, offset );
 			if( offset != DEFAULT_IFD0_OFFSET ) {
 				mDataAboveIfd0 = new byte[(int) offset - DEFAULT_IFD0_OFFSET];
-				Log.v( TAG, "read dataAboveIfd0.." );
 				read( mDataAboveIfd0 );
 			}
 		}
@@ -237,7 +211,6 @@ class ExifParser {
 			itemlen = ( ( lh & 0xff ) << 8 ) | ( ll & 0xff );
 
 			if( itemlen < 2 ) {
-				Log.e( TAG, "Invalid marker" );
 				throw new ExifInvalidFormatException( "Invalid marker" );
 			}
 
@@ -249,20 +222,18 @@ class ExifParser {
 
 			got = dataStream.read( data, 2, itemlen-2 );
 			if( got != itemlen - 2 ) {
-				Log.e( TAG, "Premature end of file?" );
 				throw new ExifInvalidFormatException( "Premature end of file?" );
 			}
 
 			section.data = data;
 
-			Log.i( TAG, "marker: " + String.format( "0x%2X", marker ) + ": " + itemlen );
+			// Log.i( TAG, "marker: " + String.format( "0x%2X", marker ) + ": " + itemlen );
 
 			boolean ignore = false;
 
 			switch( marker ) {
 				case JpegHeader.TAG_M_SOS:
 					// stop before hitting compressed data
-					Log.d( TAG, "Begins of of image data: " + dataStream.getReadByteCount() );
 					mSections.add( section );
 					mUncompressedDataPosition = dataStream.getReadByteCount();
 					return tiffStream;
@@ -288,8 +259,6 @@ class ExifParser {
 				case JpegHeader.TAG_M_JFIF:
 					if( itemlen < 16 ) {
 						ignore = true;
-					} else {
-						Log.e( TAG, "JFIF found" );
 					}
 					break;
 
@@ -318,7 +287,6 @@ class ExifParser {
 						short headerTail = readShort( data, 6 );
 						// header = Exif, headerTail=\0\0
 						if( header == EXIF_HEADER && headerTail == EXIF_HEADER_TAIL ) {
-							Log.e( TAG, "EXIF found" );
 							tiffStream = new CountedDataInputStream( new ByteArrayInputStream( data, 8, itemlen - 8 ) );
 							tiffStream.setEnd( itemlen - 6 );
 							ignore = true;
@@ -350,7 +318,6 @@ class ExifParser {
 	}
 
 	private void process_M_SOFn( final byte[] data, final int marker ) {
-		Log.i( TAG, "process_M_SOFn: " + data.length + ", marker: " + marker );
 		if( data.length > 7 ) {
 			//int data_precision = data[2] & 0xff;
 			//int num_components = data[7] & 0xff;
@@ -361,8 +328,6 @@ class ExifParser {
 	}
 
 	private void process_M_DQT( final byte[] data, int length ) {
-		Log.i( TAG, "process_M_DQT: " + length );
-
 		int a = 2;
 		int c;
 		int tableindex, coefindex;
@@ -422,8 +387,6 @@ class ExifParser {
 	}
 
 	private void parseTiffHeader( final CountedDataInputStream stream ) throws IOException, ExifInvalidFormatException {
-		Log.i( TAG, "parseTiffHeader" );
-
 		short byteOrder = stream.readShort();
 		if( LITTLE_ENDIAN_TAG == byteOrder ) {
 			stream.setByteOrder( ByteOrder.LITTLE_ENDIAN );
@@ -432,29 +395,26 @@ class ExifParser {
 			stream.setByteOrder( ByteOrder.BIG_ENDIAN );
 		}
 		else {
-			Log.e( TAG, "Invalid TIFF header (1)" );
 			throw new ExifInvalidFormatException( "Invalid TIFF header" );
 		}
 
 		if( stream.readShort() != TIFF_HEADER_TAIL ) {
-			Log.e( TAG, "Invalid TIFF header (2)" );
 			throw new ExifInvalidFormatException( "Invalid TIFF header" );
 		}
 	}
 
 	private boolean isIfdRequested( int ifdType ) {
-		Log.i( TAG, "isIfdRequested: " + ifdType );
 		switch( ifdType ) {
 			case IfdId.TYPE_IFD_0:
-				return ( mOptions & OPTION_IFD_0 ) != 0;
+				return ( mOptions & ExifInterface.Options.OPTION_IFD_0 ) != 0;
 			case IfdId.TYPE_IFD_1:
-				return ( mOptions & OPTION_IFD_1 ) != 0;
+				return ( mOptions & ExifInterface.Options.OPTION_IFD_1 ) != 0;
 			case IfdId.TYPE_IFD_EXIF:
-				return ( mOptions & OPTION_IFD_EXIF ) != 0;
+				return ( mOptions & ExifInterface.Options.OPTION_IFD_EXIF ) != 0;
 			case IfdId.TYPE_IFD_GPS:
-				return ( mOptions & OPTION_IFD_GPS ) != 0;
+				return ( mOptions & ExifInterface.Options.OPTION_IFD_GPS ) != 0;
 			case IfdId.TYPE_IFD_INTEROPERABILITY:
-				return ( mOptions & OPTION_IFD_INTEROPERABILITY ) != 0;
+				return ( mOptions & ExifInterface.Options.OPTION_IFD_INTEROPERABILITY ) != 0;
 		}
 		return false;
 	}
@@ -488,8 +448,7 @@ class ExifParser {
 	}
 
 	private boolean isThumbnailRequested() {
-		Log.i( TAG, "isThumbnailRequested: " + ( ( mOptions & OPTION_THUMBNAIL ) != 0 ) );
-		return ( mOptions & OPTION_THUMBNAIL ) != 0;
+		return ( mOptions & ExifInterface.Options.OPTION_THUMBNAIL ) != 0;
 	}
 
 	/**
@@ -501,17 +460,17 @@ class ExifParser {
 	protected static ExifParser parse( InputStream inputStream, int options, ExifInterface iRef ) throws IOException, ExifInvalidFormatException {
 		return new ExifParser( inputStream, options, iRef );
 	}
-
-	/**
-	 * Parses the the given InputStream with default options; that is, every IFD
-	 * and thumbnaill will be parsed.
-	 *
-	 * @throws java.io.IOException
-	 * @throws ExifInvalidFormatException
-	 */
-	protected static ExifParser parse( InputStream inputStream, ExifInterface iRef ) throws IOException, ExifInvalidFormatException {
-		return new ExifParser( inputStream, OPTION_IFD_0 | OPTION_IFD_1 | OPTION_IFD_EXIF | OPTION_IFD_GPS | OPTION_IFD_INTEROPERABILITY | OPTION_THUMBNAIL, iRef );
-	}
+//
+//	/**
+//	 * Parses the the given InputStream with default options; that is, every IFD
+//	 * and thumbnaill will be parsed.
+//	 *
+//	 * @throws java.io.IOException
+//	 * @throws ExifInvalidFormatException
+//	 */
+//	protected static ExifParser parse( InputStream inputStream, boolean requestThumbnail, ExifInterface iRef ) throws IOException, ExifInvalidFormatException {
+//		return new ExifParser( inputStream, OPTION_IFD_0 | OPTION_IFD_1 | OPTION_IFD_EXIF | OPTION_IFD_GPS | OPTION_IFD_INTEROPERABILITY | ( requestThumbnail ? OPTION_THUMBNAIL : 0 ), iRef );
+//	}
 
 	/**
 	 * Moves the parser forward and returns the next parsing event
@@ -762,7 +721,6 @@ class ExifParser {
 		short dataFormat = mTiffStream.readShort();
 		long numOfComp = mTiffStream.readUnsignedInt();
 		if( numOfComp > Integer.MAX_VALUE ) {
-			Log.e( TAG, "Number of component is larger then Integer.MAX_VALUE" );
 			throw new ExifInvalidFormatException( "Number of component is larger then Integer.MAX_VALUE" );
 		}
 		// Some invalid image file contains invalid data type. Ignore those tags
@@ -777,7 +735,6 @@ class ExifParser {
 		if( dataSize > 4 ) {
 			long offset = mTiffStream.readUnsignedInt();
 			if( offset > Integer.MAX_VALUE ) {
-				Log.e( TAG, "offset is larger then Integer.MAX_VALUE" );
 				throw new ExifInvalidFormatException( "offset is larger then Integer.MAX_VALUE" );
 			}
 			// Some invalid images put some undefined data before IFD0.
@@ -954,23 +911,7 @@ class ExifParser {
 			break;
 		}
 
-//		if( LOGV ) {
-//			Log.v( TAG, "\n" + tag.toString() );
-//		}
-	}
-
-	protected int getOffsetToExifEndFromSOF() {
-//		if( null != mTiffData ) {
-//			return mTiffData.offsetToApp1EndFromSOF;
-//		}
-		return 0;
-	}
-
-	protected int getTiffStartPosition() {
-//		if( null != mTiffData ) {
-//			return mTiffData.tiffStartPosition;
-//		}
-		return 0;
+		// Log.v( TAG, "\n" + tag.toString() );
 	}
 
 	/**

@@ -102,7 +102,9 @@ class ExifOutputStream {
 		dataOutputStream.writeShort( TIFF_HEADER );
 		dataOutputStream.writeInt( 8 );
 		writeAllTags( dataOutputStream );
+
 		writeThumbnail( dataOutputStream );
+
 		for( ExifTag t : nullTags ) {
 			mExifData.addTag( t );
 		}

@@ -65,7 +65,6 @@ class ExifData {
 	 * Sets the compressed thumbnail.
 	 */
 	protected void setCompressedThumbnail( byte[] thumbnail ) {
-		Log.i( TAG, "setCompressedThumbnail: " + thumbnail );
 		mThumbnail = thumbnail;
 	}
 
@@ -73,7 +72,6 @@ class ExifData {
 	 * Returns true it this header contains a compressed thumbnail.
 	 */
 	protected boolean hasCompressedThumbnail() {
-		Log.i( TAG, "hasCompressedThumbnail: " + ( mThumbnail != null ) );
 		return mThumbnail != null;
 	}
 
