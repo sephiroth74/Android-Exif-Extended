@@ -22,7 +22,7 @@ public class ExifUtil {
 		sb.append( formatter.format( min_focal.toDouble() ) );
 		sb.append( "-" );
 		sb.append( formatter.format( max_focal.toDouble() ) );
-		sb.append( " mm f/" );
+		sb.append( "mm f/" );
 		sb.append( formatter.format( min_f.toDouble() ) );
 		sb.append( "-" );
 		sb.append( formatter.format( max_f.toDouble() ) );

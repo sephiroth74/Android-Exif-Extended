@@ -1048,13 +1048,25 @@ public class ExifInterface {
 		File bak_file = new File( dstFilename + ".t" );
 
 		// try to delete old copy of backup
+		Log.d( TAG, "delete old backup file" );
 		bak_file.delete();
 
 		// rename dst file into backup file
-		if( ! dst_file.renameTo( bak_file ) ) return;
+		// Log.d( TAG, "rename dst into bak" )
+		// if( ! dst_file.renameTo( bak_file ) ) return;
 
 		try {
-			writeExif( bak_file.getAbsolutePath(), dst_file.getAbsolutePath() );
+			// Log.d( TAG, "try to write into dst" );
+			// writeExif( bak_file.getAbsolutePath(), dst_file.getAbsolutePath() );
+
+			// Trying to write into bak_file using dst_file as source
+			writeExif( dst_file.getAbsolutePath(), bak_file.getAbsolutePath() );
+
+			// Now switch bak into dst
+			Log.d( TAG, "rename the bak into dst" );
+			bak_file.renameTo( dst_file );
+		} catch( IOException e ) {
+			throw e;
 		} finally {
 			// deleting backup file
 			bak_file.delete();
@@ -2340,6 +2352,22 @@ public class ExifInterface {
 			return Math.exp( rational.toDouble() * Math.log( 2 ) * 0.5 );
 		}
 		return 0;
+	}
+
+	/**
+	 * Returns the lens model as string if any of the tags {@link #TAG_LENS_MODEL}
+	 * or {@link #TAG_LENS_SPECS} are found
+	 *
+	 * @return the string representation of the lens spec
+	 */
+	public String getLensModelDescription() {
+		String lensModel = getTagStringValue( TAG_LENS_MODEL );
+		if( null != lensModel ) return lensModel;
+
+		Rational[] rat = getTagRationalValues( TAG_LENS_SPECS );
+		if( null != rat ) return ExifUtil.processLensSpecifications( rat );
+
+		return null;
 	}
 
 	/**

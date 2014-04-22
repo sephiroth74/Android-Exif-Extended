@@ -27,6 +27,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.Date;
@@ -65,15 +66,7 @@ public class MainActivity extends Activity implements OnClickListener {
 		button1.setOnClickListener( this );
 		button2.setOnClickListener( this );
 
-		String uriString = "content://media/external/images/media/32706";
-		uriString = "content://media/external/images/media/41402";
-		// uriString = "content://media/external/images/media/25470";
-		// String uriString = "content://media/external/images/media/32705";
-		// String uriString = ( "content://media/external/images/media/18937";
-
 		Log.i( LOG_TAG, "ExifInterfaceExtended.Version: " + BuildConfig.VERSION_NAME + " - " + BuildConfig.VERSION_CODE );
-
-		Uri uri = Uri.parse( uriString );
 		processAsset( "image.jpg" );
 	}
 
@@ -111,10 +104,18 @@ public class MainActivity extends Activity implements OnClickListener {
 				exif.setTag( exif.buildTag( ExifInterface.TAG_ARTIST, "Alessandro Crugnola" ) );
 				exif.addDateTimeStampTag( ExifInterface.TAG_DATE_TIME, new Date().getTime(), TimeZone.getDefault() );
 
+				InputStream is = openInputStream( mUri );
+				OutputStream os = new FileOutputStream( dst_file );
+				org.apache.commons.io.IOUtils.copy( is, os );
+				is.close();
+				os.close();
+
 				long t1 = SystemClock.uptimeMillis();
 
 				// exif.writeExif( tmp_file.getAbsolutePath(), dst_file.getAbsolutePath() );
-				exif.writeExif( openInputStream( mUri ), dst_file.getAbsolutePath() );
+				// exif.writeExif( openInputStream( mUri ), dst_file.getAbsolutePath() );
+
+				exif.writeExif( dst_file.getAbsolutePath() );
 
 				long t2 = SystemClock.uptimeMillis();
 				Log.d( LOG_TAG, "saveImage time: " + (t2-t1) + "ms" );
@@ -263,7 +264,7 @@ public class MainActivity extends Activity implements OnClickListener {
 			StringBuilder string = new StringBuilder();
 			NumberFormat numberFormatter = DecimalFormat.getNumberInstance();
 
-			dumpToFile( mExif );
+			// dumpToFile( mExif );
 			exifText.setText( "<h2>JPEG Info<h2><br/>" );
 
 			new LoadThumbnailTask().execute( mExif );
@@ -403,6 +404,9 @@ public class MainActivity extends Activity implements OnClickListener {
 			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_LENS_SPECS, "TAG_LENS_SPECS", all_tags ) );
 			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_SENSITIVITY_TYPE, "TAG_SENSITIVITY_TYPE", all_tags ) );
 
+			List<ExifTag> tags = mExif.getTagsForTagId( mExif.getTrueTagKey( ExifInterface.TAG_ORIENTATION ) );
+			Log.d( LOG_TAG, "tags: " + tags );
+
 			string.append( "<br>--------------<br>" );
 			string.append( "<b>Total tags parsed:</b> " + mTagsCount + "<br>" );
 			string.append( "<b>Remaining tags:</b> " + ( all_tags != null ? all_tags.size() : 0 ) + "<br>" );
@@ -446,10 +450,9 @@ public class MainActivity extends Activity implements OnClickListener {
 				string.append( "<b>Shutter Speed: </b> " + speedString + "<br>" );
 			}
 
-			Rational[] rationals = mExif.getTagRationalValues( ExifInterface.TAG_LENS_SPECS );
-			if( null != rationals ) {
-				String result = ExifUtil.processLensSpecifications( rationals );
-				string.append( "<b>Lens Specifications: </b> " + result + "<br>" );
+			String lensModel = mExif.getLensModelDescription();
+			if( null != lensModel ) {
+				string.append( "<b>Lens Specifications: </b> " + lensModel + "<br>" );
 			}
 
 

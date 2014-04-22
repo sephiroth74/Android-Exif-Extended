@@ -16,6 +16,7 @@ Just add this line to your dependency group:
 ## Usage
 
     import it.sephiroth.android.library.exif2.ExifInterface;
+    import it.sephiroth.android.library.exif2.ExifTag;
 
     ExifInterface exif = new ExifInterface();
     exif.readExif( filename, ExifInterface.Options.OPTION_ALL );

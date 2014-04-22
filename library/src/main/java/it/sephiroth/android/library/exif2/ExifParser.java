@@ -220,14 +220,17 @@ class ExifParser {
 			data[0] = lh;
 			data[1] = ll;
 
-			got = dataStream.read( data, 2, itemlen-2 );
+			// Log.i( TAG, "marker: " + String.format( "0x%2X", marker ) + ": " + itemlen + ", position: " + dataStream.getReadByteCount() + ", available: " + dataStream.available() );
+			// got = dataStream.read( data, 2, itemlen-2 );
+
+			got = readBytes( dataStream, data, 2, itemlen - 2 );
+
 			if( got != itemlen - 2 ) {
-				throw new ExifInvalidFormatException( "Premature end of file?" );
+				throw new ExifInvalidFormatException( "Premature end of file? Expecting " + (itemlen-2) + ", received " + got );
 			}
 
 			section.data = data;
 
-			// Log.i( TAG, "marker: " + String.format( "0x%2X", marker ) + ": " + itemlen );
 
 			boolean ignore = false;
 
@@ -309,6 +312,30 @@ class ExifParser {
 				Log.v( TAG, "ignoring marker: " + String.format( "0x%2X", marker ) + ", length: " + itemlen );
 			}
 		}
+	}
+
+	/**
+	 * Using this instead of the default {@link java.io.InputStream#read(byte[], int, int)} because
+	 * on remote input streams reading large amount of data can fail
+	 *
+	 * @param dataStream
+	 * @param data
+	 * @param offset
+	 * @param length
+	 * @return
+	 * @throws IOException
+	 */
+	private int readBytes( final InputStream dataStream, final byte[] data, int offset, final int length ) throws IOException {
+		int count = 0;
+		int n;
+		int max_length = Math.min( 1024, length );
+
+		while( 0 < (n = dataStream.read(data, offset, max_length))) {
+			count += n;
+			offset += n;
+			max_length = Math.min( max_length, length-count );
+		}
+		return count;
 	}
 
 	static int Get16m( byte[] data, int position ) {
