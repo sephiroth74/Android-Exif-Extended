@@ -978,7 +978,6 @@ public class ExifInterface {
 		try {
 			d = new ExifReader( this ).read( inStream, options );
 		} catch( ExifInvalidFormatException e ) {
-			Log.e( TAG, e.getMessage() );
 			throw new IOException( "Invalid exif format : " + e );
 		}
 		mData = d;
@@ -1110,10 +1109,7 @@ public class ExifInterface {
 		writeExif_internal( input, output, mData );
 
 		// 7. write the rest of the image..
-		long t1 = SystemClock.uptimeMillis();
 		IOUtils.copy( input, output );
-		long t2 = SystemClock.uptimeMillis();
-		Log.d( TAG, "copy time: " + ( t2 - t1 ) + "ms" );
 
 		output.flush();
 		output.close();

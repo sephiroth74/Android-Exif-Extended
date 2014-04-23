@@ -124,7 +124,6 @@ class ExifOutputStream {
 	}
 
 	private void writeThumbnail( OrderedDataOutputStream dataOutputStream ) throws IOException {
-		Log.i( TAG, "writeThumbnail" );
 		if( mExifData.hasCompressedThumbnail() ) {
 			Log.d( TAG, "writing thumbnail.." );
 			dataOutputStream.write( mExifData.getCompressedThumbnail() );

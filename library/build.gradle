@@ -2,7 +2,7 @@ apply plugin: 'signing'
 apply plugin: 'android-library'
 
 group 'it.sephiroth.android.exif'
-version '1.0.1-SNAPSHOT'
+version '1.0.1'
 
 android {
     compileSdkVersion 19
@@ -32,7 +32,7 @@ dependencies {
 def generatePom() {
     def pom = pom {
         project {
-            name 'Android-Exif-Extended'
+            name 'exif-extended'
             groupId project.group
             artifactId project.name
             version project.version

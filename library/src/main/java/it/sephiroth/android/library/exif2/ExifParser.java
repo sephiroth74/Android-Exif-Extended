@@ -305,7 +305,7 @@ class ExifParser {
 			}
 
 			if( !ignore ) {
-				Log.d( TAG, "adding section with size: " + section.size );
+				// Log.d( TAG, "adding section with size: " + section.size );
 				mSections.add( section );
 			}
 			else {
@@ -407,7 +407,7 @@ class ExifParser {
 
 				if( tableindex == 0 ) {
 					mQualityGuess = (int) ( qual + 0.5 );
-					Log.v( TAG, "quality guess: " + mQualityGuess );
+					// Log.v( TAG, "quality guess: " + mQualityGuess );
 				}
 			}
 		}
