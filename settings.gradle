@@ -1,4 +1,3 @@
-include ':library-native'
-include ':library-java'
+include ':library'
 include ':demo'
 

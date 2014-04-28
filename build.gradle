@@ -13,9 +13,6 @@ allprojects {
     apply plugin: 'maven'
     apply plugin: 'maven-publish'
 
-    group = 'it.sephiroth.android.library.exif'
-    version = '2.97.4'
-
 
     repositories {
         mavenCentral()

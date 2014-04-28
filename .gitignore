@@ -21,6 +21,7 @@ local.properties
 
 library/.DS_Store
 library/obj
+library/build
 
 library/libs/armeabi/libexif_extended.so
 
@@ -43,3 +44,8 @@ build/
 
 .idea/
 .gradle/
+
+demo/demo.iml
+demo/pom.xml
+Android-Exif-Extended.iml
+library/library.iml
