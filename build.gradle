@@ -1,25 +1,26 @@
 buildscript {
     repositories {
         mavenCentral()
-        mavenLocal()
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:0.9.+'
+        classpath 'com.android.tools.build:gradle:0.11.+'
     }
 }
 
-allprojects {
-    apply plugin: 'maven'
-    apply plugin: 'maven-publish'
+def isReleaseBuild() {
+    return version.contains("SNAPSHOT") == false
+}
 
+allprojects {
+    version = VERSION_NAME
+    group = GROUP
 
     repositories {
         mavenCentral()
-        mavenLocal()
     }
 }
 
 task wrapper(type: Wrapper) {
-    gradleVersion = '1.11'
+    gradleVersion = '1.12'
 }

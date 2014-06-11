@@ -9,7 +9,7 @@ dependencies {
 
 android {
     compileSdkVersion 19
-    buildToolsVersion "19.0.3"
+    buildToolsVersion "19.1"
 
     defaultConfig {
         minSdkVersion 9
@@ -37,90 +37,3 @@ android {
 tasks.withType(Compile) {
     options.encoding = 'UTF-8'
 }
-
-
-def generatePom() {
-    def pom = pom {
-        project {
-            name 'Android-Exif-Extended (Demo)'
-            groupId project.group
-            artifactId project.name
-            version project.version
-            description 'Demo app for the Android-Exif-Extended library'
-            inceptionYear '2013'
-            url 'http://blog.sephiroth.it'
-
-            licenses {
-                license {
-                    name 'Public Domain Software'
-                    distribution 'repo'
-                }
-            }
-
-            scm {
-                url                 "https://github.com/sephiroth74/Android-Exif-Extended"
-                connection          "scm:git:git@github.com:sephiroth74/Android-Exif-Extended.git"
-                developerConnection "scm:git:git@github.com:sephiroth74/Android-Exif-Extended.git"
-            }
-
-
-            developers {
-                developer {
-                    id 'sephiroth74'
-                    name 'Alessandro Crugnola'
-                    email 'alessandro.crugnola@gmail.com'
-                    url 'http://blog.sephiroth.it'
-                    roles {
-                        role 'author'
-                        role 'developer'
-                    }
-                }
-            }
-        }
-    }
-}
-
-task writePom {
-    ext.pomXml = file("pom.xml")
-    inputs.file(project.buildFile)
-    outputs.file(pomXml)
-    doLast {
-        generatePom().writeTo(pomXml)
-    }
-}
-
-task sourcesJar(type: Jar) {
-    classifier = 'sources'
-    from android.sourceSets.main.allSource
-}
-
-uploadArchives {
-    repositories {
-        mavenDeployer {
-            beforeDeployment {
-                MavenDeployment deployment -> signing.signPom(deployment)
-            }
-            pom = generatePom()
-
-            repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
-                authentication(userName: sonatypeUsername, password: sonatypePassword )
-            }
-
-            snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots") {
-                authentication(userName: sonatypeUsername, password: sonatypePassword )
-            }
-        }
-    }
-}
-
-signing {
-    sign configurations.archives
-}
-
-artifacts {
-    archives sourcesJar
-}
-
-
-build.dependsOn(writePom)
-uploadArchives.dependsOn(build)

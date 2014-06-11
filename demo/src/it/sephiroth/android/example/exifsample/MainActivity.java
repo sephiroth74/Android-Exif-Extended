@@ -252,8 +252,10 @@ public class MainActivity extends Activity implements OnClickListener {
 			long t2 = System.currentTimeMillis();
 			Log.d( LOG_TAG, "parser time: " + ( t2 - t1 ) + "ms" );
 
-			all_tags = mExif.getAllTags();
-			Log.d( LOG_TAG, "total tags: " + ( all_tags != null ? all_tags.size() : 0 ) );
+			if(null != mExif) {
+				all_tags = mExif.getAllTags();
+				Log.d(LOG_TAG, "total tags: " + (all_tags != null ? all_tags.size() : 0));
+			}
 		}
 
 		image.setImageBitmap( null );

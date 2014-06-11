@@ -1,16 +1,15 @@
-apply plugin: 'signing'
 apply plugin: 'android-library'
 
-group 'it.sephiroth.android.exif'
-version '1.0.1'
+group GROUP
+version VERSION_NAME
 
 android {
-    compileSdkVersion 19
-    buildToolsVersion "19.0.3"
+    compileSdkVersion Integer.parseInt(ANDROID_BUILD_SDK_VERSION)
+    buildToolsVersion ANDROID_BUILD_TOOLS_VERSION
 
     defaultConfig {
         minSdkVersion 9
-        targetSdkVersion 19
+        targetSdkVersion Integer.parseInt(ANDROID_BUILD_TARGET_SDK_VERSION)
         versionCode 1
         versionName version
     }
@@ -29,68 +28,4 @@ dependencies {
 }
 
 
-def generatePom() {
-    def pom = pom {
-        project {
-            name 'exif-extended'
-            groupId project.group
-            artifactId project.name
-            version project.version
-            description 'Exif extended library for Android, based on jhead library (http://www.sentex.net/~mwandel/jhead/) and on the exif library used in the Android native gallery app'
-            inceptionYear '2013'
-            url 'http://blog.sephiroth.it'
-
-            licenses {
-                license {
-                    name 'Public Domain Software'
-                    distribution 'repo'
-                }
-            }
-
-            scm {
-                url                 "https://github.com/sephiroth74/Android-Exif-Extended"
-                connection          "scm:git:git@github.com:sephiroth74/Android-Exif-Extended.git"
-                developerConnection "scm:git:git@github.com:sephiroth74/Android-Exif-Extended.git"
-            }
-
-
-            developers {
-                developer {
-                    id 'sephiroth74'
-                    name 'Alessandro Crugnola'
-                    email 'alessandro.crugnola@gmail.com'
-                    url 'http://blog.sephiroth.it'
-                    roles {
-                        role 'author'
-                        role 'developer'
-                    }
-                }
-            }
-        }
-    }
-}
-
-uploadArchives {
-    if (project.hasProperty('sonatypeUsername')) {
-        repositories {
-            mavenDeployer {
-                beforeDeployment {
-                    MavenDeployment deployment -> signing.signPom(deployment)
-                }
-                pom = generatePom()
-
-                repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
-                    authentication(userName: sonatypeUsername, password: sonatypePassword)
-                }
-
-                snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots") {
-                    authentication(userName: sonatypeUsername, password: sonatypePassword)
-                }
-            }
-        }
-    }
-}
-
-signing {
-    sign configurations.archives
-}
+apply from: '../gradle-mvn-push.gradle'
