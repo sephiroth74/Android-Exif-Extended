@@ -130,7 +130,7 @@ class ExifParser {
 		mTiffStream = seekTiffData( inputStream );
 		mOptions = options;
 
-		Log.d( TAG, "sections size: " + mSections.size() );
+		// Log.d( TAG, "sections size: " + mSections.size() );
 
 		if( mTiffStream == null ) {
 			return;
@@ -292,9 +292,9 @@ class ExifParser {
 						if( header == EXIF_HEADER && headerTail == EXIF_HEADER_TAIL ) {
 							tiffStream = new CountedDataInputStream( new ByteArrayInputStream( data, 8, itemlen - 8 ) );
 							tiffStream.setEnd( itemlen - 6 );
-							ignore = true;
+							ignore = false;
 						} else {
-							// Log.v( TAG, "Image cotains XMP section" );
+							Log.v( TAG, "Image cotains XMP section" );
 						}
 					}
 					break;
@@ -559,6 +559,7 @@ class ExifParser {
 			Entry<Integer, Object> entry = mCorrespondingEvent.pollFirstEntry();
 			Object event = entry.getValue();
 			try {
+				// Log.v(TAG, "skipTo: " + entry.getKey());
 				skipTo( entry.getKey() );
 			} catch( IOException e ) {
 				Log.w( TAG, "Failed to skip to data at: " + entry.getKey() +
@@ -715,6 +716,7 @@ class ExifParser {
 
 	private void skipTo( int offset ) throws IOException {
 		mTiffStream.skipTo( offset );
+		// Log.v(TAG, "available: " + mTiffStream.available() );
 		while( ! mCorrespondingEvent.isEmpty() && mCorrespondingEvent.firstKey() < offset ) {
 			mCorrespondingEvent.pollFirstEntry();
 		}
@@ -847,7 +849,11 @@ class ExifParser {
 		}
 	}
 
-	private boolean checkAllowed( int ifd, int tagId ) {
+	public boolean isDefinedTag(int ifdId, int tagId ) {
+		return mInterface.getTagInfo().get(ExifInterface.defineTag(ifdId, (short)tagId)) != ExifInterface.DEFINITION_NULL;
+	}
+
+	public boolean checkAllowed( int ifd, int tagId ) {
 		int info = mInterface.getTagInfo().get( tagId );
 		if( info == ExifInterface.DEFINITION_NULL ) {
 			return false;

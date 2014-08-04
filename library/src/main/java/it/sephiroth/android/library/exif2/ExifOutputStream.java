@@ -78,6 +78,7 @@ class ExifOutputStream {
 		ArrayList<ExifTag> nullTags = stripNullValueTags( mExifData );
 		createRequiredIfdAndTag();
 		int exifSize = calculateAllOffset();
+		// Log.i(TAG, "exifSize: " + (exifSize + 8));
 		if( exifSize + 8 > MAX_EXIF_SIZE ) {
 			throw new IOException( "Exif header is too large (>64Kb)" );
 		}

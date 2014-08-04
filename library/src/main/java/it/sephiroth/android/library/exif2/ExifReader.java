@@ -67,11 +67,20 @@ class ExifReader {
 					break;
 				case ExifParser.EVENT_NEW_TAG:
 					tag = parser.getTag();
+
+
+
 					if( ! tag.hasValue() ) {
 						parser.registerForTagValue( tag );
 					}
 					else {
-						exifData.getIfdData( tag.getIfd() ).setTag( tag );
+						// Log.v(TAG, "parsing id " + tag.getTagId() + " = " + tag);
+						if (parser.isDefinedTag(tag.getIfd(), tag.getTagId())) {
+							exifData.getIfdData(tag.getIfd()).setTag(tag);
+						}
+						else {
+							Log.w(TAG, "skip tag because not registered in the tag table:" + tag);
+						}
 					}
 					break;
 				case ExifParser.EVENT_VALUE_OF_REGISTERED_TAG:

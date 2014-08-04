@@ -130,6 +130,8 @@ public class ExifInterface {
 	public static final int TAG_ROWS_PER_STRIP = defineTag( IfdId.TYPE_IFD_0, (short) 0x0116 );
 	public static final int TAG_STRIP_BYTE_COUNTS = defineTag( IfdId.TYPE_IFD_0, (short) 0x0117 );
 
+	public static final int TAG_INTEROP_VERSION = defineTag(IfdId.TYPE_IFD_INTEROPERABILITY, (short)0x0002);
+
 	/**
 	 * Value is unsigned double.<br />
 	 * Display/Print resolution of image. Large number of digicam uses 1/72inch, but it has no mean because personal computer doesn't
@@ -1047,7 +1049,7 @@ public class ExifInterface {
 		File bak_file = new File( dstFilename + ".t" );
 
 		// try to delete old copy of backup
-		Log.d( TAG, "delete old backup file" );
+		// Log.d( TAG, "delete old backup file" );
 		bak_file.delete();
 
 		// rename dst file into backup file
@@ -1062,7 +1064,7 @@ public class ExifInterface {
 			writeExif( dst_file.getAbsolutePath(), bak_file.getAbsolutePath() );
 
 			// Now switch bak into dst
-			Log.d( TAG, "rename the bak into dst" );
+			// Log.d( TAG, "rename the bak into dst" );
 			bak_file.renameTo( dst_file );
 		} catch( IOException e ) {
 			throw e;
@@ -1132,7 +1134,7 @@ public class ExifInterface {
 	}
 
 	private static int writeExif_internal( final InputStream input, final OutputStream output, ExifData exifData ) throws IOException {
-		Log.i( TAG, "writeExif_internal" );
+		// Log.i( TAG, "writeExif_internal" );
 
 		// 1. read the output file first
 		ExifInterface src_exif = new ExifInterface();
@@ -1159,7 +1161,7 @@ public class ExifInterface {
 		// 6.2 write all the sections except for the SOS ( start of scan )
 		for( int a = 0; a < sections.size() - 1; a++ ) {
 			ExifParser.Section current = sections.get( a );
-			Log.v( TAG, "writing section.. " + String.format( "0x%2X", current.type ) );
+			// Log.v( TAG, "writing section.. " + String.format( "0x%2X", current.type ) );
 			output.write( 0xFF );
 			output.write( current.type );
 			output.write( current.data );
@@ -1167,7 +1169,7 @@ public class ExifInterface {
 
 		// 6.3 write the last SOS marker
 		ExifParser.Section current = sections.get( sections.size() - 1 );
-		Log.v( TAG, "writing last section.. " + String.format( "0x%2X", current.type ) );
+		// Log.v( TAG, "writing last section.. " + String.format( "0x%2X", current.type ) );
 		output.write( 0xFF );
 		output.write( current.type );
 		output.write( current.data );
@@ -1435,6 +1437,7 @@ public class ExifInterface {
 		int[] interopAllowedIfds = { IfdId.TYPE_IFD_INTEROPERABILITY };
 		int interopFlags = getFlagsFromAllowedIfds( interopAllowedIfds ) << 24;
 		mTagInfo.put( TAG_INTEROPERABILITY_INDEX, interopFlags | ExifTag.TYPE_ASCII << 16 );
+		mTagInfo.put( TAG_INTEROP_VERSION, interopFlags | ExifTag.TYPE_UNDEFINED << 16 | 4 );
 	}
 
 	protected static int getFlagsFromAllowedIfds( int[] allowedIfds ) {

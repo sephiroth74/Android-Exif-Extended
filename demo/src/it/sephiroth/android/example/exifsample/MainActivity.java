@@ -89,8 +89,9 @@ public class MainActivity extends Activity implements OnClickListener {
 				exif.setTags( mExif.getAllTags() );
 				exif.setCompressedThumbnail( mExif.getThumbnail() );
 
-				exif.deleteTag( ExifInterface.TAG_COLOR_SPACE );
-				exif.deleteTag( ExifInterface.TAG_ORIENTATION );
+//				exif.deleteTag( ExifInterface.TAG_COLOR_SPACE );
+//				exif.deleteTag( ExifInterface.TAG_ORIENTATION );
+//				exif.deleteTag(ExifInterface.TAG_INTEROP_VERSION);
 
 				String uuid = UUID.randomUUID().toString();
 
@@ -100,9 +101,11 @@ public class MainActivity extends Activity implements OnClickListener {
 					uuid = StringUtils.leftPad( uuid, 32 );
 				}
 
-				exif.setTag( exif.buildTag( ExifInterface.TAG_IMAGE_UNIQUE_ID, uuid ) );
-				exif.setTag( exif.buildTag( ExifInterface.TAG_ARTIST, "Alessandro Crugnola" ) );
-				exif.addDateTimeStampTag( ExifInterface.TAG_DATE_TIME, new Date().getTime(), TimeZone.getDefault() );
+				Log.d(LOG_TAG, "uuid: " + uuid + ", size: " + uuid.length());
+
+//				exif.setTag( exif.buildTag( ExifInterface.TAG_IMAGE_UNIQUE_ID, uuid ) );
+//				exif.setTag( exif.buildTag( ExifInterface.TAG_ARTIST, "Alessandro Crugnola" ) );
+//				exif.addDateTimeStampTag( ExifInterface.TAG_DATE_TIME, new Date().getTime(), TimeZone.getDefault() );
 
 				InputStream is = openInputStream( mUri );
 				OutputStream os = new FileOutputStream( dst_file );
@@ -405,6 +408,7 @@ public class MainActivity extends Activity implements OnClickListener {
 			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_LENS_MODEL, "TAG_LENS_MODEL", all_tags ) );
 			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_LENS_SPECS, "TAG_LENS_SPECS", all_tags ) );
 			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_SENSITIVITY_TYPE, "TAG_SENSITIVITY_TYPE", all_tags ) );
+			string.append( createStringFromIfFound( mExif, ExifInterface.TAG_INTEROP_VERSION, "TAG_INTEROP_VERSION", all_tags ) );
 
 			List<ExifTag> tags = mExif.getTagsForTagId( mExif.getTrueTagKey( ExifInterface.TAG_ORIENTATION ) );
 			Log.d( LOG_TAG, "tags: " + tags );
@@ -465,7 +469,7 @@ public class MainActivity extends Activity implements OnClickListener {
 			if( null != all_tags ) {
 				Log.i( LOG_TAG, "---- remaining tags ---" );
 				for( ExifTag remaining_tag : all_tags ) {
-					Log.v( LOG_TAG, "tag: " + String.format( "0x%X", remaining_tag.getTagId() ) + ", value: " + remaining_tag.forceGetValueAsString() );
+					Log.v( LOG_TAG, "tag: " + String.format( "0x%X", remaining_tag.getTagId() ) + ", value: " + remaining_tag );
 				}
 			}
 
