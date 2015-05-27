@@ -2387,12 +2387,12 @@ public class ExifInterface {
 	public static interface Orientation {
 		public static final short TOP_LEFT = 1;
 		public static final short TOP_RIGHT = 2;
-		public static final short BOTTOM_LEFT = 3;
-		public static final short BOTTOM_RIGHT = 4;
+		public static final short BOTTOM_RIGHT = 3;
+		public static final short BOTTOM_LEFT = 4;
 		public static final short LEFT_TOP = 5;
 		public static final short RIGHT_TOP = 6;
-		public static final short LEFT_BOTTOM = 7;
-		public static final short RIGHT_BOTTOM = 8;
+		public static final short RIGHT_BOTTOM = 7;
+		public static final short LEFT_BOTTOM = 8;
 	}
 
 	/**
