@@ -45,7 +45,5 @@ build/
 .idea/
 .gradle/
 
-demo/demo.iml
+*.iml
 demo/pom.xml
-Android-Exif-Extended.iml
-library/library.iml
