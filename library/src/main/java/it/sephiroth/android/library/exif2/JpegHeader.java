@@ -103,7 +103,7 @@ class JpegHeader {
 	/** Comment section * */
 	public static final short M_COM = (short) 0xFFFE;          // Comment section
 
-	public static final boolean isSofMarker( short marker ) {
+	public static boolean isSofMarker( short marker ) {
 		return marker >= M_SOF0 && marker <= M_SOF15 && marker != M_DHT && marker != JPG && marker != DAC;
 	}
 }

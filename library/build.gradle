@@ -1,4 +1,4 @@
-apply plugin: 'android-library'
+apply plugin: 'com.android.library'
 
 group GROUP
 version VERSION_NAME
@@ -23,8 +23,6 @@ android {
 
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
-    compile 'org.apache.commons:commons-lang3:3.3.2'
-    compile 'commons-io:commons-io:2.4'
 }
 
 

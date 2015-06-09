@@ -1,18 +1,20 @@
 
 apply plugin: 'signing'
-apply plugin: 'android'
+apply plugin: 'com.android.application'
 
 dependencies {
     compile project(':library')
+    compile 'org.apache.commons:commons-lang3:3.3.2'
+    compile 'commons-io:commons-io:2.4'
 }
 
 android {
-    compileSdkVersion 21
-    buildToolsVersion "21.1.1"
+    compileSdkVersion 22
+    buildToolsVersion "21.1.2"
 
     defaultConfig {
         minSdkVersion 9
-        targetSdkVersion 21
+        targetSdkVersion 22
     }
 
     sourceSets {
