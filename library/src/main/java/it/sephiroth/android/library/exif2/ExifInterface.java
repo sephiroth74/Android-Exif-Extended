@@ -1356,7 +1356,7 @@ public class ExifInterface {
 		mTagInfo.put( ExifInterface.TAG_SUB_SEC_TIME_ORIGINAL, exifFlags | ExifTag.TYPE_ASCII << 16 );
 		mTagInfo.put( ExifInterface.TAG_SUB_SEC_TIME_DIGITIZED, exifFlags | ExifTag.TYPE_ASCII << 16 );
 		mTagInfo.put( ExifInterface.TAG_IMAGE_UNIQUE_ID, exifFlags | ExifTag.TYPE_ASCII << 16 | 33 );
-		mTagInfo.put( ExifInterface.TAG_LENS_SPECS, exifFlags | ExifTag.TYPE_RATIONAL << 16 | 3 );
+		mTagInfo.put( ExifInterface.TAG_LENS_SPECS, exifFlags | ExifTag.TYPE_RATIONAL << 16 | 4 );
 		mTagInfo.put( ExifInterface.TAG_LENS_MAKE, exifFlags | ExifTag.TYPE_ASCII << 16 );
 		mTagInfo.put( ExifInterface.TAG_LENS_MODEL, exifFlags | ExifTag.TYPE_ASCII << 16 );
 		mTagInfo.put( ExifInterface.TAG_SENSITIVITY_TYPE, exifFlags | ExifTag.TYPE_UNSIGNED_SHORT << 16 | 1 );
