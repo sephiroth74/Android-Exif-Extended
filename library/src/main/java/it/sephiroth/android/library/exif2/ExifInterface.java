@@ -18,11 +18,8 @@ package it.sephiroth.android.library.exif2;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.os.SystemClock;
 import android.util.Log;
 import android.util.SparseIntArray;
-
-import org.apache.commons.io.IOUtils;
 
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
@@ -1096,10 +1093,9 @@ public class ExifInterface {
 		in_channel.transferTo( position, in_channel.size() - position, out_channel );
 		output.flush();
 
-		IOUtils.closeQuietly( input );
-		IOUtils.closeQuietly( output );
+        StreamUtils.closeQuietly( input );
+        StreamUtils.closeQuietly( output );
 	}
-
 
 	public void writeExif( final InputStream input, final String dstFilename ) throws IOException {
 		Log.i( TAG, "writeExif: " + dstFilename );
@@ -1111,7 +1107,7 @@ public class ExifInterface {
 		writeExif_internal( input, output, mData );
 
 		// 7. write the rest of the image..
-		IOUtils.copy( input, output );
+		StreamUtils.copy( input, output );
 
 		output.flush();
 		output.close();

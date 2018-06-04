@@ -23,9 +23,6 @@ android {
 
 dependencies {
     api fileTree(dir: 'libs', include: ['*.jar'])
-    api 'org.apache.commons:commons-lang3:3.3.2'
-    api 'commons-io:commons-io:2.4'
 }
-
 
 apply from: '../gradle-mvn-push.gradle'

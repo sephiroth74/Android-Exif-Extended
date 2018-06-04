@@ -1,6 +1,5 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="it.sephiroth.android.library.exif2">
+<manifest package="it.sephiroth.android.library.exif2">
 
-	<application>
-	</application>
+    <application></application>
 
 </manifest>
