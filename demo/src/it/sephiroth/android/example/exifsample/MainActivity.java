@@ -19,8 +19,6 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import org.apache.commons.lang3.StringUtils;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -39,9 +37,8 @@ import it.sephiroth.android.example.exifsample.utils.IOUtils;
 import it.sephiroth.android.library.exif2.BuildConfig;
 import it.sephiroth.android.library.exif2.ExifInterface;
 import it.sephiroth.android.library.exif2.ExifTag;
-import it.sephiroth.android.library.exif2.ExifUtil;
 import it.sephiroth.android.library.exif2.IfdId;
-import it.sephiroth.android.library.exif2.Rational;
+import it.sephiroth.android.library.exif2.StreamUtils;
 
 public class MainActivity extends Activity implements OnClickListener {
 
@@ -98,7 +95,7 @@ public class MainActivity extends Activity implements OnClickListener {
 				if( uuid.length() > 32 ) {
 					uuid = uuid.substring( 0, 32 );
 				} else if( uuid.length() < 32 ) {
-					uuid = StringUtils.leftPad( uuid, 32 );
+					uuid = leftPad( uuid, 32 );
 				}
 
 				Log.d(LOG_TAG, "uuid: " + uuid + ", size: " + uuid.length());
@@ -109,7 +106,7 @@ public class MainActivity extends Activity implements OnClickListener {
 
 				InputStream is = openInputStream( mUri );
 				OutputStream os = new FileOutputStream( dst_file );
-				org.apache.commons.io.IOUtils.copy( is, os );
+				StreamUtils.copy( is, os );
 				is.close();
 				os.close();
 
@@ -126,6 +123,28 @@ public class MainActivity extends Activity implements OnClickListener {
 			}
 
 		}
+	}
+
+	private static String leftPad(final String str, final int size) {
+		if (str == null) {
+			return null;
+		}
+
+		final int pads = size - str.length();
+
+		if (pads <= 0) {
+			return str; // returns original String when possible
+		}
+
+		return repeat(' ', pads).concat(str);
+	}
+
+	private static String repeat(final char ch, final int repeat) {
+		final char[] buf = new char[repeat];
+		for (int i = repeat - 1; i >= 0; i--) {
+			buf[i] = ch;
+		}
+		return new String(buf);
 	}
 
 	private void dumpToFile( ExifInterface exif ) {
