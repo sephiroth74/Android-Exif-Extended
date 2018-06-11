@@ -771,10 +771,9 @@ class ExifParser {
 			}
 			// Some invalid images put some undefined data before IFD0.
 			// Read the data here.
-			if( (offset < mIfd0Position) && (dataFormat == ExifTag.TYPE_UNDEFINED)) {
-				byte[] buf = new byte[(int) numOfComp];
-				int length = Math.min(mDataAboveIfd0.length, (int) numOfComp);
-				System.arraycopy( mDataAboveIfd0, (int) offset - DEFAULT_IFD0_OFFSET, buf, 0, length );
+			if( (offset < mIfd0Position) && (offset >= DEFAULT_IFD0_OFFSET) && (dataFormat == ExifTag.TYPE_UNDEFINED)) {
+                byte[] buf = new byte[Math.min(mDataAboveIfd0.length, (int) numOfComp)];
+				System.arraycopy( mDataAboveIfd0, (int) offset - DEFAULT_IFD0_OFFSET, buf, 0, buf.length );
 				tag.setValue( buf );
 			}
 			else {
