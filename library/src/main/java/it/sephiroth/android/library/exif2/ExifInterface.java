@@ -1113,6 +1113,14 @@ public class ExifInterface {
 		output.close();
 	}
 
+  //  Write the data to another stream provided by the client
+  public void writeExif(final InputStream input, final OutputStream output) throws IOException {
+    Log.i( TAG, "writeExif: to stream" );
+
+    writeExif_internal( input, output, mData );
+    StreamUtils.copy( input, output );
+  }
+
 	@SuppressWarnings( "unused" )
 	public void writeExif( final Bitmap input, final String dstFilename, int quality ) throws IOException {
 		Log.i( TAG, "writeExif: " + dstFilename );
