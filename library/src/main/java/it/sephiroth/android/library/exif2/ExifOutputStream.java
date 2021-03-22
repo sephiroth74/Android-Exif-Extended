@@ -24,6 +24,7 @@ import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
+import java.util.List;
 
 class ExifOutputStream {
 	private static final String TAG = "ExifOutputStream";
@@ -115,10 +116,13 @@ class ExifOutputStream {
 
 	private ArrayList<ExifTag> stripNullValueTags( ExifData data ) {
 		ArrayList<ExifTag> nullTags = new ArrayList<ExifTag>();
-		for( ExifTag t : data.getAllTags() ) {
-			if( t.getValue() == null && ! ExifInterface.isOffsetTag( t.getTagId() ) ) {
-				data.removeTag( t.getTagId(), t.getIfd() );
-				nullTags.add( t );
+		List<ExifTag> allTags = data.getAllTags();
+		if (allTags != null) {
+			for (ExifTag t : allTags) {
+				if (t.getValue() == null && !ExifInterface.isOffsetTag(t.getTagId())) {
+					data.removeTag(t.getTagId(), t.getIfd());
+					nullTags.add(t);
+				}
 			}
 		}
 		return nullTags;
